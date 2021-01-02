@@ -1,49 +1,60 @@
 use common::read_single_line;
-use computer::Computer;
+use computer::{computer_error::ComputerError, Computer};
+use std::str::FromStr;
 
-pub fn result1() {
-    let input = read_single_line("data/day02/input.txt");
-    let mut computer = Computer::parse(&input);
+pub fn result1() -> Result<String, ComputerError> {
+    let input = read_single_line("data/day02/input.txt")?;
+    let mut computer = Computer::from_str(&input)?;
     computer.patch_memory(1, 12);
     computer.patch_memory(2, 2);
 
     computer.run();
     let result = computer.memory()[0];
 
-    println!("Day 02 - Result 1: {}", result);
+    Ok(format!("Day 02 - Result 1: {}", result))
 }
 
-pub fn result2() {
-    let input = read_single_line("data/day02/input.txt");
-    let computer = Computer::parse(&input);
+pub fn result2() -> Result<String, ComputerError> {
+    let input = read_single_line("data/day02/input.txt")?;
+    let computer = Computer::from_str(&input)?;
 
+    let (noun, verb) = test_numbers(computer)?;
+    Ok(format!("Day 02 - Result 2: {}", 100 * noun + verb))
+}
+
+fn test_numbers(original: Computer) -> Result<(i32, i32), ComputerError> {
     for noun in 0..100 {
         for verb in 0..100 {
-            let mut computer = computer.clone();
+            let mut computer = original.clone();
             computer.patch_memory(1, noun);
             computer.patch_memory(2, verb);
 
             let computer = computer.run();
             let result = computer.memory()[0];
             if result == 19690720 {
-                println!("Day 02 - Result 2: {}", 100 * noun + verb);
-                return;
+                return Ok((noun, verb));
             }
         }
     }
+    Err(ComputerError::MessageError(String::from(
+        "No suitable numbers found",
+    )))
 }
 
 #[cfg(test)]
 mod tests {
-    use computer::Computer;
+    use computer::{computer_error::ComputerError, Computer};
+    use std::str::FromStr;
 
     #[test]
-    fn test_parse() {
+    fn test_parse() -> Result<(), ComputerError> {
         let input = "1,9,10,3,2,3,11,0,99,30,40,50";
-        let computer = Computer::parse(&input);
+        let computer = Computer::from_str(&input)?;
         let result = computer.memory();
         let expected = vec![1, 9, 10, 3, 2, 3, 11, 0, 99, 30, 40, 50];
         assert_eq!(result, &expected);
+
+        Ok(())
     }
 
     #[test]

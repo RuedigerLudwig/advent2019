@@ -1,4 +1,7 @@
 use common::as_int;
+use std::str::FromStr;
+
+use crate::computer_error::ComputerError;
 
 #[derive(Clone)]
 pub struct Computer {
@@ -6,17 +9,12 @@ pub struct Computer {
     _pointer: usize,
 }
 
-impl<'a> Computer {
+impl Computer {
     pub fn new(code: Vec<i32>) -> Computer {
         Computer {
             _memory: code.clone(),
             _pointer: 0,
         }
-    }
-
-    pub fn parse(input: &str) -> Computer {
-        let parts = input.split(",").map(as_int).collect();
-        Computer::new(parts)
     }
 
     pub fn patch_memory(&mut self, pos: usize, value: i32) {
@@ -70,5 +68,14 @@ impl<'a> Computer {
         self._memory[result] = op1 * op2;
 
         self._pointer += 4;
+    }
+}
+
+impl FromStr for Computer {
+    type Err = ComputerError;
+
+    fn from_str(input: &str) -> Result<Computer, Self::Err> {
+        let code = input.split(",").map(as_int).collect::<Result<_, _>>()?;
+        Ok(Computer::new(code))
     }
 }
