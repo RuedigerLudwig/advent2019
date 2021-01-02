@@ -1,5 +1,6 @@
 #[derive(Debug)]
 pub enum CommonError {
+    MessageError(String),
     ParseIntError(std::num::ParseIntError),
     IOError(std::io::Error),
 }
@@ -7,6 +8,7 @@ pub enum CommonError {
 impl std::error::Error for CommonError {
     fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
         match self {
+            CommonError::MessageError(_) => None,
             CommonError::ParseIntError(err) => Some(err),
             CommonError::IOError(err) => Some(err),
         }
@@ -16,6 +18,8 @@ impl std::error::Error for CommonError {
 impl std::fmt::Display for CommonError {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
         match self {
+            CommonError::MessageError(message) => write!(f, "{}", message),
+
             CommonError::ParseIntError(err) => {
                 write!(f, "Error while parsing Integer:\n{}", err)
             }
