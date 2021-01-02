@@ -5,11 +5,12 @@ use std::str::FromStr;
 pub fn result1() -> Result<String, ComputerError> {
     let input = read_single_line("data/day02/input.txt")?;
     let mut computer = Computer::from_str(&input)?;
-    computer.patch_memory(1, 12);
-    computer.patch_memory(2, 2);
 
-    computer.run();
-    let result = computer.memory()[0];
+    computer.patch_memory(1, 12)?;
+    computer.patch_memory(2, 2)?;
+    computer.run()?;
+
+    let result = computer.get_memory()[0];
 
     Ok(format!("Day 02 - Result 1: {}", result))
 }
@@ -26,12 +27,12 @@ fn test_numbers(original: Computer) -> Result<(i32, i32), ComputerError> {
     for noun in 0..100 {
         for verb in 0..100 {
             let mut computer = original.clone();
-            computer.patch_memory(1, noun);
-            computer.patch_memory(2, verb);
 
-            let computer = computer.run();
-            let result = computer.memory()[0];
-            if result == 19690720 {
+            computer.patch_memory(1, noun)?;
+            computer.patch_memory(2, verb)?;
+            computer.run()?;
+
+            if computer.get_memory()[0] == 19690720 {
                 return Ok((noun, verb));
             }
         }
@@ -50,7 +51,7 @@ mod tests {
     fn test_parse() -> Result<(), ComputerError> {
         let input = "1,9,10,3,2,3,11,0,99,30,40,50";
         let computer = Computer::from_str(&input)?;
-        let result = computer.memory();
+        let result = computer.get_memory();
         let expected = vec![1, 9, 10, 3, 2, 3, 11, 0, 99, 30, 40, 50];
         assert_eq!(result, &expected);
 
@@ -58,15 +59,17 @@ mod tests {
     }
 
     #[test]
-    fn test_computer_running() {
+    fn test_computer_running() -> Result<(), ComputerError> {
         let input = vec![1, 9, 10, 3, 2, 3, 11, 0, 99, 30, 40, 50];
 
-        let mut computer = Computer::new(input);
-        computer.run();
-        let result = computer.memory();
+        let mut computer = Computer::new(input)?;
+        computer.run()?;
+        let result = computer.get_memory();
 
         let expected: Vec<i32> = vec![3500, 9, 10, 70, 2, 3, 11, 0, 99, 30, 40, 50];
 
         assert_eq!(result, &expected);
+
+        Ok(())
     }
 }
