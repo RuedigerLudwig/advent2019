@@ -5,7 +5,7 @@ mod better_password;
 mod password;
 
 pub fn result1() -> Result<String, CommonError> {
-    let input = read_single_line("data/day04/input.txt")?;
+    let input = read_single_line("day04", "input.txt")?;
     let split: Vec<i32> = input.split('-').map(as_int).collect::<Result<_, _>>()?;
     if split.len() != 2 || split[0] >= split[1] {
         Err(CommonError::MessageError(String::from("Need range of two")))
@@ -16,7 +16,7 @@ pub fn result1() -> Result<String, CommonError> {
 }
 
 pub fn result2() -> Result<String, CommonError> {
-    let input = read_single_line("data/day04/input.txt")?;
+    let input = read_single_line("day04", "input.txt")?;
     let split: Vec<i32> = input.split('-').map(as_int).collect::<Result<_, _>>()?;
     if split.len() != 2 || split[0] >= split[1] {
         Err(CommonError::MessageError(String::from("Need range of two")))

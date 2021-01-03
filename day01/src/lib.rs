@@ -15,7 +15,7 @@ pub fn calculate2(mass: i32) -> i32 {
 }
 
 pub fn result1() -> Result<String, CommonError> {
-    let result: i32 = work_on_file("data/day01/input.txt", as_int)?
+    let result: i32 = work_on_file("day01", "input.txt", as_int)?
         .iter()
         .copied()
         .map(calculate)
@@ -25,7 +25,7 @@ pub fn result1() -> Result<String, CommonError> {
 }
 
 pub fn result2() -> Result<String, CommonError> {
-    let result: i32 = work_on_file("data/day01/input.txt", as_int)?
+    let result: i32 = work_on_file("day01", "input.txt", as_int)?
         .iter()
         .copied()
         .map(calculate2)

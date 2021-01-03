@@ -3,7 +3,7 @@ use computer::{computer_error::ComputerError, Computer};
 use std::str::FromStr;
 
 pub fn result1() -> Result<String, ComputerError> {
-    let input = read_single_line("data/day02/input.txt")?;
+    let input = read_single_line("day02", "input.txt")?;
     let mut computer = Computer::from_str(&input)?;
 
     computer.patch_memory(1, 12)?;
@@ -16,7 +16,7 @@ pub fn result1() -> Result<String, ComputerError> {
 }
 
 pub fn result2() -> Result<String, ComputerError> {
-    let input = read_single_line("data/day02/input.txt")?;
+    let input = read_single_line("day02", "input.txt")?;
     let computer = Computer::from_str(&input)?;
 
     let (noun, verb) = test_numbers(computer)?;

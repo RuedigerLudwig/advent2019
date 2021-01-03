@@ -9,7 +9,7 @@ mod wire;
 mod wire_error;
 
 pub fn result1() -> Result<String, WireError> {
-    let input = read_all_lines("data/day03/input.txt")?;
+    let input = read_all_lines("day03", "input.txt")?;
     let wire1 = Wire::from_str(&input[0])?;
     let wire2 = Wire::from_str(&input[1])?;
 
@@ -21,7 +21,7 @@ pub fn result1() -> Result<String, WireError> {
 }
 
 pub fn result2() -> Result<String, WireError> {
-    let input = read_all_lines("data/day03/input.txt")?;
+    let input = read_all_lines("day03", "input.txt")?;
     let wire1 = Wire::from_str(&input[0])?;
     let wire2 = Wire::from_str(&input[1])?;
 

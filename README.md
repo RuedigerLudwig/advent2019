@@ -6,4 +6,6 @@ These are my attempt for the year 2019. I wanted to learn Rust (started at versi
 
 My goal was to finished at least one puzzle on a given day. And to try to use a few addidtional crates as possible.
 
+If you look at the code and see ways I could improve my program, please do not hesitate to contact me. I am always grateful for everything that makes me a better programmer.
+
 All code is published under the [Unlicense](https://unlicense.org/)

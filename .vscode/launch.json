@@ -20,7 +20,7 @@
                 }
             },
             "args": [
-                "day05"
+                "${input:program}"
             ],
             "cwd": "${workspaceFolder}",
             "sourceLanguages": [
@@ -48,6 +48,14 @@
             "sourceLanguages": [
                 "rust"
             ]
+        }
+    ],
+    "inputs": [
+        {
+            "id": "program",
+            "type": "promptString",
+            "default": "day",
+            "description": "Which day shall I  run?"
         }
     ]
 }
