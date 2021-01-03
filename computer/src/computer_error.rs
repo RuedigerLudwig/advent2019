@@ -4,8 +4,12 @@ use common::CommonError;
 pub enum ComputerError {
     MessageError(String),
     CommonError(CommonError),
+
     UnknownOperation(i32),
-    IllegalAddress(usize, String),
+    InputEmpty,
+
+    IllegalAddress(String),
+    IllegalMode(u8),
 }
 
 impl std::error::Error for ComputerError {
@@ -13,7 +17,9 @@ impl std::error::Error for ComputerError {
         match self {
             ComputerError::MessageError(_) => None,
             ComputerError::UnknownOperation(_) => None,
-            ComputerError::IllegalAddress(_, _) => None,
+            ComputerError::IllegalAddress(_) => None,
+            ComputerError::IllegalMode(_) => None,
+            ComputerError::InputEmpty => None,
             ComputerError::CommonError(err) => Some(err),
         }
     }
@@ -24,8 +30,12 @@ impl std::fmt::Display for ComputerError {
         match self {
             ComputerError::MessageError(message) => write!(f, "{}", message),
             ComputerError::UnknownOperation(op_code) => write!(f, "Unknown OpCode: {}", op_code),
-            ComputerError::IllegalAddress(addr, message) => {
-                write!(f, "Illegal address {} for {}", addr, message)
+            ComputerError::InputEmpty => write!(f, "Input unexpectedly empty"),
+            ComputerError::IllegalAddress(message) => {
+                write!(f, "Illegal address {}", message)
+            }
+            ComputerError::IllegalMode(addr) => {
+                write!(f, "Illegal mode {}", addr)
             }
             ComputerError::CommonError(ref err) => err.fmt(f),
         }
