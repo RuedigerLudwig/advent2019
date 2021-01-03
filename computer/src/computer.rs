@@ -1,4 +1,4 @@
-use common::as_int;
+use common::{as_int, read_single_line};
 use std::{collections::VecDeque, str::FromStr};
 
 use crate::computer_error::ComputerError;
@@ -25,6 +25,11 @@ impl Computer {
                 _input: VecDeque::new(),
             })
         }
+    }
+
+    pub fn from_file(module: &str, file: &str) -> Result<Computer, ComputerError> {
+        let input = read_single_line(module, file)?;
+        Computer::from_str(&input)
     }
 
     pub fn run(&mut self) -> Result<Vec<i32>, ComputerError> {

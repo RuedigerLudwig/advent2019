@@ -1,10 +1,7 @@
-use common::read_single_line;
 use computer::{computer_error::ComputerError, Computer};
-use std::str::FromStr;
 
 pub fn result1() -> Result<String, ComputerError> {
-    let input = read_single_line("day05", "input.txt")?;
-    let mut computer = Computer::from_str(&input)?;
+    let mut computer = Computer::from_file("day05", "input.txt")?;
 
     computer.provide_input(1);
     let result = computer.run()?;
@@ -13,8 +10,7 @@ pub fn result1() -> Result<String, ComputerError> {
 }
 
 pub fn result2() -> Result<String, ComputerError> {
-    let input = read_single_line("day05", "input.txt")?;
-    let mut computer = Computer::from_str(&input)?;
+    let mut computer = Computer::from_file("day05", "input.txt")?;
 
     computer.provide_input(5);
     let result = computer.run()?;
