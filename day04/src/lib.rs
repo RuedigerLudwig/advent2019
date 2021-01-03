@@ -22,6 +22,6 @@ pub fn result2() -> Result<String, CommonError> {
         Err(CommonError::MessageError(String::from("Need range of two")))
     } else {
         let result = check_better(split[0], split[1]);
-        Ok(format!("Day 04 - Result 1: {}", result))
+        Ok(format!("Day 04 - Result 2: {}", result))
     }
 }
