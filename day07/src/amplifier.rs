@@ -2,7 +2,7 @@ use std::collections::VecDeque;
 
 use computer::{computer_error::ComputerError, Computer};
 
-use crate::permutations::Permutations;
+use crate::permutations::LexPermutations;
 
 pub struct Amplifier {
     computers: VecDeque<Computer>,
@@ -23,7 +23,7 @@ impl Amplifier {
 
     pub fn get_best(template: &Computer, setting: &Vec<i32>) -> Result<i32, ComputerError> {
         let mut result = i32::MIN;
-        for perm in Permutations::new(setting) {
+        for perm in LexPermutations::new(setting) {
             let mut amplifier = Amplifier::new(template, &perm);
             result = result.max(amplifier.run_once(0)?);
         }
@@ -35,7 +35,7 @@ impl Amplifier {
         setting: &Vec<i32>,
     ) -> Result<i32, ComputerError> {
         let mut result = i32::MIN;
-        for perm in Permutations::new(setting) {
+        for perm in LexPermutations::new(setting) {
             let mut amplifier = Amplifier::new(template, &perm);
             result = result.max(amplifier.run_continously(0)?);
         }
