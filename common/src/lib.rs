@@ -5,7 +5,7 @@ pub mod common_error;
 pub mod helpers;
 
 fn read_from_file(module: &str, file: &str) -> Result<String, CommonError> {
-    let mut result = fs::read_to_string(format!("data/{}/{}", module, file));
+    let mut result = fs::read_to_string(format!("{}/data/{}", module, file));
     if result.is_err() {
         result = fs::read_to_string(format!("data/{}", file));
     }
