@@ -5,7 +5,7 @@ pub enum ComputerError {
     MessageError(String),
     CommonError(CommonError),
 
-    UnknownOperation(i32),
+    UnknownOperation(u8),
     InputEmpty,
 
     IllegalAddress(String),

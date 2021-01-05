@@ -9,7 +9,7 @@ pub struct Amplifier {
 }
 
 impl Amplifier {
-    pub fn new(template: &Computer, setting: &Vec<i32>) -> Amplifier {
+    pub fn new(template: &Computer, setting: &Vec<i64>) -> Amplifier {
         let computers = setting
             .iter()
             .map(|input| {
@@ -21,8 +21,8 @@ impl Amplifier {
         Amplifier { computers }
     }
 
-    pub fn get_best(template: &Computer, setting: &Vec<i32>) -> Result<i32, ComputerError> {
-        let mut result = i32::MIN;
+    pub fn get_best(template: &Computer, setting: &Vec<i64>) -> Result<i64, ComputerError> {
+        let mut result = i64::MIN;
         for perm in LexPermutations::new(setting) {
             let mut amplifier = Amplifier::new(template, &perm);
             result = result.max(amplifier.run_once(0)?);
@@ -32,9 +32,9 @@ impl Amplifier {
 
     pub fn get_best_continously(
         template: &Computer,
-        setting: &Vec<i32>,
-    ) -> Result<i32, ComputerError> {
-        let mut result = i32::MIN;
+        setting: &Vec<i64>,
+    ) -> Result<i64, ComputerError> {
+        let mut result = i64::MIN;
         for perm in LexPermutations::new(setting) {
             let mut amplifier = Amplifier::new(template, &perm);
             result = result.max(amplifier.run_continously(0)?);
@@ -42,7 +42,7 @@ impl Amplifier {
         Ok(result)
     }
 
-    pub fn run_once(&mut self, initial_value: i32) -> Result<i32, ComputerError> {
+    pub fn run_once(&mut self, initial_value: i64) -> Result<i64, ComputerError> {
         let mut value = initial_value;
         for computer in self.computers.iter_mut() {
             computer.provide_input(value);
@@ -58,7 +58,7 @@ impl Amplifier {
         Ok(value)
     }
 
-    pub fn run_continously(&mut self, initial_value: i32) -> Result<i32, ComputerError> {
+    pub fn run_continously(&mut self, initial_value: i64) -> Result<i64, ComputerError> {
         let mut value = initial_value;
         loop {
             if let Some(mut computer) = self.computers.pop_front() {
