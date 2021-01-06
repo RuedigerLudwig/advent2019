@@ -1,21 +1,20 @@
 use computer::{computer_error::ComputerError, Computer};
 
-pub fn result1() -> Result<String, ComputerError> {
-    let mut computer = Computer::from_file("day09", "input.txt")?;
+pub fn result() -> Result<(), ComputerError> {
+    let template = Computer::from_file("day09", "input.txt")?;
 
-    computer.provide_input(1);
-    let result = computer.run()?;
+    let mut computer1 = template.clone();
+    computer1.provide_input(1);
+    let result1 = computer1.run()?;
+    println!("Day 09 - Result 1: {:?}", result1);
 
-    Ok(format!("Day 09 - Result 1: {:?}", result))
-}
+    let mut computer2 = template.clone();
+    computer2.provide_input(2);
+    let result2 = computer2.run()?;
 
-pub fn result2() -> Result<String, ComputerError> {
-    let mut computer = Computer::from_file("day09", "input.txt")?;
+    println!("Day 09 - Result 2: {:?}", result2);
 
-    computer.provide_input(2);
-    let result = computer.run()?;
-
-    Ok(format!("Day 09 - Result 2: {:?}", result))
+    Ok(())
 }
 
 #[cfg(test)]

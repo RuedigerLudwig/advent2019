@@ -4,20 +4,16 @@ use computer::{computer_error::ComputerError, Computer};
 mod amplifier;
 mod permutations;
 
-pub fn result1() -> Result<String, ComputerError> {
+pub fn result() -> Result<(), ComputerError> {
     let template = Computer::from_file("day07", "input.txt")?;
 
-    let result = Amplifier::get_best(&template, &vec![0, 1, 2, 3, 4])?;
+    let result1 = Amplifier::get_best(&template, &vec![0, 1, 2, 3, 4])?;
+    println!("Day 07 - Result 1: {:?}", result1);
 
-    Ok(format!("Day 07 - Result 1: {:?}", result))
-}
+    let result2 = Amplifier::get_best_continously(&template, &vec![5, 6, 7, 8, 9])?;
+    println!("Day 07 - Result 2: {:?}", result2);
 
-pub fn result2() -> Result<String, ComputerError> {
-    let template = Computer::from_file("day07", "input.txt")?;
-
-    let result = Amplifier::get_best_continously(&template, &vec![5, 6, 7, 8, 9])?;
-
-    Ok(format!("Day 07 - Result 2: {:?}", result))
+    Ok(())
 }
 
 #[cfg(test)]

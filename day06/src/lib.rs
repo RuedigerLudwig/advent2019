@@ -5,19 +5,16 @@ mod orbits;
 use orbit_error::OrbitError;
 use orbits::System;
 
-pub fn result1() -> Result<String, OrbitError> {
+pub fn result() -> Result<(), OrbitError> {
     let input = read_all_lines("day06", "input.txt")?;
     let system = System::parse(&input)?;
 
-    Ok(format!("Day 06 - Result 1: {}", system.count_orbits()))
-}
+    println!("Day 06 - Result 1: {}", system.count_orbits());
 
-pub fn result2() -> Result<String, OrbitError> {
-    let input = read_all_lines("day06", "input.txt")?;
-    let system = System::parse(&input)?;
+    let result2 = system.count_transfers("YOU", "SAN")?;
+    println!("Day 06 - Result 2: {}", result2);
 
-    let result = system.count_transfers("YOU", "SAN")?;
-    Ok(format!("Day 06 - Result 2: {}", result))
+    Ok(())
 }
 
 #[cfg(test)]

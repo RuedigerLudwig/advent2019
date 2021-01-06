@@ -1,6 +1,8 @@
 use std::str::FromStr;
 
-use crate::{pos::Pos, wire_error::WireError};
+use common::Pos;
+
+use crate::wire_error::WireError;
 
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
 pub enum Direction {
@@ -13,10 +15,10 @@ pub enum Direction {
 impl Direction {
     pub fn as_pos(&self) -> Pos {
         match *self {
-            Direction::Right => Pos::new(0, 1),
-            Direction::Left => Pos::new(0, -1),
-            Direction::Up => Pos::new(1, 0),
-            Direction::Down => Pos::new(-1, 0),
+            Direction::Right => Pos::new(1, 0),
+            Direction::Left => Pos::new(-1, 0),
+            Direction::Up => Pos::new(0, 1),
+            Direction::Down => Pos::new(0, -1),
         }
     }
 
@@ -88,11 +90,11 @@ impl Section {
                 (down_up.end(), down_up._start)
             };
 
-            let col = down.col();
-            let row = left.row();
+            let x = down.x();
+            let y = left.y();
 
-            if left.col() < col && col < right.col() && down.row() < row && row < up.row() {
-                Some(Pos::new(row, col))
+            if left.x() < x && x < right.x() && down.y() < y && y < up.y() {
+                Some(Pos::new(x, y))
             } else {
                 None
             }

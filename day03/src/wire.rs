@@ -1,6 +1,6 @@
+use crate::{section::Section, wire_error::WireError};
+use common::Pos;
 use std::str::FromStr;
-
-use crate::{pos::Pos, section::Section, wire_error::WireError};
 
 #[derive(Debug)]
 pub struct Wire {
@@ -67,24 +67,19 @@ impl FromStr for Wire {
 
 #[cfg(test)]
 mod tests {
+    use super::*;
+    use crate::section::Direction;
     use common::hashset;
-
-    use crate::{
-        pos::Pos,
-        section::{Direction, Section},
-        wire::Wire,
-        wire_error::WireError,
-    };
-    use std::{collections::HashSet, iter::FromIterator, str::FromStr};
+    use std::{collections::HashSet, iter::FromIterator};
 
     #[test]
     fn parse() -> Result<(), WireError> {
         let wire = Wire::from_str(&"U7,R6,D14,L4")?;
         let expected = vec![
             Section::new(Direction::Up, 7),
-            Section::new(Direction::Right, 6).set_start(Pos::new(7, 0)),
-            Section::new(Direction::Down, 14).set_start(Pos::new(7, 6)),
-            Section::new(Direction::Left, 4).set_start(Pos::new(-7, 6)),
+            Section::new(Direction::Right, 6).set_start(Pos::new(0, 7)),
+            Section::new(Direction::Down, 14).set_start(Pos::new(6, 7)),
+            Section::new(Direction::Left, 4).set_start(Pos::new(6, -7)),
         ];
         assert_eq!(expected, wire._path);
 
@@ -95,7 +90,7 @@ mod tests {
     fn get_intersections() -> Result<(), WireError> {
         let wire1 = Wire::from_str("R8,U5,L5,D3")?;
         let wire2 = Wire::from_str("U7,R6,D4,L4")?;
-        let expected = hashset!(Pos::new(3, 3), Pos::new(5, 6));
+        let expected = hashset!(Pos::new(3, 3), Pos::new(6, 5));
         let crossings = wire1.get_intersections(&wire2);
         let result = HashSet::from_iter(crossings.iter().map(|(p, _)| p).copied());
         assert_eq!(expected, result);

@@ -1,22 +1,23 @@
 use computer::{computer_error::ComputerError, Computer};
 
-pub fn result1() -> Result<String, ComputerError> {
-    let mut computer = Computer::from_file("day02", "input.txt")?;
+pub fn result() -> Result<(), ComputerError> {
+    let template = Computer::from_file("day02", "input.txt")?;
 
-    computer.patch_memory(1, 12);
-    computer.patch_memory(2, 2);
-    computer.run()?;
+    let mut computer1 = template.clone();
 
-    let result = computer.get_memory()[0];
+    computer1.patch_memory(1, 12);
+    computer1.patch_memory(2, 2);
+    computer1.run()?;
 
-    Ok(format!("Day 02 - Result 1: {}", result))
-}
+    let result1 = computer1.get_memory()[0];
+    println!("Day 02 - Result 1: {}", result1);
 
-pub fn result2() -> Result<String, ComputerError> {
-    let computer = Computer::from_file("day02", "input.txt")?;
+    let computer2 = template.clone();
+    let (noun, verb) = test_numbers(computer2)?;
 
-    let (noun, verb) = test_numbers(computer)?;
-    Ok(format!("Day 02 - Result 2: {}", 100 * noun + verb))
+    println!("Day 02 - Result 2: {}", 100 * noun + verb);
+
+    Ok(())
 }
 
 fn test_numbers(original: Computer) -> Result<(i64, i64), ComputerError> {

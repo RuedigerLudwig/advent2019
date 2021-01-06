@@ -14,24 +14,24 @@ pub fn calculate2(mass: i32) -> i32 {
     result
 }
 
-pub fn result1() -> Result<String, CommonError> {
-    let result: i32 = work_on_file("day01", "input.txt", as_int)?
+pub fn result() -> Result<(), CommonError> {
+    let result1: i32 = work_on_file("day01", "input.txt", as_int)?
         .iter()
         .copied()
         .map(calculate)
         .sum();
 
-    Ok(format!("Day 01 - Result 1: {}", result))
-}
+    println!("Day 01 - Result 1: {}", result1);
 
-pub fn result2() -> Result<String, CommonError> {
-    let result: i32 = work_on_file("day01", "input.txt", as_int)?
+    let result2: i32 = work_on_file("day01", "input.txt", as_int)?
         .iter()
         .copied()
         .map(calculate2)
         .sum();
 
-    Ok(format!("Day 01 - Result 2: {}", result))
+    println!("Day 01 - Result 2: {}", result2);
+
+    Ok(())
 }
 
 #[cfg(test)]
