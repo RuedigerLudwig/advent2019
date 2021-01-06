@@ -1,45 +1,25 @@
+use std::ops::{Add, Mul, Sub};
 use std::{cmp::Ordering, fmt};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
-pub struct Pos(i32, i32);
+pub struct Pos<T>(T, T);
 
-impl Pos {
-    pub fn origin() -> Pos {
+impl Pos<i32> {
+    pub fn origin() -> Pos<i32> {
         Pos(0, 0)
-    }
-
-    pub fn new(x: i32, y: i32) -> Pos {
-        Pos(x, y)
-    }
-
-    pub fn x(&self) -> i32 {
-        self.0
-    }
-
-    pub fn y(&self) -> i32 {
-        self.1
     }
 
     pub fn abs(&self) -> i32 {
         self.0.abs() + self.1.abs()
     }
 
-    pub fn normalize(&self) -> (Pos, i32) {
+    pub fn normalize(&self) -> (Pos<i32>, i32) {
         if self.0 == 0 && self.1 == 0 {
             (*self, 1)
         } else {
             let ggt = self.ggt();
             (Pos::new(self.0 / ggt, self.1 / ggt), ggt)
         }
-    }
-
-    pub fn angle(&self) -> f64 {
-        (self.1 as f64).atan2(self.0 as f64)
-    }
-
-    pub fn angle2(&self) -> f64 {
-        ((-self.0 as f64).atan2(-self.1 as f64) + std::f64::consts::PI)
-            .rem_euclid(2.0 * std::f64::consts::PI)
     }
 
     fn ggt(&self) -> i32 {
@@ -56,50 +36,109 @@ impl Pos {
             a.abs()
         }
     }
+
+    pub fn angle(&self) -> f64 {
+        (self.1 as f64).atan2(self.0 as f64)
+    }
+
+    pub fn angle2(&self) -> f64 {
+        ((-self.0 as f64).atan2(-self.1 as f64) + std::f64::consts::PI)
+            .rem_euclid(2.0 * std::f64::consts::PI)
+    }
 }
 
-impl Ord for Pos {
+impl Pos<f64> {
+    pub fn forigin() -> Pos<f64> {
+        Pos(0.0, 0.0)
+    }
+
+    pub fn abs(&self) -> f64 {
+        self.0.abs() + self.1.abs()
+    }
+
+    pub fn angle(&self) -> f64 {
+        self.1.atan2(self.0)
+    }
+
+    pub fn angle2(&self) -> f64 {
+        ((-self.0).atan2(-self.1) + std::f64::consts::PI).rem_euclid(2.0 * std::f64::consts::PI)
+    }
+}
+
+impl<T> Pos<T>
+where
+    T: Copy,
+{
+    pub fn new(x: T, y: T) -> Pos<T> {
+        Pos(x, y)
+    }
+
+    pub fn x(&self) -> T {
+        self.0
+    }
+
+    pub fn y(&self) -> T {
+        self.1
+    }
+}
+
+impl Ord for Pos<i32> {
     fn cmp(&self, other: &Self) -> Ordering {
         self.abs().cmp(&other.abs())
     }
 }
 
-impl PartialOrd for Pos {
+impl PartialOrd for Pos<i32> {
     fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
         Some(self.cmp(other))
     }
 }
 
-impl fmt::Display for Pos {
+impl<T> fmt::Display for Pos<T>
+where
+    T: fmt::Display,
+{
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "({}, {})", self.0, self.1)
     }
 }
 
-impl std::ops::Add for Pos {
+impl<T> Add for Pos<T>
+where
+    T: Add<Output = T>,
+{
     type Output = Self;
     fn add(self, rhs: Self) -> Self {
         Self(self.0 + rhs.0, self.1 + rhs.1)
     }
 }
 
-impl std::ops::Add<(i32, i32)> for Pos {
+impl<T> Add<(T, T)> for Pos<T>
+where
+    T: Add<Output = T>,
+{
     type Output = Self;
-    fn add(self, rhs: (i32, i32)) -> Self {
+    fn add(self, rhs: (T, T)) -> Self {
         Self(self.0 + rhs.0, self.1 + rhs.1)
     }
 }
 
-impl std::ops::Sub for Pos {
-    type Output = Pos;
-    fn sub(self, rhs: Self) -> Pos {
+impl<T> Sub for Pos<T>
+where
+    T: Sub<Output = T>,
+{
+    type Output = Pos<T>;
+    fn sub(self, rhs: Self) -> Pos<T> {
         Self(self.0 - rhs.0, self.1 - rhs.1)
     }
 }
 
-impl std::ops::Mul<i32> for Pos {
+impl<T> Mul<T> for Pos<T>
+where
+    T: Mul<Output = T> + Copy,
+{
     type Output = Self;
-    fn mul(self, rhs: i32) -> Self {
+    fn mul(self, rhs: T) -> Self {
         Self(self.0 * rhs, self.1 * rhs)
     }
 }

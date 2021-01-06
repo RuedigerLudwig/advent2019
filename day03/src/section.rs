@@ -1,42 +1,14 @@
 use std::str::FromStr;
 
-use common::Pos;
+use common::{Direction, Pos};
 
 use crate::wire_error::WireError;
-
-#[derive(Debug, Copy, Clone, PartialEq, Eq)]
-pub enum Direction {
-    Right,
-    Left,
-    Up,
-    Down,
-}
-
-impl Direction {
-    pub fn as_pos(&self) -> Pos {
-        match *self {
-            Direction::Right => Pos::new(1, 0),
-            Direction::Left => Pos::new(-1, 0),
-            Direction::Up => Pos::new(0, 1),
-            Direction::Down => Pos::new(0, -1),
-        }
-    }
-
-    pub fn is_perpendicular(&self, other: &Direction) -> bool {
-        match *self {
-            Direction::Right => *other != Direction::Right && *other != Direction::Left,
-            Direction::Left => *other != Direction::Right && *other != Direction::Left,
-            Direction::Up => *other != Direction::Up && *other != Direction::Down,
-            Direction::Down => *other != Direction::Up && *other != Direction::Down,
-        }
-    }
-}
 
 #[derive(Debug, PartialEq, Eq)]
 pub struct Section {
     _direction: Direction,
     _steps: i32,
-    _start: Pos,
+    _start: Pos<i32>,
 }
 
 impl Section {
@@ -52,11 +24,11 @@ impl Section {
         self._steps
     }
 
-    pub fn end(&self) -> Pos {
+    pub fn end(&self) -> Pos<i32> {
         self._start + self._direction.as_pos() * self._steps
     }
 
-    pub fn set_start(&self, start: Pos) -> Section {
+    pub fn set_start(&self, start: Pos<i32>) -> Section {
         Section {
             _start: start,
             _direction: self._direction,
@@ -64,27 +36,27 @@ impl Section {
         }
     }
 
-    pub fn distance(&self, pos: Pos) -> i32 {
+    pub fn distance(&self, pos: Pos<i32>) -> i32 {
         (pos - self._start).abs()
     }
 
-    pub fn intersection(&self, other: &Section) -> Option<Pos> {
+    pub fn intersection(&self, other: &Section) -> Option<Pos<i32>> {
         if !self._direction.is_perpendicular(&other._direction) {
             None
         } else {
             let (left_right, down_up) =
-                if self._direction == Direction::Right || self._direction == Direction::Left {
+                if self._direction == Direction::East || self._direction == Direction::West {
                     (self, other)
                 } else {
                     (other, self)
                 };
-            let (left, right) = if left_right._direction == Direction::Right {
+            let (left, right) = if left_right._direction == Direction::East {
                 (left_right._start, left_right.end())
             } else {
                 (left_right.end(), left_right._start)
             };
 
-            let (down, up) = if down_up._direction == Direction::Up {
+            let (down, up) = if down_up._direction == Direction::North {
                 (down_up._start, down_up.end())
             } else {
                 (down_up.end(), down_up._start)
@@ -111,10 +83,10 @@ impl FromStr for Section {
         } else {
             let number = input[1..].parse::<i32>()?;
             match input.chars().nth(0).unwrap() {
-                'L' => Ok(Section::new(Direction::Left, number)),
-                'R' => Ok(Section::new(Direction::Right, number)),
-                'U' => Ok(Section::new(Direction::Up, number)),
-                'D' => Ok(Section::new(Direction::Down, number)),
+                'L' => Ok(Section::new(Direction::West, number)),
+                'R' => Ok(Section::new(Direction::East, number)),
+                'U' => Ok(Section::new(Direction::North, number)),
+                'D' => Ok(Section::new(Direction::South, number)),
                 _ => Err(WireError::ParseError(String::from(input))),
             }
         }

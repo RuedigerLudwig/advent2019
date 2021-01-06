@@ -6,7 +6,7 @@ use std::{
 use common::{CommonError, Pos};
 
 pub struct Asteroids {
-    field: HashSet<Pos>,
+    field: HashSet<Pos<i32>>,
 }
 
 impl Asteroids {
@@ -22,7 +22,7 @@ impl Asteroids {
         Asteroids { field }
     }
 
-    pub fn get_visible(&self, center: Pos) -> HashSet<Pos> {
+    pub fn get_visible(&self, center: Pos<i32>) -> HashSet<Pos<i32>> {
         let mut visible_map = HashMap::new();
         for asteroid in &self.field {
             if *asteroid != center {
@@ -46,7 +46,7 @@ impl Asteroids {
         result
     }
 
-    pub fn get_best_position(&self) -> Result<(Pos, usize), CommonError> {
+    pub fn get_best_position(&self) -> Result<(Pos<i32>, usize), CommonError> {
         let mut result = Vec::new();
         let mut max = 0;
         for center in &self.field {
@@ -70,12 +70,12 @@ impl Asteroids {
         }
     }
 
-    fn pos_cmp<'a, 'b>(pos1: &'a Pos, pos2: &'b Pos) -> Ordering {
+    fn pos_cmp<'a, 'b>(pos1: &'a Pos<i32>, pos2: &'b Pos<i32>) -> Ordering {
         pos1.angle2().partial_cmp(&pos2.angle2()).unwrap()
     }
 
-    pub fn get_lasered_asteroids(&self, center: Pos) -> Vec<Pos> {
-        let mut visible_map: HashMap<Pos, Vec<i32>> = HashMap::new();
+    pub fn get_lasered_asteroids(&self, center: Pos<i32>) -> Vec<Pos<i32>> {
+        let mut visible_map: HashMap<Pos<i32>, Vec<i32>> = HashMap::new();
         for asteroid in &self.field {
             if *asteroid != center {
                 let diff = *asteroid - center;

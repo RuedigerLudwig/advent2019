@@ -19,7 +19,7 @@ impl Wire {
         Wire { _path: my_path }
     }
 
-    pub fn get_intersections(&self, other: &Wire) -> Vec<(Pos, i32)> {
+    pub fn get_intersections(&self, other: &Wire) -> Vec<(Pos<i32>, i32)> {
         let mut result = Vec::new();
         let mut len1 = 0;
         for sec1 in &self._path {
@@ -36,7 +36,7 @@ impl Wire {
         result
     }
 
-    pub fn get_closest_intersection(&self, other: &Wire) -> Option<Pos> {
+    pub fn get_closest_intersection(&self, other: &Wire) -> Option<Pos<i32>> {
         self.get_intersections(other)
             .iter()
             .map(|(p, _)| p)
@@ -68,18 +68,17 @@ impl FromStr for Wire {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::section::Direction;
-    use common::hashset;
+    use common::{hashset, Direction};
     use std::{collections::HashSet, iter::FromIterator};
 
     #[test]
     fn parse() -> Result<(), WireError> {
         let wire = Wire::from_str(&"U7,R6,D14,L4")?;
         let expected = vec![
-            Section::new(Direction::Up, 7),
-            Section::new(Direction::Right, 6).set_start(Pos::new(0, 7)),
-            Section::new(Direction::Down, 14).set_start(Pos::new(6, 7)),
-            Section::new(Direction::Left, 4).set_start(Pos::new(6, -7)),
+            Section::new(Direction::North, 7),
+            Section::new(Direction::East, 6).set_start(Pos::new(0, 7)),
+            Section::new(Direction::South, 14).set_start(Pos::new(6, 7)),
+            Section::new(Direction::West, 4).set_start(Pos::new(6, -7)),
         ];
         assert_eq!(expected, wire._path);
 
