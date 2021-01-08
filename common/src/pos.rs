@@ -1,6 +1,8 @@
 use std::ops::{Add, Mul, Sub};
 use std::{cmp::Ordering, fmt};
 
+use crate::i32::gcd;
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub struct Pos<T>(T, T);
 
@@ -17,23 +19,8 @@ impl Pos<i32> {
         if self.0 == 0 && self.1 == 0 {
             (*self, 1)
         } else {
-            let ggt = self.ggt();
+            let ggt = gcd(self.0, self.1);
             (Pos::new(self.0 / ggt, self.1 / ggt), ggt)
-        }
-    }
-
-    fn ggt(&self) -> i32 {
-        let mut a = self.0;
-        let mut b = self.1;
-        if a == 0 {
-            b.abs()
-        } else {
-            while b != 0 {
-                let t = a % b;
-                a = b;
-                b = t;
-            }
-            a.abs()
         }
     }
 
