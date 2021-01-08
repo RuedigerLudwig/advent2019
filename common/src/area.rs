@@ -1,3 +1,5 @@
+use std::iter::FromIterator;
+
 use crate::Pos;
 
 #[derive(Debug, Clone, Copy)]
@@ -14,6 +16,15 @@ impl SuccPrev for i32 {
     }
     fn prev(self) -> Self {
         self - 1
+    }
+}
+
+impl SuccPrev for i64 {
+    fn succ(self) -> Self {
+        self + 1i64
+    }
+    fn prev(self) -> Self {
+        self - 1i64
     }
 }
 
@@ -45,6 +56,24 @@ where
 
     pub fn get_lower_right(&self) -> Pos<T> {
         self.1
+    }
+}
+
+impl<_T> FromIterator<Pos<_T>> for Area<_T>
+where
+    _T: Ord + Copy,
+{
+    fn from_iter<T: IntoIterator<Item = Pos<_T>>>(iter: T) -> Self {
+        let mut iter = iter.into_iter();
+        if let Some(pos) = iter.next() {
+            let mut area = Area::single(pos);
+            while let Some(pos) = iter.next() {
+                area = area.extend(pos);
+            }
+            area
+        } else {
+            panic!("Need to have at least one position for an area");
+        }
     }
 }
 

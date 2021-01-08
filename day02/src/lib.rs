@@ -59,7 +59,7 @@ mod tests {
     fn test_computer_running() -> Result<(), ComputerError> {
         let input = vec![1, 9, 10, 3, 2, 3, 11, 0, 99, 30, 40, 50];
 
-        let mut computer = Computer::new(&input)?;
+        let mut computer = Computer::new(&input);
         computer.run()?;
         let result = computer.get_memory();
 
