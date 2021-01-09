@@ -1,7 +1,7 @@
 use std::ops::{Add, Mul, Sub};
 use std::{cmp::Ordering, fmt};
 
-use crate::i32::gcd;
+use crate::math::gcd;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub struct Pos<T>(T, T);

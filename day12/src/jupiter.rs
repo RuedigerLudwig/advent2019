@@ -1,6 +1,6 @@
 use std::{fmt::Debug, ops::Index, str::FromStr};
 
-use common::{as_int, i64::lcm};
+use common::{as_int, lcm};
 use regex::Regex;
 
 use crate::jupiter_error::JupiterError;
@@ -92,7 +92,10 @@ impl FromStr for Moon {
             let z = as_int(&items["z"])?;
             Ok(Moon::new(x, y, z))
         } else {
-            Err(JupiterError::MessageError(format!("Not a valid moon {}", s)))
+            Err(JupiterError::MessageError(format!(
+                "Not a valid moon {}",
+                s
+            )))
         }
     }
 }
