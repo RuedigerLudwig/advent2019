@@ -12,6 +12,7 @@ use day11;
 use day12;
 use day13;
 use day14;
+use day15;
 use std::{env, error::Error};
 
 fn main() -> Result<(), Box<dyn Error>> {
@@ -71,6 +72,10 @@ fn main() -> Result<(), Box<dyn Error>> {
 
     if days.is_empty() || days.contains(&String::from("day14")) {
         day14::result()?;
+    }
+
+    if days.is_empty() || days.contains(&String::from("day15")) {
+        day15::result()?;
     }
 
     Ok(())

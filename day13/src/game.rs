@@ -132,8 +132,8 @@ impl Game {
 impl Display for Game {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         let area = self._board.keys().copied().collect::<Area>();
-        for row in area.rows() {
-            for col in row.cols() {
+        for row in area.rows(true) {
+            for col in row.cols(true) {
                 let tile = *self._board.get(&col).unwrap_or(&Tile::Empty);
                 write!(f, "{}", tile)?;
             }

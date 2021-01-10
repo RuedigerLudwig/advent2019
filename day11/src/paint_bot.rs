@@ -59,8 +59,8 @@ impl<T> Bot<T> {
 impl<T> Display for Bot<T> {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         let extent = self.get_extend();
-        for row in extent.rows() {
-            for pos in row.cols() {
+        for row in extent.rows(false) {
+            for pos in row.cols(true) {
                 let is_white = *self.board.get(&pos).unwrap_or(&false);
                 write!(f, "{}", if is_white { '█' } else { ' ' })?;
             }

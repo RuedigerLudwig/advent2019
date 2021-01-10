@@ -2,30 +2,34 @@ use std::iter::FromIterator;
 
 use crate::Pos;
 
-#[derive(Debug, Clone, Copy)]
-pub struct Area<T>(Pos<T>, Pos<T>);
-
 pub trait SuccPrev: Ord + Copy {
-    fn succ(self) -> Self;
-    fn prev(self) -> Self;
+    fn step(self, ascending: bool) -> Self;
 }
 
 impl SuccPrev for i32 {
-    fn succ(self) -> Self {
-        self + 1
-    }
-    fn prev(self) -> Self {
-        self - 1
+    fn step(self, ascending: bool) -> Self {
+        if ascending {
+            self + 1
+        } else {
+            self - 1
+        }
     }
 }
 
 impl SuccPrev for i64 {
-    fn succ(self) -> Self {
-        self + 1i64
+    fn step(self, ascending: bool) -> Self {
+        if ascending {
+            self + 1
+        } else {
+            self - 1
+        }
     }
-    fn prev(self) -> Self {
-        self - 1i64
-    }
+}
+
+#[derive(Debug, Clone, Copy)]
+pub struct Area<T> {
+    lower_left: Pos<T>,
+    upper_right: Pos<T>,
 }
 
 impl<T> Area<T>
@@ -33,29 +37,38 @@ where
     T: Ord + Copy,
 {
     pub fn single(pos: Pos<T>) -> Area<T> {
-        Area(pos, pos)
+        Area {
+            lower_left: pos,
+            upper_right: pos,
+        }
     }
 
     pub fn new(p1: Pos<T>, p2: Pos<T>) -> Area<T> {
-        Area(
-            Pos::new(p1.x().min(p2.x()), p1.y().max(p2.y())),
-            Pos::new(p1.x().max(p2.x()), p1.y().min(p2.y())),
-        )
+        Area {
+            lower_left: Pos::new(p1.x().min(p2.x()), p1.y().min(p2.y())),
+            upper_right: Pos::new(p1.x().max(p2.x()), p1.y().max(p2.y())),
+        }
     }
 
     pub fn extend(&self, pos: Pos<T>) -> Area<T> {
-        Area(
-            Pos::new(self.0.x().min(pos.x()), self.0.y().max(pos.y())),
-            Pos::new(self.1.x().max(pos.x()), self.1.y().min(pos.y())),
-        )
+        Area {
+            lower_left: Pos::new(
+                self.lower_left.x().min(pos.x()),
+                self.lower_left.y().min(pos.y()),
+            ),
+            upper_right: Pos::new(
+                self.upper_right.x().max(pos.x()),
+                self.upper_right.y().max(pos.y()),
+            ),
+        }
     }
 
-    pub fn get_upper_left(&self) -> Pos<T> {
-        self.0
+    pub fn get_lower_left(&self) -> Pos<T> {
+        self.lower_left
     }
 
-    pub fn get_lower_right(&self) -> Pos<T> {
-        self.1
+    pub fn get_upper_right(&self) -> Pos<T> {
+        self.upper_right
     }
 }
 
@@ -81,10 +94,15 @@ impl<T> Area<T>
 where
     T: SuccPrev,
 {
-    pub fn rows(&self) -> RowIterator<T> {
+    pub fn rows(&self, ascending: bool) -> RowIterator<T> {
         RowIterator {
             area: self,
-            row: self.0.y(),
+            row: if ascending {
+                self.lower_left.y()
+            } else {
+                self.upper_right.y()
+            },
+            ascending,
         }
     }
 }
@@ -92,6 +110,7 @@ where
 pub struct RowIterator<'a, T> {
     area: &'a Area<T>,
     row: T,
+    ascending: bool,
 }
 
 impl<'a, T> Iterator for RowIterator<'a, T>
@@ -101,12 +120,14 @@ where
     type Item = Row<'a, T>;
 
     fn next(&mut self) -> Option<Self::Item> {
-        if self.row >= self.area.1.y() {
+        if (self.ascending && self.row <= self.area.upper_right.y())
+            || (!self.ascending && self.row >= self.area.lower_left.y())
+        {
             let row = Row {
                 area: self.area,
                 row: self.row,
             };
-            self.row = self.row.prev();
+            self.row = self.row.step(self.ascending);
             Some(row)
         } else {
             None
@@ -123,11 +144,16 @@ impl<'a, T> Row<'a, T>
 where
     T: SuccPrev,
 {
-    pub fn cols(&self) -> ColIterator<T> {
+    pub fn cols(&self, ascending: bool) -> ColIterator<T> {
         ColIterator {
             area: self.area,
             row: self.row,
-            col: self.area.0.x(),
+            col: if ascending {
+                self.area.lower_left.x()
+            } else {
+                self.area.upper_right.x()
+            },
+            ascending,
         }
     }
 }
@@ -136,6 +162,7 @@ pub struct ColIterator<'a, T> {
     area: &'a Area<T>,
     row: T,
     col: T,
+    ascending: bool,
 }
 
 impl<'a, T> Iterator for ColIterator<'a, T>
@@ -144,9 +171,11 @@ where
 {
     type Item = Pos<T>;
     fn next(&mut self) -> Option<Self::Item> {
-        if self.col <= self.area.1.x() {
+        if (self.ascending && self.col <= self.area.upper_right.x())
+            || (!self.ascending && self.col >= self.area.lower_left.x())
+        {
             let pos = Pos::new(self.col, self.row);
-            self.col = self.col.succ();
+            self.col = self.col.step(self.ascending);
             Some(pos)
         } else {
             None
