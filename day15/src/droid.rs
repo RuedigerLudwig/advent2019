@@ -1,5 +1,3 @@
-#![allow(dead_code)]
-
 use std::{collections::HashMap, fmt::Display};
 
 use common::Pos as RawPos;
@@ -15,10 +13,8 @@ type Area = RawArea<i32>;
 enum Tile {
     Unknown,
     Wall,
-    UnfinishedFloor,
-    DeadEnd,
-    Oxygen,
-    Start,
+    Floor,
+    Oxygen(usize),
 }
 
 impl Display for Tile {
@@ -26,40 +22,72 @@ impl Display for Tile {
         match self {
             Tile::Unknown => write!(f, " "),
             Tile::Wall => write!(f, "#"),
-            Tile::UnfinishedFloor => write!(f, "."),
-            Tile::DeadEnd => write!(f, "."),
-            Tile::Oxygen => write!(f, "O"),
-            Tile::Start => write!(f, "S"),
+            Tile::Floor => write!(f, "."),
+            Tile::Oxygen(_) => write!(f, "~"),
         }
     }
 }
 
+#[derive(Debug, PartialEq, Eq)]
+enum Status {
+    Unexplored,
+    Exploring,
+    RepairedOxygenSystem,
+    Oxygenizing,
+    AllClear,
+}
+
 pub struct Droid<I> {
-    interface: I,
-    layout: HashMap<Pos, Tile>,
-    position: Pos,
-    path: Vec<Direction>,
+    _interface: I,
+    _layout: HashMap<Pos, Tile>,
+    _position: Pos,
+    _status: Status,
 }
 
 impl<I> Droid<I> {
     fn get_tile(&self, pos: Pos) -> Tile {
-        *self.layout.get(&pos).unwrap_or(&Tile::Unknown)
+        *self._layout.get(&pos).unwrap_or(&Tile::Unknown)
     }
 
-    fn get_tile_info(&self, position: Pos) -> HashMap<Direction, Tile> {
-        let mut result = HashMap::new();
-        result.insert(Direction::East, self.get_tile(Direction::East + position));
-        result.insert(Direction::North, self.get_tile(Direction::North + position));
-        result.insert(Direction::West, self.get_tile(Direction::West + position));
-        result.insert(Direction::South, self.get_tile(Direction::South + position));
-        result
+    fn get_earliest_oxygen(&self, position: Pos, mn: Option<usize>) -> Option<usize> {
+        if let Tile::Oxygen(level) = self.get_tile(position) {
+            mn.map(|curr_min| curr_min.min(level)).or(Some(level))
+        } else {
+            mn
+        }
     }
 
-    fn do_turn(&self, facing: Direction) -> Option<Direction> {
-        let mut face_next = facing;
+    fn get_oxygen_time(&self, position: Pos) -> Option<usize> {
+        if let Tile::Oxygen(time) = self.get_tile(position) {
+            return Some(time);
+        }
+
+        let mut earliest = None;
+
+        earliest = self.get_earliest_oxygen(Direction::East + position, earliest);
+        earliest = self.get_earliest_oxygen(Direction::North + position, earliest);
+        earliest = self.get_earliest_oxygen(Direction::West + position, earliest);
+        earliest = self.get_earliest_oxygen(Direction::South + position, earliest);
+
+        earliest.map(|time| time + 1)
+    }
+
+    fn next_for_exploring(&self) -> Option<Direction> {
+        let mut face_next = Direction::East;
         for _ in 0..4 {
-            match self.get_tile(face_next + self.position) {
-                Tile::Unknown => return Some(face_next),
+            if self.get_tile(face_next + self._position) == Tile::Unknown {
+                return Some(face_next);
+            }
+            face_next = face_next.turn_left();
+        }
+        None
+    }
+
+    fn next_for_oxygenizing(&self) -> Option<Direction> {
+        let mut face_next = Direction::East;
+        for _ in 0..4 {
+            match self.get_tile(face_next + self._position) {
+                Tile::Unknown | Tile::Floor => return Some(face_next),
                 _ => (),
             }
             face_next = face_next.turn_left();
@@ -74,29 +102,32 @@ where
 {
     pub fn new(interface: I) -> Droid<I> {
         Droid {
-            interface,
-            layout: HashMap::new(),
-            position: Pos::origin(),
-            path: Vec::new(),
+            _interface: interface,
+            _layout: HashMap::new(),
+            _position: Pos::origin(),
+            _status: Status::Unexplored,
         }
     }
 
-    pub fn backtrack(&mut self) -> Result<Direction, ComputerError> {
+    fn backtrack_exploring(
+        &mut self,
+        path: &mut Vec<Direction>,
+    ) -> Result<Direction, ComputerError> {
         loop {
-            self.layout.insert(self.position, Tile::DeadEnd);
-            if let Some(prev_dir) = self.path.pop() {
+            if let Some(prev_dir) = path.pop() {
                 let facing = prev_dir.turn_back();
-                match self.interface.send_direction(facing)? {
+                match self._interface.send_direction(facing)? {
                     Report::Moved => {
-                        self.position = facing + self.position;
-                        if let Some(facing) = self.do_turn(facing) {
+                        self._position = facing + self._position;
+                        if let Some(facing) = self.next_for_exploring() {
                             return Ok(facing);
                         }
                     }
-                    err => {
+
+                    into => {
                         return Err(ComputerError::MessageError(format!(
-                            "Droid error while backtracking: {:?}",
-                            err
+                            "Droid error while backtracking into {:?}",
+                            into
                         )));
                     }
                 }
@@ -107,72 +138,130 @@ where
     }
 
     pub fn explore(&mut self) -> Result<usize, ComputerError> {
-        let mut facing = Direction::East;
-        self.layout.insert(self.position, Tile::Start);
-        let result = loop {
-            match self.interface.send_direction(facing)? {
+        if self._status != Status::Unexplored {
+            return Err(ComputerError::MessageError(String::from(
+                "Can only search in newly created szenario",
+            )));
+        }
+        self._status = Status::Exploring;
+
+        self._layout.insert(self._position, Tile::Floor);
+        let mut path = Vec::new();
+        let mut facing = self.next_for_exploring().unwrap_or(Direction::East);
+
+        loop {
+            match self._interface.send_direction(facing)? {
                 Report::Wall => {
-                    self.layout.insert(facing + self.position, Tile::Wall);
-                    match self.do_turn(facing) {
+                    self._layout.insert(facing + self._position, Tile::Wall);
+                    match self.next_for_exploring() {
                         Some(next_face) => facing = next_face,
-                        None => facing = self.backtrack()?,
+                        None => facing = self.backtrack_exploring(&mut path)?,
                     }
                 }
+
                 Report::Moved => {
-                    self.path.push(facing);
-                    self.position = facing + self.position;
-                    self.layout
-                        .entry(self.position)
-                        .or_insert(Tile::UnfinishedFloor);
+                    path.push(facing);
+                    self._position = facing + self._position;
+                    self._layout.insert(self._position, Tile::Floor);
                 }
+
                 Report::Oxygen => {
-                    self.layout.insert(facing + self.position, Tile::Oxygen);
-                    break self.path.len() + 1;
+                    self._position = facing + self._position;
+                    self._layout.insert(self._position, Tile::Oxygen(0));
+                    self._status = Status::RepairedOxygenSystem;
+                    return Ok(path.len() + 1);
                 }
             }
-        };
+        }
+    }
 
-        Ok(result)
+    fn backtrack_oxygenizing(
+        &mut self,
+        path: &mut Vec<Direction>,
+    ) -> Result<Option<Direction>, ComputerError> {
+        loop {
+            if let Some(prev_dir) = path.pop() {
+                let facing = prev_dir.turn_back();
+                match self._interface.send_direction(facing)? {
+                    Report::Moved | Report::Oxygen => {
+                        self._position = facing + self._position;
+                        if let Some(facing) = self.next_for_oxygenizing() {
+                            return Ok(Some(facing));
+                        }
+                    }
+
+                    Report::Wall => {
+                        return Err(ComputerError::MessageError(format!(
+                            "Droid error while backtracking into Wall",
+                        )))
+                    }
+                }
+            } else {
+                return Ok(None);
+            }
+        }
+    }
+
+    pub fn oxygenize(&mut self) -> Result<usize, ComputerError> {
+        if self._status != Status::RepairedOxygenSystem {
+            return Err(ComputerError::MessageError(String::from(
+                "Can only oxygenize directly after I repaired the oxygen system",
+            )));
+        }
+        self._status = Status::Oxygenizing;
+
+        let mut facing = self.next_for_oxygenizing().unwrap_or(Direction::East);
+        let mut path = Vec::new();
+        let mut max_time: usize = 0;
+
+        loop {
+            match self._interface.send_direction(facing)? {
+                Report::Wall => {
+                    self._layout.insert(facing + self._position, Tile::Wall);
+                    match self.next_for_oxygenizing() {
+                        Some(next_face) => facing = next_face,
+                        None => {
+                            if let Some(next_face) = self.backtrack_oxygenizing(&mut path)? {
+                                facing = next_face
+                            } else {
+                                self._status = Status::AllClear;
+                                return Ok(max_time);
+                            }
+                        }
+                    }
+                }
+
+                Report::Moved | Report::Oxygen => {
+                    path.push(facing);
+                    self._position = facing + self._position;
+                    if let Some(time) = self.get_oxygen_time(self._position) {
+                        max_time = max_time.max(time);
+                        self._layout.insert(self._position, Tile::Oxygen(time));
+                    } else {
+                        return Err(ComputerError::MessageError(String::from(
+                            "This tile is not oxygenized",
+                        )));
+                    }
+                }
+            }
+        }
     }
 }
 
 impl<I> Display for Droid<I> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        let area = self.layout.keys().copied().collect::<Area>();
+        let area = self._layout.keys().copied().collect::<Area>();
         for row in area.rows(false) {
-            for col in row.cols(true) {
-                let tile = self.get_tile(col);
-                if col == self.position {
-                    if tile == Tile::Oxygen {
-                        write!(f, "H")?;
-                    } else {
-                        write!(f, "D")?;
-                    }
+            for cell in row.cols(true) {
+                if cell == self._position {
+                    write!(f, "D")?;
                 } else {
+                    let tile = self.get_tile(cell);
                     write!(f, "{}", tile)?;
                 }
             }
             writeln!(f, "")?;
         }
         writeln!(f, "--")
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use computer::Computer;
-
-    use crate::interface::ComputerInterface;
-
-    use super::*;
-
-    #[test]
-    fn parse_simple() -> Result<(), ComputerError> {
-        let template = Computer::from_file("day15", "input.txt")?;
-        let interface = ComputerInterface::new(&template);
-        let mut droid = Droid::new(interface);
-        droid.explore()?;
-
-        Ok(())
     }
 }

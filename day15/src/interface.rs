@@ -38,12 +38,11 @@ impl DroidComputerInterface for ComputerInterface {
         let dir_number = ComputerInterface::dir_number(direction);
         self.computer.provide_input(dir_number);
         if let Some(report) = self.computer.next() {
-            match report {
-                Err(err) => Err(err),
-                Ok(0) => Ok(Report::Wall),
-                Ok(1) => Ok(Report::Moved),
-                Ok(2) => Ok(Report::Oxygen),
-                Ok(code) => Err(ComputerError::MessageError(format!(
+            match report? {
+                0 => Ok(Report::Wall),
+                1 => Ok(Report::Moved),
+                2 => Ok(Report::Oxygen),
+                code => Err(ComputerError::MessageError(format!(
                     "Unknown result code: {}",
                     code
                 ))),
