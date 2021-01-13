@@ -6,13 +6,13 @@ pub enum ComputerError {
     CommonError(CommonError),
 
     UnknownOperation(u8),
+    UnknownMode(i64),
     InputEmpty,
 
     NotValidAsciiChar(char),
     NotValidAsciiInt(i64),
 
     IllegalAddress(String),
-    IllegalMode(u8),
 }
 
 impl std::error::Error for ComputerError {
@@ -20,10 +20,10 @@ impl std::error::Error for ComputerError {
         match self {
             ComputerError::MessageError(_) => None,
             ComputerError::UnknownOperation(_) => None,
+            ComputerError::UnknownMode(_) => None,
             ComputerError::IllegalAddress(_) => None,
             ComputerError::NotValidAsciiChar(_) => None,
             ComputerError::NotValidAsciiInt(_) => None,
-            ComputerError::IllegalMode(_) => None,
             ComputerError::InputEmpty => None,
             ComputerError::CommonError(err) => Some(err),
         }
@@ -35,6 +35,7 @@ impl std::fmt::Display for ComputerError {
         match self {
             ComputerError::MessageError(message) => write!(f, "{}", message),
             ComputerError::UnknownOperation(op_code) => write!(f, "Unknown OpCode: {}", op_code),
+            ComputerError::UnknownMode(mode) => write!(f, "Unknown Mode: {}", mode),
             ComputerError::InputEmpty => write!(f, "Input unexpectedly empty"),
             ComputerError::NotValidAsciiChar(ch) => {
                 write!(f, "Not a valid Ascci Char: {}", ch)
@@ -44,9 +45,6 @@ impl std::fmt::Display for ComputerError {
             }
             ComputerError::IllegalAddress(message) => {
                 write!(f, "Illegal address {}", message)
-            }
-            ComputerError::IllegalMode(addr) => {
-                write!(f, "Illegal mode {}", addr)
             }
             ComputerError::CommonError(ref err) => err.fmt(f),
         }

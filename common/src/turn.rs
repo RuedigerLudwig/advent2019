@@ -1,5 +1,5 @@
 use crate::Direction;
-use std::ops::Add;
+use std::{fmt::Display, ops::Add};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Turn {
@@ -36,6 +36,17 @@ impl Turn {
             Back => Forward,
             Right => Left,
             Forward => Back,
+        }
+    }
+}
+
+impl Display for Turn {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match *self {
+            Turn::Left => write!(f, "Left"),
+            Turn::Right => write!(f, "Right"),
+            Turn::Forward => write!(f, "Forward"),
+            Turn::Back => write!(f, "Back"),
         }
     }
 }

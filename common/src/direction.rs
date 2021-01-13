@@ -1,5 +1,8 @@
 use crate::{Pos, Turn};
-use std::ops::{Add, Sub};
+use std::{
+    fmt::Display,
+    ops::{Add, Sub},
+};
 use Turn::*;
 
 #[derive(Debug, Copy, Clone, PartialEq, Eq, Hash)]
@@ -76,6 +79,17 @@ impl Direction {
             North => South,
             West => East,
             South => North,
+        }
+    }
+}
+
+impl Display for Direction {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match *self {
+            Direction::East => write!(f, "East"),
+            Direction::North => write!(f, "North"),
+            Direction::West => write!(f, "West"),
+            Direction::South => write!(f, "South"),
         }
     }
 }

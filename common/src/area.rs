@@ -1,4 +1,4 @@
-use std::iter::FromIterator;
+use std::{fmt::Display, iter::FromIterator};
 
 use crate::Pos;
 
@@ -69,6 +69,15 @@ where
 
     pub fn get_upper_right(&self) -> Pos<T> {
         self.upper_right
+    }
+}
+
+impl<_T> Display for Area<_T>
+where
+    _T: Display,
+{
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "[{}-{}]", self.lower_left, self.upper_right)
     }
 }
 

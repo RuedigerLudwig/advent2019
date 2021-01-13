@@ -2,20 +2,12 @@ use std::collections::VecDeque;
 
 pub trait ComputerInput {
     fn provide_input(&mut self, input: i64);
-    fn next_input(&mut self) -> Option<i64>;
+    fn get_next_input(&mut self) -> Option<i64>;
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Default)]
 pub struct ListInput {
     _list: VecDeque<i64>,
-}
-
-impl Default for ListInput {
-    fn default() -> Self {
-        ListInput {
-            _list: VecDeque::new(),
-        }
-    }
 }
 
 impl ComputerInput for ListInput {
@@ -23,7 +15,7 @@ impl ComputerInput for ListInput {
         self._list.push_back(input);
     }
 
-    fn next_input(&mut self) -> Option<i64> {
+    fn get_next_input(&mut self) -> Option<i64> {
         self._list.pop_front()
     }
 }
