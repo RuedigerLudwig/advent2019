@@ -3,14 +3,10 @@ use std::{cmp::Ordering, fmt};
 
 use crate::{math::gcd, Direction};
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Default)]
 pub struct Pos<T>(T, T);
 
 impl Pos<i32> {
-    pub fn origin() -> Pos<i32> {
-        Pos(0, 0)
-    }
-
     pub fn abs(&self) -> i32 {
         self.0.abs() + self.1.abs()
     }
@@ -35,10 +31,6 @@ impl Pos<i32> {
 }
 
 impl Pos<f64> {
-    pub fn forigin() -> Pos<f64> {
-        Pos(0.0, 0.0)
-    }
-
     pub fn abs(&self) -> f64 {
         self.0.abs() + self.1.abs()
     }

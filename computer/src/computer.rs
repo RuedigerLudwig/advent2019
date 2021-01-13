@@ -210,6 +210,50 @@ where
         self._input.provide_input(value)
     }
 
+    pub fn write_input(&mut self, text: &String) -> Result<(), ComputerError> {
+        for ch in text.chars() {
+            let val = ch as i64;
+            if 0 <= val && val <= 127 {
+                self._input.provide_input(val);
+            } else {
+                return Err(ComputerError::NotValidAsciiChar(ch));
+            }
+        }
+        self._input.provide_input(10);
+
+        Ok(())
+    }
+
+    pub fn run(&mut self) -> Result<Vec<i64>, ComputerError> {
+        self.collect()
+    }
+
+    pub fn read_output(&mut self) -> Result<Option<String>, ComputerError> {
+        let mut result = String::new();
+
+        while let Some(code) = self.next() {
+            let code = code?;
+            if code == 10 {
+                return Ok(Some(result));
+            }
+            if 0 <= code && code <= 127 {
+                result.push((code as u8) as char);
+            } else {
+                return Err(ComputerError::NotValidAsciiInt(code));
+            }
+        }
+        Ok(None)
+    }
+
+    pub fn do_steps(&mut self, num: usize) -> Result<Option<Vec<i64>>, ComputerError> {
+        let result: Vec<i64> = self.take(num).collect::<Result<_, _>>()?;
+        if result.len() != num {
+            Ok(None)
+        } else {
+            Ok(Some(result))
+        }
+    }
+
     fn input(&mut self, modes: &Modes) -> Result<InstResult, ComputerError> {
         if let Some(input) = self._input.next_input() {
             let addr = self.get_addr(self._pointer + 1, modes.get(0))?;
@@ -219,19 +263,6 @@ where
             Ok(InstResult::Proceed)
         } else {
             Err(ComputerError::InputEmpty)
-        }
-    }
-
-    pub fn run(&mut self) -> Result<Vec<i64>, ComputerError> {
-        self.collect()
-    }
-
-    pub fn do_steps(&mut self, num: usize) -> Result<Option<Vec<i64>>, ComputerError> {
-        let result: Vec<i64> = self.take(num).collect::<Result<_, _>>()?;
-        if result.len() != num {
-            Ok(None)
-        } else {
-            Ok(Some(result))
         }
     }
 }
@@ -287,7 +318,7 @@ where
 
 impl Computer<ListInput> {
     pub fn new(code: &Vec<i64>) -> Computer<ListInput> {
-        Computer::create(code, ListInput::new())
+        Computer::create(code, ListInput::default())
     }
 
     pub fn from_file(module: &str, file: &str) -> Result<Computer<ListInput>, ComputerError> {

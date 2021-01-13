@@ -164,7 +164,7 @@ where
     pub fn new(mut _interface: I) -> Result<Exterior<I>, ExteriorError> {
         let picture = _interface.get_picture()?;
         let mut _data = HashMap::new();
-        for (row, line) in (0..).zip(picture.lines()) {
+        for (row, line) in (0..).zip(picture) {
             for (col, item) in (0..).zip(line.chars()) {
                 let tile: Tile = item.into();
                 if let Tile::Space = tile {
@@ -177,9 +177,10 @@ where
         Ok(Exterior { _interface, _data })
     }
 
-    pub fn run_bot(&mut self) -> Result<i64, ExteriorError> {
-        let data = self.break_into_parts()?;
-        let result = self._interface.send_data(&data)?;
+    pub fn run_bot(&mut self, run_silent: bool) -> Result<i64, ExteriorError> {
+        let mut answers = self.break_into_parts()?;
+        answers.push(String::from("n"));
+        let result = self._interface.send_data(&answers, run_silent)?;
         Ok(result)
     }
 }
@@ -200,27 +201,27 @@ impl<I> Display for Exterior<I> {
 
 #[cfg(test)]
 mod tests {
-    use common::{hashset, read_as_string};
+    use common::{hashset, read_all_lines};
 
     use super::*;
 
     struct TestInterface {
-        data: String,
+        data: Vec<String>,
     }
 
     impl TestInterface {
         pub fn new(module: &str, file: &str) -> Result<TestInterface, ExteriorError> {
-            let data = read_as_string(module, file)?;
+            let data = read_all_lines(module, file)?;
             Ok(TestInterface { data })
         }
     }
 
     impl ExteriorInterface for TestInterface {
-        fn get_picture(&mut self) -> Result<String, ExteriorError> {
+        fn get_picture(&mut self) -> Result<Vec<String>, ExteriorError> {
             Ok(self.data.clone())
         }
 
-        fn send_data(&mut self, _data: &[String]) -> Result<i64, ExteriorError> {
+        fn send_data(&mut self, _data: &[String], _run_silent: bool) -> Result<i64, ExteriorError> {
             unimplemented!()
         }
     }

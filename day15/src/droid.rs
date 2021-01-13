@@ -104,7 +104,7 @@ where
         Droid {
             _interface: interface,
             _layout: HashMap::new(),
-            _position: Pos::origin(),
+            _position: Pos::default(),
             _status: Status::Unexplored,
         }
     }

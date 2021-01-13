@@ -10,8 +10,8 @@ pub struct ListInput {
     _list: VecDeque<i64>,
 }
 
-impl ListInput {
-    pub fn new() -> ListInput {
+impl Default for ListInput {
+    fn default() -> Self {
         ListInput {
             _list: VecDeque::new(),
         }

@@ -10,7 +10,7 @@ pub struct Wire {
 impl Wire {
     pub fn new(path: &Vec<Section>) -> Wire {
         let mut my_path = Vec::with_capacity(path.len());
-        let mut endpoint = Pos::origin();
+        let mut endpoint = Pos::default();
         for section in path {
             let next_section = section.set_start(endpoint);
             endpoint = next_section.end();

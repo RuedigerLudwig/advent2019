@@ -14,7 +14,7 @@ pub struct Section {
 impl Section {
     pub fn new(dir: Direction, steps: i32) -> Section {
         Section {
-            _start: Pos::origin(),
+            _start: Pos::default(),
             _direction: dir,
             _steps: steps,
         }

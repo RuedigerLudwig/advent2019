@@ -16,7 +16,7 @@ pub fn result() -> Result<(), ExteriorError> {
     let result1 = exterior.get_alignment();
     println!("Day 17 - Result 1: {}", result1);
 
-    let result2 = exterior.run_bot()?;
+    let result2 = exterior.run_bot(true)?;
     println!("Day 17 - Result 2: {}", result2);
 
     Ok(())

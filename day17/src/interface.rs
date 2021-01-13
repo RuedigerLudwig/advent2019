@@ -3,8 +3,8 @@ use computer::Computer;
 use crate::exterior_error::ExteriorError;
 
 pub trait ExteriorInterface {
-    fn get_picture(&mut self) -> Result<String, ExteriorError>;
-    fn send_data(&mut self, data: &[String]) -> Result<i64, ExteriorError>;
+    fn get_picture(&mut self) -> Result<Vec<String>, ExteriorError>;
+    fn send_data(&mut self, data: &[String], run_silent: bool) -> Result<i64, ExteriorError>;
 }
 
 pub struct ExteriorComputerInterface {
@@ -20,28 +20,26 @@ impl ExteriorComputerInterface {
 }
 
 impl ExteriorInterface for ExteriorComputerInterface {
-    fn get_picture(&mut self) -> Result<String, ExteriorError> {
-        let mut result = String::from("");
-        while let Some(pixel) = self.computer.next() {
-            let code = pixel? as u8;
-            let ch = code as char;
-            result.push(ch)
+    fn get_picture(&mut self) -> Result<Vec<String>, ExteriorError> {
+        let mut result = Vec::new();
+        while let Some(line) = self.computer.read_output()? {
+            result.push(line)
         }
 
         Ok(result)
     }
 
-    fn send_data(&mut self, data: &[String]) -> Result<i64, ExteriorError> {
-        for line in data {
-            for character in line.chars() {
-                self.computer.provide_input(character as i64);
-            }
-            self.computer.provide_input(10);
-        }
-        self.computer.provide_input('n' as i64);
-        self.computer.provide_input(10);
-
+    fn send_data(&mut self, data: &[String], run_silent: bool) -> Result<i64, ExteriorError> {
         self.computer.patch_memory(0, 2);
+        for answer in data {
+            if let Some(question) = self.computer.read_output()? {
+                self.computer.write_input(answer)?;
+                if !run_silent {
+                    println!("{} {}", question, answer);
+                }
+            }
+        }
+
         let result = self.computer.run()?;
 
         if let Some(result) = result.last() {

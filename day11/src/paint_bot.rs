@@ -21,7 +21,7 @@ impl<T: BotComputerInterface> Bot<T> {
         Bot {
             interface,
             board: HashMap::new(),
-            position: Pos::origin(),
+            position: Pos::default(),
             facing: Direction::North,
         }
     }
@@ -52,7 +52,7 @@ impl<T> Bot<T> {
     fn get_extend(&self) -> IArea {
         self.board
             .keys()
-            .fold(Area::single(Pos::origin()), |area, pos| area.extend(*pos))
+            .fold(Area::default(), |area, pos| area.extend(*pos))
     }
 }
 

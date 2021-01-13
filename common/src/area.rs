@@ -26,7 +26,7 @@ impl SuccPrev for i64 {
     }
 }
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, Default)]
 pub struct Area<T> {
     lower_left: Pos<T>,
     upper_right: Pos<T>,

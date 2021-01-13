@@ -60,8 +60,7 @@ impl Path {
             if to_check.iter().any(|p| p.is_function()) {
                 continue;
             }
-            let p_str = Path::as_string(to_check);
-            if p_str.len() > 25 {
+            if Path::as_string(to_check).len() > 25 {
                 continue;
             }
 
