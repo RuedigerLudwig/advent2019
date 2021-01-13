@@ -30,6 +30,9 @@ impl ExteriorInterface for ExteriorComputerInterface {
     }
 
     fn send_data(&mut self, data: &[String], run_silent: bool) -> Result<i64, ExteriorError> {
+        if !run_silent {
+            print!("{esc}[2J{esc}[1;1H", esc = 27 as char);
+        }
         self.computer.patch_memory(0, 2);
         for answer in data {
             if let Some(question) = self.computer.read_output()? {
@@ -40,6 +43,16 @@ impl ExteriorInterface for ExteriorComputerInterface {
             }
         }
 
+        if !run_silent {
+            let mut jump_start = true;
+            while let Some(line) = self.computer.read_output()? {
+                if jump_start {
+                    print!("{esc}[1;1H", esc = 27 as char);
+                }
+                println!("{}", line);
+                jump_start = line.is_empty();
+            }
+        }
         let result = self.computer.run()?;
 
         if let Some(result) = result.last() {

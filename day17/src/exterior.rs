@@ -179,7 +179,11 @@ where
 
     pub fn run_bot(&mut self, run_silent: bool) -> Result<i64, ExteriorError> {
         let mut answers = self.break_into_parts()?;
-        answers.push(String::from("n"));
+        if run_silent {
+            answers.push(String::from("n"));
+        } else {
+            answers.push(String::from("y"));
+        }
         let result = self._interface.send_data(&answers, run_silent)?;
         Ok(result)
     }

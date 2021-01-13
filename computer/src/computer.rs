@@ -15,6 +15,7 @@ pub struct Computer<I> {
     _terminated: bool,
     _input: I,
     _relative_base: i64,
+    _peek: Option<Option<i64>>,
 }
 
 impl<I> Computer<I> {
@@ -30,6 +31,7 @@ impl<I> Computer<I> {
             _terminated: false,
             _input: input,
             _relative_base: 0,
+            _peek: None,
         }
     }
 }
@@ -230,6 +232,12 @@ where
     pub fn read_output(&mut self) -> Result<Option<String>, ComputerError> {
         let mut result = String::new();
 
+        if let Some(first) = self.peek()? {
+            if 0 > first || first > 127 {
+                return Ok(None);
+            }
+        }
+
         while let Some(code) = self.next() {
             let code = code?;
             if code == 10 {
@@ -264,6 +272,19 @@ where
             Err(ComputerError::InputEmpty)
         }
     }
+
+    pub fn peek(&mut self) -> Result<Option<i64>, ComputerError> {
+        if let Some(result) = self._peek {
+            Ok(result)
+        } else if let Some(result) = self.next() {
+            let result = result?;
+            self._peek = Some(Some(result));
+            Ok(Some(result))
+        } else {
+            self._peek = Some(None);
+            Ok(None)
+        }
+    }
 }
 
 impl<I> Iterator for Computer<I>
@@ -275,6 +296,11 @@ where
     fn next(&mut self) -> Option<Self::Item> {
         if self._terminated {
             return None;
+        }
+
+        if let Some(result) = self._peek {
+            self._peek = None;
+            return result.map(|v| Ok(v));
         }
 
         while let Some(instruction) = self._memory.get(&self._pointer) {
