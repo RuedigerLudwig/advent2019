@@ -11,12 +11,12 @@ mod path;
 pub fn result() -> Result<(), ExteriorError> {
     let template = Computer::from_file("day17", "input.txt")?;
     let interface = ExteriorComputerInterface::new(&template);
-    let mut camera = Exterior::new(interface)?;
+    let mut exterior = Exterior::new(interface)?;
 
-    let result1 = camera.get_alignment();
-    println!("Day 17 - Result 1: {}\n{}", result1, camera);
+    let result1 = exterior.get_alignment();
+    println!("Day 17 - Result 1: {}", result1);
 
-    let result2 = camera.run_bot()?;
+    let result2 = exterior.run_bot()?;
     println!("Day 17 - Result 2: {}", result2);
 
     Ok(())
