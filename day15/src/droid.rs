@@ -75,7 +75,7 @@ impl<I> Droid<I> {
     fn next_for_exploring(&self) -> Option<Direction> {
         let mut face_next = Direction::East;
         for _ in 0..4 {
-            if self.get_tile(face_next + self._position) == Tile::Unknown {
+            if self.get_tile(self._position + face_next) == Tile::Unknown {
                 return Some(face_next);
             }
             face_next = face_next.turn_left();
@@ -86,7 +86,7 @@ impl<I> Droid<I> {
     fn next_for_oxygenizing(&self) -> Option<Direction> {
         let mut face_next = Direction::East;
         for _ in 0..4 {
-            match self.get_tile(face_next + self._position) {
+            match self.get_tile(self._position + face_next) {
                 Tile::Unknown | Tile::Floor => return Some(face_next),
                 _ => (),
             }
@@ -118,7 +118,7 @@ where
                 let facing = prev_dir.turn_back();
                 match self._interface.send_direction(facing)? {
                     Report::Moved => {
-                        self._position = facing + self._position;
+                        self._position = self._position + facing;
                         if let Some(facing) = self.next_for_exploring() {
                             return Ok(facing);
                         }
@@ -126,7 +126,7 @@ where
 
                     into => {
                         return Err(ComputerError::MessageError(format!(
-                            "Droid error while backtracking into {:?}",
+                            "Droid error by backtracking into {:?}",
                             into
                         )));
                     }
@@ -152,7 +152,7 @@ where
         loop {
             match self._interface.send_direction(facing)? {
                 Report::Wall => {
-                    self._layout.insert(facing + self._position, Tile::Wall);
+                    self._layout.insert(self._position + facing, Tile::Wall);
                     match self.next_for_exploring() {
                         Some(next_face) => facing = next_face,
                         None => facing = self.backtrack_exploring(&mut path)?,
@@ -161,12 +161,12 @@ where
 
                 Report::Moved => {
                     path.push(facing);
-                    self._position = facing + self._position;
+                    self._position = self._position + facing;
                     self._layout.insert(self._position, Tile::Floor);
                 }
 
                 Report::Oxygen => {
-                    self._position = facing + self._position;
+                    self._position = self._position + facing;
                     self._layout.insert(self._position, Tile::Oxygen(0));
                     self._status = Status::RepairedOxygenSystem;
                     return Ok(path.len() + 1);
@@ -184,7 +184,7 @@ where
                 let facing = prev_dir.turn_back();
                 match self._interface.send_direction(facing)? {
                     Report::Moved | Report::Oxygen => {
-                        self._position = facing + self._position;
+                        self._position = self._position + facing;
                         if let Some(facing) = self.next_for_oxygenizing() {
                             return Ok(Some(facing));
                         }
@@ -192,7 +192,7 @@ where
 
                     Report::Wall => {
                         return Err(ComputerError::MessageError(format!(
-                            "Droid error while backtracking into Wall",
+                            "Droid error by backtracking into Wall",
                         )))
                     }
                 }
@@ -217,7 +217,7 @@ where
         loop {
             match self._interface.send_direction(facing)? {
                 Report::Wall => {
-                    self._layout.insert(facing + self._position, Tile::Wall);
+                    self._layout.insert(self._position + facing, Tile::Wall);
                     match self.next_for_oxygenizing() {
                         Some(next_face) => facing = next_face,
                         None => {
@@ -233,7 +233,7 @@ where
 
                 Report::Moved | Report::Oxygen => {
                     path.push(facing);
-                    self._position = facing + self._position;
+                    self._position = self._position + facing;
                     if let Some(time) = self.get_oxygen_time(self._position) {
                         max_time = max_time.max(time);
                         self._layout.insert(self._position, Tile::Oxygen(time));

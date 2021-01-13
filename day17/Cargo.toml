@@ -1,0 +1,11 @@
+[package]
+name = "day17"
+version = "0.1.0"
+authors = ["Ruediger Ludwig <github@savinien.de>"]
+edition = "2018"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+computer = { path = "../computer" }
+common = { path = "../common" }

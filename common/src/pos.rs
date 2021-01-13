@@ -1,7 +1,7 @@
 use std::ops::{Add, Mul, Sub};
 use std::{cmp::Ordering, fmt};
 
-use crate::math::gcd;
+use crate::{math::gcd, Direction};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub struct Pos<T>(T, T);
@@ -107,6 +107,15 @@ where
     type Output = Self;
     fn add(self, rhs: (T, T)) -> Self {
         Self(self.0 + rhs.0, self.1 + rhs.1)
+    }
+}
+
+impl Add<Direction> for Pos<i32> {
+    type Output = Self;
+
+    fn add(self, rhs: Direction) -> Self {
+        let dir = rhs.as_pos();
+        Self(self.0 + dir.0, self.1 + dir.1)
     }
 }
 

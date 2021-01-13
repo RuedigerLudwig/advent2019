@@ -29,9 +29,9 @@ impl<T: BotComputerInterface> Bot<T> {
     pub fn run(&mut self) {
         loop {
             let is_white = *self.board.get(&self.position).unwrap_or(&false);
-            if let Some((paint_color, turn_right)) = self.interface.accept_input(is_white) {
+            if let Some((paint_color, turn)) = self.interface.accept_input(is_white) {
                 self.board.insert(self.position, paint_color);
-                self.facing = self.facing.turn(turn_right);
+                self.facing = self.facing.turn(turn);
                 self.position = self.position + self.facing.as_pos();
             } else {
                 break;
@@ -62,7 +62,7 @@ impl<T> Display for Bot<T> {
         for row in extent.rows(false) {
             for pos in row.cols(true) {
                 let is_white = *self.board.get(&pos).unwrap_or(&false);
-                write!(f, "{}", if is_white { '█' } else { ' ' })?;
+                write!(f, "{}", if is_white { '#' } else { ' ' })?;
             }
             writeln!(f, "")?;
         }
@@ -72,6 +72,8 @@ impl<T> Display for Bot<T> {
 
 #[cfg(test)]
 mod tests {
+    use common::Turn;
+
     use super::*;
 
     #[test]
@@ -96,11 +98,11 @@ mod tests {
     }
 
     impl BotComputerInterface for TestInterface {
-        fn accept_input(&mut self, _is_white: bool) -> Option<(bool, bool)> {
+        fn accept_input(&mut self, _is_white: bool) -> Option<(bool, Turn)> {
             if self.index < self.list.len() {
                 let (paint, turn) = self.list[self.index];
                 self.index += 1;
-                Some((paint == 1, turn == 1))
+                Some((paint == 1, if turn == 1 { Turn::Right } else { Turn::Left }))
             } else {
                 None
             }

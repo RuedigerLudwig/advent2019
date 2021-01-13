@@ -1,5 +1,6 @@
-use crate::Pos;
-use std::ops::Add;
+use crate::{Pos, Turn};
+use std::ops::{Add, Sub};
+use Turn::*;
 
 #[derive(Debug, Copy, Clone, PartialEq, Eq, Hash)]
 pub enum Direction {
@@ -9,48 +10,72 @@ pub enum Direction {
     South,
 }
 
+use Direction::*;
+
 impl Direction {
     pub fn as_pos(&self) -> Pos<i32> {
         match *self {
-            Direction::East => Pos::new(1, 0),
-            Direction::North => Pos::new(0, 1),
-            Direction::West => Pos::new(-1, 0),
-            Direction::South => Pos::new(0, -1),
+            East => Pos::new(1, 0),
+            North => Pos::new(0, 1),
+            West => Pos::new(-1, 0),
+            South => Pos::new(0, -1),
         }
     }
 
     pub fn is_perpendicular(&self, other: &Direction) -> bool {
         match *self {
-            Direction::East => *other != Direction::East && *other != Direction::West,
-            Direction::North => *other != Direction::North && *other != Direction::South,
-            Direction::West => *other != Direction::East && *other != Direction::West,
-            Direction::South => *other != Direction::North && *other != Direction::South,
+            East => *other != East && *other != West,
+            North => *other != North && *other != South,
+            West => *other != East && *other != West,
+            South => *other != North && *other != South,
         }
     }
 
-    pub fn turn(&self, to_right: bool) -> Direction {
-        match (*self, to_right) {
-            (Direction::East, false) | (Direction::West, true) => Direction::North,
-            (Direction::North, false) | (Direction::South, true) => Direction::West,
-            (Direction::West, false) | (Direction::East, true) => Direction::South,
-            (Direction::South, false) | (Direction::North, true) => Direction::East,
+    pub fn get_turn(&self, toward: Direction) -> Turn {
+        if *self == toward {
+            Forward
+        } else if toward == self.turn_left() {
+            Left
+        } else if toward == self.turn_right() {
+            Right
+        } else {
+            Back
+        }
+    }
+
+    pub fn turn(&self, turn: Turn) -> Direction {
+        match turn {
+            Left => self.turn_left(),
+            Right => self.turn_right(),
+            Back => self.turn_back(),
+            Forward => *self,
         }
     }
 
     pub fn turn_right(&self) -> Direction {
-        self.turn(true)
+        match *self {
+            East => South,
+            North => East,
+            West => North,
+            South => West,
+        }
     }
 
     pub fn turn_left(&self) -> Direction {
-        self.turn(false)
+        match *self {
+            East => North,
+            North => West,
+            West => South,
+            South => East,
+        }
     }
 
     pub fn turn_back(&self) -> Direction {
         match *self {
-            Direction::West => Direction::East,
-            Direction::South => Direction::North,
-            Direction::East => Direction::West,
-            Direction::North => Direction::South,
+            East => West,
+            North => South,
+            West => East,
+            South => North,
         }
     }
 }
@@ -60,5 +85,29 @@ impl Add<Pos<i32>> for Direction {
 
     fn add(self, rhs: Pos<i32>) -> Self::Output {
         rhs + self.as_pos()
+    }
+}
+
+impl Add<Turn> for Direction {
+    type Output = Self;
+
+    fn add(self, rhs: Turn) -> Self {
+        self.turn(rhs)
+    }
+}
+
+impl Add<&Pos<i32>> for Direction {
+    type Output = Pos<i32>;
+
+    fn add(self, rhs: &Pos<i32>) -> Self::Output {
+        *rhs + self.as_pos()
+    }
+}
+
+impl Sub<Direction> for Direction {
+    type Output = Turn;
+
+    fn sub(self, rhs: Direction) -> Self::Output {
+        self.get_turn(rhs)
     }
 }
