@@ -4,7 +4,7 @@ use common::CommonError;
 
 #[derive(Debug)]
 pub struct Transmission {
-    values: Vec<i64>,
+    values: Vec<u8>,
     offset: usize,
 }
 
@@ -13,7 +13,7 @@ impl Transmission {
         let mut values = Vec::new();
         for digit in input.chars() {
             if let Some(number) = digit.to_digit(10) {
-                values.push(number as i64);
+                values.push(number as u8);
             } else {
                 return Err(CommonError::MessageError(format!("Not a digit: {}", digit)));
             }
@@ -42,14 +42,15 @@ impl Transmission {
     fn run_phases(&self, steps: usize) -> Transmission {
         let len = self.values.len();
         let mut values = self.values.clone();
-        for _ in 0..steps {
-            let thorough_until = (len + self.offset) / 2;
-            let quick_starts = if len > thorough_until {
-                len - thorough_until
-            } else {
-                0
-            };
 
+        let thorough_until = (len + self.offset) / 2;
+        let quick_starts = if len > thorough_until {
+            len - thorough_until
+        } else {
+            0
+        };
+
+        for _ in 0..steps {
             for output_pos in 0..quick_starts {
                 let mut sum = 0i64;
                 let mut input_pos = output_pos;
@@ -58,16 +59,27 @@ impl Transmission {
                     let end_pos = len.min(input_pos + pattern_len);
 
                     match pattern {
-                        1 => sum += values[input_pos..end_pos].iter().sum::<i64>(),
-                        3 => sum -= values[input_pos..end_pos].iter().sum::<i64>(),
+                        1 => {
+                            sum += values[input_pos..end_pos]
+                                .iter()
+                                .map(|n| *n as i64)
+                                .sum::<i64>()
+                        }
+                        3 => {
+                            sum -= values[input_pos..end_pos]
+                                .iter()
+                                .map(|n| *n as i64)
+                                .sum::<i64>()
+                        }
                         _ => (),
                     }
                     input_pos = end_pos;
                 }
-                values[output_pos] = (sum % 10).abs();
+                values[output_pos] = (sum % 10).abs() as u8;
             }
+
             for output_pos in (quick_starts..len - 1).rev() {
-                values[output_pos] = ((values[output_pos] + values[output_pos + 1]) % 10).abs();
+                values[output_pos] = (values[output_pos] + values[output_pos + 1]) % 10;
             }
         }
         Transmission {

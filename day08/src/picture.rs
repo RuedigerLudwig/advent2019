@@ -1,23 +1,25 @@
 use std::{collections::HashMap, fmt::Display};
 
 #[derive(Debug)]
-pub struct Picture {
-    _pixels: String,
+pub struct Picture<'a> {
+    _pixels: &'a str,
     _width: usize,
     _height: usize,
     _layers: usize,
 }
 
-impl Picture {
-    pub fn new(input: &str, width: usize, height: usize) -> Picture {
+impl<'a> Picture<'a> {
+    pub fn new(input: &'a str, width: usize, height: usize) -> Picture<'a> {
         Picture {
-            _pixels: String::from(input),
+            _pixels: input,
             _width: width,
             _height: height,
-            _layers: input.len() / (width * height),
+            _layers: input.chars().count() / (width * height),
         }
     }
+}
 
+impl Picture<'_> {
     pub fn count_number_per_layer(&self) -> Vec<HashMap<char, usize>> {
         let mut result = Vec::new();
         let mut chars = self._pixels.chars();
@@ -26,11 +28,8 @@ impl Picture {
             let mut map = HashMap::new();
             for _ in 0..(self._height * self._width) {
                 let pixel = chars.next().unwrap();
-                if let Some(count) = map.get_mut(&pixel) {
-                    *count = *count + 1;
-                } else {
-                    map.insert(pixel, 1);
-                }
+                let count = map.entry(pixel).or_default();
+                *count = *count + 1;
             }
             result.push(map);
         }
@@ -62,7 +61,7 @@ impl Picture {
                     if result[row][col] == "?" {
                         match pixel {
                             '0' => result[row][col] = " ",
-                            '1' => result[row][col] = "█",
+                            '1' => result[row][col] = "#",
                             _ => (),
                         }
                     }
@@ -78,7 +77,7 @@ impl Picture {
     }
 }
 
-impl Display for Picture {
+impl Display for Picture<'_> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "{}", self.display())
     }

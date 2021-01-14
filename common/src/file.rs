@@ -10,14 +10,6 @@ fn read_from_file(module: &str, file: &str) -> Result<String, CommonError> {
     Ok(result?)
 }
 
-pub fn work_on_file<F, T>(module: &str, file: &str, fun: F) -> Result<Vec<T>, CommonError>
-where
-    F: Fn(&str) -> Result<T, CommonError>,
-{
-    let lines = read_from_file(module, file)?;
-    Ok(lines.lines().map(fun).collect::<Result<_, _>>()?)
-}
-
 pub fn read_all_lines(module: &str, file: &str) -> Result<Vec<String>, CommonError> {
     let lines = read_from_file(module, file)?;
     Ok(lines.lines().map(String::from).collect())
@@ -31,9 +23,9 @@ pub fn read_as_string(module: &str, file: &str) -> Result<String, CommonError> {
 pub fn read_single_line(module: &str, file: &str) -> Result<String, CommonError> {
     let lines = read_from_file(module, file)?;
 
-    let result = match lines.lines().next() {
-        Some(line) => String::from(line.trim()),
-        None => String::from(""),
-    };
-    Ok(result)
+    if let Some(line) = lines.lines().next() {
+        Ok(line.to_owned())
+    } else {
+        Ok("".to_owned())
+    }
 }

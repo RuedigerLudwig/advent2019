@@ -1,10 +1,10 @@
-use common::{as_int, work_on_file, CommonError};
+use common::{as_int, read_all_lines, CommonError};
 
-pub fn calculate(mass: i32) -> i32 {
+fn calculate(mass: i32) -> i32 {
     mass / 3 - 2
 }
 
-pub fn calculate2(mass: i32) -> i32 {
+fn calculate2(mass: i32) -> i32 {
     let mut result = 0;
     let mut fuel = calculate(mass);
     while fuel > 0 {
@@ -14,21 +14,23 @@ pub fn calculate2(mass: i32) -> i32 {
     result
 }
 
-pub fn result() -> Result<(), CommonError> {
-    let result1: i32 = work_on_file("day01", "input.txt", as_int)?
-        .iter()
-        .copied()
-        .map(calculate)
-        .sum();
+fn do_iter<F>(numbers: &[i32], function: F) -> i32
+where
+    F: Fn(i32) -> i32,
+{
+    numbers.iter().copied().map(function).sum()
+}
 
+pub fn result() -> Result<(), CommonError> {
+    let numbers = read_all_lines("day01", "input.txt")?
+        .iter()
+        .map(|s| as_int(s))
+        .collect::<Result<Vec<_>, _>>()?;
+
+    let result1 = do_iter(&numbers, calculate);
     println!("Day 01 - Result 1: {}", result1);
 
-    let result2: i32 = work_on_file("day01", "input.txt", as_int)?
-        .iter()
-        .copied()
-        .map(calculate2)
-        .sum();
-
+    let result2 = do_iter(&numbers, calculate2);
     println!("Day 01 - Result 2: {}", result2);
 
     Ok(())

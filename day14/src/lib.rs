@@ -7,7 +7,7 @@ mod factory_error;
 
 pub fn result() -> Result<(), FactoryError> {
     let input = read_all_lines("day14", "input.txt")?;
-    let factory = Factory::new(input)?;
+    let factory = Factory::new(&input)?;
 
     let result = factory.ore_per_fuel(1)?;
     println!("Day 14 - Result 1: {}", result);

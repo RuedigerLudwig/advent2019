@@ -20,6 +20,12 @@ pub enum Tile {
     Ball,
 }
 
+impl Default for Tile {
+    fn default() -> Self {
+        Tile::Empty
+    }
+}
+
 impl TryFrom<i64> for Tile {
     type Error = ComputerError;
 
@@ -42,7 +48,7 @@ impl Display for Tile {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             Tile::Empty => write!(f, " "),
-            Tile::Wall => write!(f, "█"),
+            Tile::Wall => write!(f, "#"),
             Tile::Block => write!(f, "+"),
             Tile::Paddle => write!(f, "-"),
             Tile::Ball => write!(f, "o"),
@@ -134,7 +140,7 @@ impl Display for Game {
         let area = self._board.keys().copied().collect::<Area>();
         for row in area.rows(true) {
             for col in row.cols(true) {
-                let tile = *self._board.get(&col).unwrap_or(&Tile::Empty);
+                let tile = self._board.get(&col).copied().unwrap_or_default();
                 write!(f, "{}", tile)?;
             }
             writeln!(f, "")?;
