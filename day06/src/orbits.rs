@@ -2,13 +2,13 @@ use std::collections::HashMap;
 
 use crate::orbit_error::OrbitError;
 
-pub struct System {
-    pub name: String,
-    subsystems: Vec<System>,
+pub struct System<'a> {
+    pub name: &'a str,
+    subsystems: Vec<System<'a>>,
 }
 
-impl System {
-    pub fn parse(input: &Vec<String>) -> Result<System, OrbitError> {
+impl<'a> System<'a> {
+    pub fn parse(input: &[String]) -> Result<System, OrbitError> {
         let map = System::to_map(&input)?;
         let center = System::find_center(&map)?;
 
@@ -27,32 +27,27 @@ impl System {
     }
 
     pub fn count_transfers(&self, from: &str, to: &str) -> Result<i32, OrbitError> {
-        if let Some(result) = self.get_length(from, to, 1).2 {
+        if let Some(result) = self.get_distance(from, to, 1).2 {
             Ok(result)
         } else {
-            Err(OrbitError::NoPathError(
-                String::from(from),
-                String::from(to),
-            ))
+            Err(OrbitError::NoPathError(from.to_owned(), to.to_owned()))
         }
     }
 
-    fn get_length(
+    fn get_distance(
         &self,
         from: &str,
         to: &str,
         distance: i32,
     ) -> (Option<i32>, Option<i32>, Option<i32>) {
-        let (mut found_from, mut found_to) = if self.name == from {
-            (Some(distance), None)
-        } else if self.name == to {
-            (None, Some(distance))
-        } else {
-            (None, None)
+        let (mut found_from, mut found_to) = match self.name {
+            name if name == from => (Some(distance), None),
+            name if name == to => (None, Some(distance)),
+            _ => (None, None),
         };
 
         for sub in &self.subsystems {
-            let (maybe_from, maybe_to, maybe_sum) = sub.get_length(from, to, distance + 1);
+            let (maybe_from, maybe_to, maybe_sum) = sub.get_distance(from, to, distance + 1);
             if maybe_sum.is_some() {
                 return (None, None, maybe_sum);
             }
@@ -69,26 +64,25 @@ impl System {
         (found_from, found_to, None)
     }
 
-    fn to_map(input: &Vec<String>) -> Result<HashMap<String, Vec<String>>, OrbitError> {
-        let mut map: HashMap<String, Vec<String>> = HashMap::new();
+    fn to_map(input: &'a [String]) -> Result<HashMap<&'a str, Vec<&'a str>>, OrbitError> {
+        let mut map: HashMap<_, Vec<&'a str>> = HashMap::new();
         for line in input {
-            let parts: Vec<&str> = line.split(")").collect();
-            if parts.len() != 2 {
-                Err(OrbitError::OnlyTwoPerLine)?
-            }
-            let center = String::from(parts[0]);
-            let orbiter = String::from(parts[1]);
-            if let Some(orbits) = map.get_mut(&center) {
-                orbits.push(orbiter);
+            let mut parts = line.split(")");
+
+            let (center, orbiter) = if let Some((c, o)) = parts.next().zip(parts.next()) {
+                (c, o)
             } else {
-                map.insert(center, vec![orbiter]);
-            }
+                return Err(OrbitError::OnlyTwoPerLine);
+            };
+
+            let orbits = map.entry(center).or_default();
+            orbits.push(orbiter);
         }
         Ok(map)
     }
 
-    fn find_center(map: &HashMap<String, Vec<String>>) -> Result<String, OrbitError> {
-        let mut result = Vec::new();
+    fn find_center(map: &HashMap<&'a str, Vec<&'a str>>) -> Result<&'a str, OrbitError> {
+        let mut center = None;
         for maybe_center in map.keys() {
             let mut is_orbiting = false;
             for orbits in map.values() {
@@ -98,33 +92,37 @@ impl System {
                 }
             }
             if !is_orbiting {
-                result.push(maybe_center);
+                if center.is_none() {
+                    center = Some(*maybe_center);
+                } else {
+                    return Err(OrbitError::NoCenterFound);
+                }
             }
         }
 
-        if result.len() != 1 {
-            Err(OrbitError::NoCenterFound)
+        if let Some(center) = center {
+            Ok(center)
         } else {
-            Ok(result[0].clone())
+            Err(OrbitError::NoCenterFound)
         }
     }
 
     fn build_system(
-        current: &str,
-        map: &HashMap<String, Vec<String>>,
-    ) -> Result<System, OrbitError> {
+        current: &'a str,
+        map: &HashMap<&'a str, Vec<&'a str>>,
+    ) -> Result<System<'a>, OrbitError> {
         if let Some(orbits) = map.get(current) {
             let subsystems = orbits
                 .iter()
                 .map(|orbiter| System::build_system(orbiter, map))
                 .collect::<Result<_, _>>()?;
             Ok(System {
-                name: String::from(current),
+                name: current,
                 subsystems,
             })
         } else {
             Ok(System {
-                name: String::from(current),
+                name: current,
                 subsystems: vec![],
             })
         }
