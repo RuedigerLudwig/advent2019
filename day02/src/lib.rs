@@ -1,35 +1,36 @@
-use computer::{computer_error::ComputerError, Computer};
+use std::error::Error;
 
-pub fn result() -> Result<(), ComputerError> {
-    let template = Computer::from_file("day02", "input.txt")?;
+use computer::{Code, ComputerError, VirtualMachine};
 
-    let mut computer1 = template.clone();
+pub fn result() -> Result<(), Box<dyn Error>> {
+    let code = Code::from_file("day02", "input.txt")?;
 
-    computer1.patch_memory(1, 12);
-    computer1.patch_memory(2, 2);
-    computer1.run()?;
+    let vm = VirtualMachine::new(&code);
 
-    let result1 = computer1.get_memory()[0];
+    vm.patch_memory(1, 12);
+    vm.patch_memory(2, 2);
+    vm.get_output().get_all()?;
+
+    let result1 = vm.get_memory()[0];
     println!("Day 02 - Result 1: {}", result1);
 
-    let computer2 = template.clone();
-    let (noun, verb) = test_numbers(computer2)?;
+    let (noun, verb) = test_numbers(&code)?;
 
     println!("Day 02 - Result 2: {}", 100 * noun + verb);
 
     Ok(())
 }
 
-fn test_numbers(original: Computer) -> Result<(i64, i64), ComputerError> {
+fn test_numbers(code: &Code) -> Result<(i64, i64), ComputerError> {
     for noun in 0..100 {
         for verb in 0..100 {
-            let mut computer = original.clone();
+            let vm = VirtualMachine::new(&code);
 
-            computer.patch_memory(1, noun);
-            computer.patch_memory(2, verb);
-            computer.run()?;
+            vm.patch_memory(1, noun);
+            vm.patch_memory(2, verb);
+            vm.get_output().get_all()?;
 
-            if computer.get_memory()[0] == 19690720 {
+            if vm.get_memory()[0] == 19690720 {
                 return Ok((noun, verb));
             }
         }
@@ -41,14 +42,14 @@ fn test_numbers(original: Computer) -> Result<(i64, i64), ComputerError> {
 
 #[cfg(test)]
 mod tests {
-    use computer::{computer_error::ComputerError, Computer};
-    use std::str::FromStr;
+    use super::*;
 
     #[test]
-    fn test_parse() -> Result<(), ComputerError> {
+    fn test_parse() -> Result<(), Box<dyn Error>> {
         let input = "1,9,10,3,2,3,11,0,99,30,40,50";
-        let computer = Computer::from_str(&input)?;
-        let result = computer.get_memory();
+        let code: Code = input.parse()?;
+        let vm = VirtualMachine::new(&code);
+        let result = vm.get_memory();
         let expected = vec![1, 9, 10, 3, 2, 3, 11, 0, 99, 30, 40, 50];
         assert_eq!(result, expected);
 
@@ -56,12 +57,13 @@ mod tests {
     }
 
     #[test]
-    fn test_computer_running() -> Result<(), ComputerError> {
+    fn test_computer_running() -> Result<(), Box<dyn Error>> {
         let input = vec![1, 9, 10, 3, 2, 3, 11, 0, 99, 30, 40, 50];
 
-        let mut computer = Computer::new(&input);
-        computer.run()?;
-        let result = computer.get_memory();
+        let code = input.into();
+        let vm = VirtualMachine::new(&code);
+        vm.get_output().get_all()?;
+        let result = vm.get_memory();
 
         let expected: Vec<i64> = vec![3500, 9, 10, 70, 2, 3, 11, 0, 99, 30, 40, 50];
 

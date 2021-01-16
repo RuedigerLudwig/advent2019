@@ -1,27 +1,27 @@
 use std::collections::VecDeque;
 
-use computer::{computer_error::ComputerError, Computer};
+use computer::{Code, ComputerError, ComputerInput, ListInput, VirtualMachine};
 
 use crate::permutations::LexPermutations;
 
 pub struct Amplifier {
-    computers: VecDeque<Computer>,
+    computers: VecDeque<VirtualMachine<ListInput>>,
 }
 
 impl Amplifier {
-    pub fn new(template: &Computer, setting: &Vec<i64>) -> Amplifier {
+    pub fn new(code: &Code, setting: &Vec<i64>) -> Amplifier {
         let computers = setting
             .iter()
             .map(|input| {
-                let mut computer = template.clone();
-                computer.provide_input(*input);
-                computer
+                let vm = VirtualMachine::new(&code);
+                vm.get_input().provide_input(*input);
+                vm
             })
             .collect();
         Amplifier { computers }
     }
 
-    pub fn get_best(template: &Computer, setting: &Vec<i64>) -> Result<i64, ComputerError> {
+    pub fn get_best(template: &Code, setting: &Vec<i64>) -> Result<i64, ComputerError> {
         let mut result = i64::MIN;
         for perm in LexPermutations::new(setting) {
             let mut amplifier = Amplifier::new(template, &perm);
@@ -30,10 +30,7 @@ impl Amplifier {
         Ok(result)
     }
 
-    pub fn get_best_continously(
-        template: &Computer,
-        setting: &Vec<i64>,
-    ) -> Result<i64, ComputerError> {
+    pub fn get_best_continously(template: &Code, setting: &Vec<i64>) -> Result<i64, ComputerError> {
         let mut result = i64::MIN;
         for perm in LexPermutations::new(setting) {
             let mut amplifier = Amplifier::new(template, &perm);
@@ -44,9 +41,9 @@ impl Amplifier {
 
     pub fn run_once(&mut self, initial_value: i64) -> Result<i64, ComputerError> {
         let mut value = initial_value;
-        for computer in self.computers.iter_mut() {
-            computer.provide_input(value);
-            let result = computer.run()?;
+        for vm in self.computers.iter_mut() {
+            vm.get_input().provide_input(value);
+            let result = vm.get_output().get_all()?;
             if result.len() != 1 {
                 Err(ComputerError::MessageError(format!(
                     "Did not get exactly one result: {:?}",
@@ -59,18 +56,18 @@ impl Amplifier {
     }
 
     pub fn run_continously(&mut self, initial_value: i64) -> Result<i64, ComputerError> {
-        let mut value = initial_value;
+        let mut end_value = initial_value;
         loop {
-            if let Some(mut computer) = self.computers.pop_front() {
-                computer.provide_input(value);
-                if let Some(result) = computer.next() {
-                    value = result?;
+            if let Some(computer) = self.computers.pop_front() {
+                computer.get_input().provide_input(end_value);
+                if let Some(step_result) = computer.get_output().next() {
+                    end_value = step_result?;
                     self.computers.push_back(computer);
                 } else {
                     break;
                 }
             }
         }
-        Ok(value)
+        Ok(end_value)
     }
 }

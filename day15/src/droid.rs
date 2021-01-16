@@ -2,7 +2,7 @@ use std::{collections::HashMap, fmt::Display};
 
 use common::Pos as RawPos;
 use common::{Area as RawArea, Direction};
-use computer::computer_error::ComputerError;
+use computer::ComputerError;
 
 use crate::interface::{DroidComputerInterface, Report};
 

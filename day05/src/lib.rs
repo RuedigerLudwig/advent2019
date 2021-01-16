@@ -1,18 +1,19 @@
-use computer::{computer_error::ComputerError, Computer};
+use std::error::Error;
 
-pub fn result() -> Result<(), ComputerError> {
-    let template = Computer::from_file("day05", "input.txt")?;
-    let mut computer1 = template.clone();
+use computer::{Code, ComputerInput, VirtualMachine};
 
-    computer1.provide_input(1);
-    let result1 = computer1.run()?;
+pub fn result() -> Result<(), Box<dyn Error>> {
+    let code = Code::from_file("day05", "input.txt")?;
+
+    let vm1 = VirtualMachine::new(&code);
+    vm1.get_input().provide_input(1);
+    let result1 = vm1.get_output().get_all()?;
 
     println!("Day 05 - Result 1: {:?}", result1);
 
-    let mut computer2 = template.clone();
-
-    computer2.provide_input(5);
-    let result2 = computer2.run()?;
+    let vm2 = VirtualMachine::new(&code);
+    vm2.get_input().provide_input(5);
+    let result2 = vm2.get_output().get_all()?;
 
     println!("Day 05 - Result 2: {:?}", result2);
 
@@ -21,15 +22,18 @@ pub fn result() -> Result<(), ComputerError> {
 
 #[cfg(test)]
 mod tests {
-    use computer::{computer_error::ComputerError, Computer};
-    use std::str::FromStr;
+    use computer::ComputerError;
+
+    use super::*;
 
     #[test]
-    fn param_test() -> Result<(), ComputerError> {
+    fn param_test() -> Result<(), Box<dyn Error>> {
         let input = vec![1002, 4, 3, 4, 33];
-        let mut computer = Computer::new(&input);
-        computer.run()?;
-        let result = computer.get_memory();
+        let code = input.into();
+        let vm = VirtualMachine::new(&code);
+        vm.get_output().get_all()?;
+
+        let result = vm.get_memory();
 
         let expected = vec![1002, 4, 3, 4, 99];
 
@@ -39,11 +43,12 @@ mod tests {
     }
 
     #[test]
-    fn negative_test() -> Result<(), ComputerError> {
+    fn negative_test() -> Result<(), Box<dyn Error>> {
         let input = "1101,100,-1,4,0";
-        let mut computer = Computer::from_str(input)?;
-        computer.run()?;
-        let result = computer.get_memory();
+        let code: Code = input.parse()?;
+        let vm = VirtualMachine::new(&code);
+        vm.get_output().get_all()?;
+        let result = vm.get_memory();
 
         let expected = vec![1101, 100, -1, 4, 99];
 
@@ -55,10 +60,11 @@ mod tests {
     #[test]
     fn input_test() -> Result<(), ComputerError> {
         let input = vec![3, 3, 99, 0];
-        let mut computer = Computer::new(&input);
-        computer.provide_input(123);
-        computer.run()?;
-        let result = computer.get_memory();
+        let code = input.into();
+        let vm = VirtualMachine::new(&code);
+        vm.get_input().provide_input(123);
+        vm.get_output().get_all()?;
+        let result = vm.get_memory();
 
         let expected = vec![3, 3, 99, 123];
 
@@ -70,9 +76,10 @@ mod tests {
     #[test]
     fn io_test() -> Result<(), ComputerError> {
         let input = vec![3, 0, 4, 0, 99];
-        let mut computer = Computer::new(&input);
-        computer.provide_input(123);
-        let result = computer.run()?;
+        let code = input.into();
+        let vm = VirtualMachine::new(&code);
+        vm.get_input().provide_input(123);
+        let result = vm.get_output().get_all()?;
 
         let expected = vec![123];
 
@@ -84,9 +91,10 @@ mod tests {
     #[test]
     fn is_eq_pos_eq() -> Result<(), ComputerError> {
         let input = vec![3, 9, 8, 9, 10, 9, 4, 9, 99, -1, 8];
-        let mut computer = Computer::new(&input);
-        computer.provide_input(8);
-        let result = computer.run()?;
+        let code = input.into();
+        let vm = VirtualMachine::new(&code);
+        vm.get_input().provide_input(8);
+        let result = vm.get_output().get_all()?;
 
         let expected = vec![1];
 
@@ -98,9 +106,10 @@ mod tests {
     #[test]
     fn is_eq_pos_ne() -> Result<(), ComputerError> {
         let input = vec![3, 9, 8, 9, 10, 9, 4, 9, 99, -1, 8];
-        let mut computer = Computer::new(&input);
-        computer.provide_input(9);
-        let result = computer.run()?;
+        let code = input.into();
+        let vm = VirtualMachine::new(&code);
+        vm.get_input().provide_input(9);
+        let result = vm.get_output().get_all()?;
 
         let expected = vec![0];
 
@@ -112,9 +121,10 @@ mod tests {
     #[test]
     fn is_lt_pos_eq() -> Result<(), ComputerError> {
         let input = vec![3, 9, 7, 9, 10, 9, 4, 9, 99, -1, 8];
-        let mut computer = Computer::new(&input);
-        computer.provide_input(7);
-        let result = computer.run()?;
+        let code = input.into();
+        let vm = VirtualMachine::new(&code);
+        vm.get_input().provide_input(7);
+        let result = vm.get_output().get_all()?;
 
         let expected = vec![1];
 
@@ -126,9 +136,10 @@ mod tests {
     #[test]
     fn is_lt_pos_ne() -> Result<(), ComputerError> {
         let input = vec![3, 9, 7, 9, 10, 9, 4, 9, 99, -1, 8];
-        let mut computer = Computer::new(&input);
-        computer.provide_input(9);
-        let result = computer.run()?;
+        let code = input.into();
+        let vm = VirtualMachine::new(&code);
+        vm.get_input().provide_input(9);
+        let result = vm.get_output().get_all()?;
 
         let expected = vec![0];
 
@@ -140,9 +151,10 @@ mod tests {
     #[test]
     fn is_eq_imm_eq() -> Result<(), ComputerError> {
         let input = vec![3, 3, 1108, -1, 8, 3, 4, 3, 99];
-        let mut computer = Computer::new(&input);
-        computer.provide_input(8);
-        let result = computer.run()?;
+        let code = input.into();
+        let vm = VirtualMachine::new(&code);
+        vm.get_input().provide_input(8);
+        let result = vm.get_output().get_all()?;
 
         let expected = vec![1];
 
@@ -154,9 +166,10 @@ mod tests {
     #[test]
     fn is_eq_imm_ne() -> Result<(), ComputerError> {
         let input = vec![3, 3, 1108, -1, 8, 3, 4, 3, 99];
-        let mut computer = Computer::new(&input);
-        computer.provide_input(9);
-        let result = computer.run()?;
+        let code = input.into();
+        let vm = VirtualMachine::new(&code);
+        vm.get_input().provide_input(9);
+        let result = vm.get_output().get_all()?;
 
         let expected = vec![0];
 
@@ -168,9 +181,10 @@ mod tests {
     #[test]
     fn is_lt_imm_eq() -> Result<(), ComputerError> {
         let input = vec![3, 3, 1107, -1, 8, 3, 4, 3, 99];
-        let mut computer = Computer::new(&input);
-        computer.provide_input(7);
-        let result = computer.run()?;
+        let code = input.into();
+        let vm = VirtualMachine::new(&code);
+        vm.get_input().provide_input(7);
+        let result = vm.get_output().get_all()?;
 
         let expected = vec![1];
 
@@ -182,9 +196,10 @@ mod tests {
     #[test]
     fn is_lt_imm_ne() -> Result<(), ComputerError> {
         let input = vec![3, 3, 1107, -1, 8, 3, 4, 3, 99];
-        let mut computer = Computer::new(&input);
-        computer.provide_input(9);
-        let result = computer.run()?;
+        let code = input.into();
+        let vm = VirtualMachine::new(&code);
+        vm.get_input().provide_input(9);
+        let result = vm.get_output().get_all()?;
 
         let expected = vec![0];
 
@@ -200,9 +215,10 @@ mod tests {
             0, 1002, 21, 125, 20, 4, 20, 1105, 1, 46, 104, 999, 1105, 1, 46, 1101, 1000, 1, 20, 4,
             20, 1105, 1, 46, 98, 99,
         ];
-        let mut computer = Computer::new(&input);
-        computer.provide_input(7);
-        let result = computer.run()?;
+        let code = input.into();
+        let vm = VirtualMachine::new(&code);
+        vm.get_input().provide_input(7);
+        let result = vm.get_output().get_all()?;
 
         let expected = vec![999];
 
@@ -218,9 +234,10 @@ mod tests {
             0, 1002, 21, 125, 20, 4, 20, 1105, 1, 46, 104, 999, 1105, 1, 46, 1101, 1000, 1, 20, 4,
             20, 1105, 1, 46, 98, 99,
         ];
-        let mut computer = Computer::new(&input);
-        computer.provide_input(8);
-        let result = computer.run()?;
+        let code = input.into();
+        let vm = VirtualMachine::new(&code);
+        vm.get_input().provide_input(8);
+        let result = vm.get_output().get_all()?;
 
         let expected = vec![1000];
 
@@ -236,9 +253,10 @@ mod tests {
             0, 1002, 21, 125, 20, 4, 20, 1105, 1, 46, 104, 999, 1105, 1, 46, 1101, 1000, 1, 20, 4,
             20, 1105, 1, 46, 98, 99,
         ];
-        let mut computer = Computer::new(&input);
-        computer.provide_input(9);
-        let result = computer.run()?;
+        let code = input.into();
+        let vm = VirtualMachine::new(&code);
+        vm.get_input().provide_input(9);
+        let result = vm.get_output().get_all()?;
 
         let expected = vec![1001];
 

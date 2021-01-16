@@ -6,7 +6,7 @@ use std::{
 };
 
 use common::{Area as RawArea, Pos as RawPos};
-use computer::{computer_error::ComputerError, Computer};
+use computer::{Code, ComputerError, ComputerInput, ListInput, VirtualMachine};
 
 type Pos = RawPos<i64>;
 type Area = RawArea<i64>;
@@ -56,7 +56,7 @@ impl Display for Tile {
     }
 }
 
-pub enum Input {
+pub enum Command {
     Tile(Pos, Tile),
     Score(i64),
 }
@@ -66,15 +66,26 @@ pub struct Game {
 }
 
 impl Game {
-    fn get_tile(computer: &mut Computer) -> Result<Option<Input>, ComputerError> {
-        let result = if let Some(result) = computer.do_steps(3)? {
+    pub fn paint_board(code: &Code) -> Result<Game, ComputerError> {
+        let vm = VirtualMachine::new(code);
+        let mut board = HashMap::new();
+        while let Some(Command::Tile(pos, tile)) = Game::get_tile(&vm)? {
+            board.insert(pos, tile);
+        }
+
+        Ok(Game { _board: board })
+    }
+
+    fn get_tile(computer: &VirtualMachine<ListInput>) -> Result<Option<Command>, ComputerError> {
+        let mut output = computer.get_output();
+        let result = if let Some(result) = output.take_exactly(3)? {
             let x = result[0];
             let y = result[1];
 
             if x == -1 && y == 0 {
-                Some(Input::Score(result[2]))
+                Some(Command::Score(result[2]))
             } else {
-                Some(Input::Tile(Pos::new(x, y), Tile::try_from(result[2])?))
+                Some(Command::Tile(Pos::new(x, y), Tile::try_from(result[2])?))
             }
         } else {
             None
@@ -87,45 +98,36 @@ impl Game {
         self._board.values().filter(|other| **other == tile).count()
     }
 
-    pub fn parse(template: &Computer) -> Result<Game, ComputerError> {
-        let mut _computer = template.clone();
-        let mut _board = HashMap::new();
-        while let Some(Input::Tile(pos, tile)) = Game::get_tile(&mut _computer)? {
-            _board.insert(pos, tile);
-        }
-
-        Ok(Game { _board })
-    }
-
-    pub fn free_game(template: &Computer) -> Result<i64, ComputerError> {
-        let mut computer = template.clone();
-        computer.patch_memory(0, 2);
+    pub fn free_game(code: &Code) -> Result<i64, ComputerError> {
+        let mut vm = VirtualMachine::new(code);
+        let input_device = vm.get_input();
+        vm.patch_memory(0, 2);
 
         loop {
             let mut score = 0i64;
             let mut blocks = HashSet::new();
             let mut paddle: Option<i64> = None;
-            while let Some(input) = Game::get_tile(&mut computer)? {
-                match input {
-                    Input::Score(_score) => {
+            while let Some(command) = Game::get_tile(&mut vm)? {
+                match command {
+                    Command::Score(_score) => {
                         score = _score;
                     }
-                    Input::Tile(pos, Tile::Block) => {
+                    Command::Tile(pos, Tile::Block) => {
                         blocks.insert(pos);
                     }
-                    Input::Tile(pos, Tile::Empty) => {
+                    Command::Tile(pos, Tile::Empty) => {
                         blocks.remove(&pos);
                     }
-                    Input::Tile(pos, Tile::Paddle) => {
+                    Command::Tile(pos, Tile::Paddle) => {
                         paddle = Some(pos.x());
                     }
-                    Input::Tile(pos, Tile::Ball) => {
+                    Command::Tile(pos, Tile::Ball) => {
                         let direction = paddle
                             .map(|paddle| (pos.x() - paddle).signum())
                             .unwrap_or(0);
-                        computer.provide_input(direction);
+                        input_device.provide_input(direction);
                     }
-                    Input::Tile(_, Tile::Wall) => (),
+                    Command::Tile(_, Tile::Wall) => (),
                 }
             }
             if blocks.is_empty() {

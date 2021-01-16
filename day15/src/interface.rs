@@ -1,5 +1,5 @@
 use common::Direction;
-use computer::{computer_error::ComputerError, Computer};
+use computer::{Code, ComputerError, ComputerInput, ListInput, Output, VirtualMachine};
 
 #[derive(Debug)]
 pub enum Report {
@@ -13,13 +13,17 @@ pub trait DroidComputerInterface {
 }
 
 pub struct ComputerInterface {
-    computer: Computer,
+    output: Output<ListInput>,
+    input: ListInput,
 }
 
 impl ComputerInterface {
-    pub fn new(computer: &Computer) -> ComputerInterface {
+    pub fn new(code: &Code) -> ComputerInterface {
+        let input = ListInput::new();
+        let vm = VirtualMachine::with_input(code, input.clone());
         ComputerInterface {
-            computer: computer.clone(),
+            input,
+            output: vm.get_output(),
         }
     }
 
@@ -36,8 +40,9 @@ impl ComputerInterface {
 impl DroidComputerInterface for ComputerInterface {
     fn send_direction(&mut self, direction: Direction) -> Result<Report, ComputerError> {
         let dir_number = ComputerInterface::dir_number(direction);
-        self.computer.provide_input(dir_number);
-        if let Some(report) = self.computer.next() {
+        self.input.provide_input(dir_number);
+
+        if let Some(report) = self.output.next() {
             match report? {
                 0 => Ok(Report::Wall),
                 1 => Ok(Report::Moved),

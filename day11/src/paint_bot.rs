@@ -4,14 +4,15 @@ use std::{
 };
 
 use common::{Area, Direction, Pos};
+use computer::ComputerError;
 
-use crate::interface::BotComputerInterface;
+use crate::interface::{BotComputerInterface, Color};
 
 type IPos = Pos<i32>;
 type IArea = Area<i32>;
 pub struct Bot<T> {
     interface: T,
-    board: HashMap<IPos, bool>,
+    board: HashMap<IPos, Color>,
     position: IPos,
     facing: Direction,
 }
@@ -26,10 +27,10 @@ impl<T: BotComputerInterface> Bot<T> {
         }
     }
 
-    pub fn run(&mut self) {
+    pub fn run(&mut self) -> Result<(), ComputerError> {
         loop {
-            let is_white = *self.board.get(&self.position).unwrap_or(&false);
-            if let Some((paint_color, turn)) = self.interface.accept_input(is_white) {
+            let color = self.board.get(&self.position).copied().unwrap_or_default();
+            if let Some((paint_color, turn)) = self.interface.accept_input(color)? {
                 self.board.insert(self.position, paint_color);
                 self.facing = self.facing.turn(turn);
                 self.position = self.position + self.facing.as_pos();
@@ -37,12 +38,14 @@ impl<T: BotComputerInterface> Bot<T> {
                 break;
             }
         }
+
+        Ok(())
     }
 }
 
 impl<T> Bot<T> {
-    pub fn paint_current_board(&mut self, paint_white: bool) {
-        self.board.insert(self.position, paint_white);
+    pub fn paint_current_board(&mut self, color: Color) {
+        self.board.insert(self.position, color);
     }
 
     pub fn count_painted_boards(&self) -> usize {
@@ -61,8 +64,7 @@ impl<T> Display for Bot<T> {
         let extent = self.get_extend();
         for row in extent.rows(false) {
             for pos in row.cols(true) {
-                let is_white = *self.board.get(&pos).unwrap_or(&false);
-                write!(f, "{}", if is_white { '#' } else { ' ' })?;
+                write!(f, "{}", self.board.get(&pos).copied().unwrap_or_default())?;
             }
             writeln!(f, "")?;
         }
@@ -77,13 +79,15 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_dummy_paint() {
+    fn test_dummy_paint() -> Result<(), ComputerError> {
         let instruction = vec![(1, 0), (0, 0), (1, 0), (1, 0), (0, 1), (1, 0), (1, 0)];
         let interface = TestInterface::new(instruction);
         let mut bot = Bot::new(interface);
-        bot.run();
+        bot.run()?;
         let expected = 6;
         assert_eq!(bot.board.len(), expected);
+
+        Ok(())
     }
 
     pub struct TestInterface {
@@ -98,13 +102,20 @@ mod tests {
     }
 
     impl BotComputerInterface for TestInterface {
-        fn accept_input(&mut self, _is_white: bool) -> Option<(bool, Turn)> {
+        fn accept_input(&mut self, _color: Color) -> Result<Option<(Color, Turn)>, ComputerError> {
             if self.index < self.list.len() {
                 let (paint, turn) = self.list[self.index];
                 self.index += 1;
-                Some((paint == 1, if turn == 1 { Turn::Right } else { Turn::Left }))
+                Ok(Some((
+                    if paint == 1 {
+                        Color::White
+                    } else {
+                        Color::Black
+                    },
+                    if turn == 1 { Turn::Right } else { Turn::Left },
+                )))
             } else {
-                None
+                Ok(None)
             }
         }
     }

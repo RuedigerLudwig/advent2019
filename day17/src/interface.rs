@@ -1,51 +1,56 @@
-use computer::Computer;
+use std::error::Error;
+
+use computer::{Code, TextInput, TextOutput, VirtualMachine};
 
 use crate::exterior_error::ExteriorError;
 
 pub trait ExteriorInterface {
-    fn get_picture(&mut self) -> Result<Vec<String>, ExteriorError>;
-    fn send_data(&mut self, data: &[String], run_silent: bool) -> Result<i64, ExteriorError>;
+    fn get_picture(&mut self) -> Result<Vec<String>, Box<dyn Error>>;
+    fn send_data(&mut self, data: &[String], run_silent: bool) -> Result<i64, Box<dyn Error>>;
 }
 
 pub struct ExteriorComputerInterface {
-    computer: Computer,
+    vm: VirtualMachine<TextInput>,
+    input: TextInput,
+    output: TextOutput,
 }
 
 impl ExteriorComputerInterface {
-    pub fn new(computer: &Computer) -> ExteriorComputerInterface {
-        ExteriorComputerInterface {
-            computer: computer.clone(),
-        }
+    pub fn new(code: &Code) -> ExteriorComputerInterface {
+        let input = TextInput::new();
+        let vm = VirtualMachine::with_input(code, input.clone());
+        let output = TextOutput::new(vm.get_output());
+        ExteriorComputerInterface { vm, input, output }
     }
 }
 
 impl ExteriorInterface for ExteriorComputerInterface {
-    fn get_picture(&mut self) -> Result<Vec<String>, ExteriorError> {
+    fn get_picture(&mut self) -> Result<Vec<String>, Box<dyn Error>> {
         let mut result = Vec::new();
-        while let Some(line) = self.computer.read_output()? {
+        while let Some(line) = self.output.read_line()? {
             result.push(line)
         }
 
         Ok(result)
     }
 
-    fn send_data(&mut self, data: &[String], run_silent: bool) -> Result<i64, ExteriorError> {
+    fn send_data(&mut self, data: &[String], run_silent: bool) -> Result<i64, Box<dyn Error>> {
         if !run_silent {
             print!("{esc}[2J{esc}[1;1H", esc = 27 as char);
         }
-        self.computer.patch_memory(0, 2);
+        self.vm.patch_memory(0, 2);
         for answer in data {
-            if let Some(question) = self.computer.read_output()? {
-                self.computer.write_input(answer)?;
+            if let Some(question) = self.output.read_line()? {
+                self.input.write_input(answer)?;
                 if !run_silent {
                     println!("{} {}", question, answer);
                 }
             }
         }
 
-        if !run_silent {
-            let mut jump_start = true;
-            while let Some(line) = self.computer.read_output()? {
+        let mut jump_start = true;
+        while let Some(line) = self.output.read_line()? {
+            if !run_silent {
                 if jump_start {
                     print!("{esc}[1;1H", esc = 27 as char);
                 }
@@ -53,12 +58,11 @@ impl ExteriorInterface for ExteriorComputerInterface {
                 jump_start = line.is_empty();
             }
         }
-        let result = self.computer.run()?;
 
-        if let Some(result) = result.last() {
-            Ok(*result)
+        if let Some(result) = self.output.next() {
+            Ok(result?)
         } else {
-            Err(ExteriorError::NoData)
+            Err(Box::new(ExteriorError::NoData))
         }
     }
 }

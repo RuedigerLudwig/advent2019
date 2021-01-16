@@ -1,5 +1,4 @@
-use common::{CommonError, Direction, Pos};
-use computer::computer_error::ComputerError;
+use common::{Direction, Pos};
 
 #[derive(Debug)]
 pub enum ExteriorError {
@@ -7,8 +6,6 @@ pub enum ExteriorError {
     NoPath,
     NoData,
     NoScaffold(Pos<i32>, Direction),
-    ComputerError(ComputerError),
-    CommonError(CommonError),
 }
 
 impl std::error::Error for ExteriorError {
@@ -18,8 +15,6 @@ impl std::error::Error for ExteriorError {
             ExteriorError::NoRobot => None,
             ExteriorError::NoPath => None,
             ExteriorError::NoData => None,
-            ExteriorError::ComputerError(err) => Some(err),
-            ExteriorError::CommonError(err) => Some(err),
         }
     }
 }
@@ -39,20 +34,6 @@ impl std::fmt::Display for ExteriorError {
             ExteriorError::NoData => {
                 write!(f, "Did not get any data from robot")
             }
-            ExteriorError::ComputerError(ref err) => err.fmt(f),
-            ExteriorError::CommonError(ref err) => err.fmt(f),
         }
-    }
-}
-
-impl From<ComputerError> for ExteriorError {
-    fn from(err: ComputerError) -> ExteriorError {
-        ExteriorError::ComputerError(err)
-    }
-}
-
-impl From<CommonError> for ExteriorError {
-    fn from(err: CommonError) -> ExteriorError {
-        ExteriorError::CommonError(err)
     }
 }

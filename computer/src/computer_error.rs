@@ -1,11 +1,8 @@
-use common::CommonError;
-
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum ComputerError {
     MessageError(String),
-    CommonError(CommonError),
 
-    UnknownOperation(u8),
+    UnknownInstruction(i64, usize),
     UnknownMode(i64),
     InputEmpty,
 
@@ -13,19 +10,21 @@ pub enum ComputerError {
     NotValidAsciiInt(i64),
 
     IllegalAddress(String),
+
+    Terminated,
 }
 
 impl std::error::Error for ComputerError {
     fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
         match self {
             ComputerError::MessageError(_) => None,
-            ComputerError::UnknownOperation(_) => None,
+            ComputerError::UnknownInstruction(_, _) => None,
             ComputerError::UnknownMode(_) => None,
             ComputerError::IllegalAddress(_) => None,
             ComputerError::NotValidAsciiChar(_) => None,
             ComputerError::NotValidAsciiInt(_) => None,
             ComputerError::InputEmpty => None,
-            ComputerError::CommonError(err) => Some(err),
+            ComputerError::Terminated => None,
         }
     }
 }
@@ -34,9 +33,12 @@ impl std::fmt::Display for ComputerError {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
         match self {
             ComputerError::MessageError(message) => write!(f, "{}", message),
-            ComputerError::UnknownOperation(op_code) => write!(f, "Unknown OpCode: {}", op_code),
+            ComputerError::UnknownInstruction(instruction, pointer) => {
+                write!(f, "Unknown instruction {} at {}", instruction, pointer)
+            }
             ComputerError::UnknownMode(mode) => write!(f, "Unknown Mode: {}", mode),
             ComputerError::InputEmpty => write!(f, "Input unexpectedly empty"),
+            ComputerError::Terminated => write!(f, "Cpu hash already crashed"),
             ComputerError::NotValidAsciiChar(ch) => {
                 write!(f, "Not a valid Ascci Char: {}", ch)
             }
@@ -46,13 +48,6 @@ impl std::fmt::Display for ComputerError {
             ComputerError::IllegalAddress(message) => {
                 write!(f, "Illegal address {}", message)
             }
-            ComputerError::CommonError(ref err) => err.fmt(f),
         }
-    }
-}
-
-impl From<CommonError> for ComputerError {
-    fn from(err: CommonError) -> ComputerError {
-        ComputerError::CommonError(err)
     }
 }

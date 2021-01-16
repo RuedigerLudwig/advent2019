@@ -1,5 +1,6 @@
 use std::{
     collections::{HashMap, HashSet},
+    error::Error,
     fmt::Display,
 };
 
@@ -161,7 +162,7 @@ impl<I> Exterior<I>
 where
     I: ExteriorInterface,
 {
-    pub fn new(mut _interface: I) -> Result<Exterior<I>, ExteriorError> {
+    pub fn new(mut _interface: I) -> Result<Exterior<I>, Box<dyn Error>> {
         let picture = _interface.get_picture()?;
         let mut _data = HashMap::new();
         for (row, line) in (0..).zip(picture) {
@@ -177,7 +178,7 @@ where
         Ok(Exterior { _interface, _data })
     }
 
-    pub fn run_bot(&mut self, run_silent: bool) -> Result<i64, ExteriorError> {
+    pub fn run_bot(&mut self, run_silent: bool) -> Result<i64, Box<dyn Error>> {
         let mut answers = self.break_into_parts()?;
         if run_silent {
             answers.push(String::from("n"));
@@ -205,6 +206,8 @@ impl<I> Display for Exterior<I> {
 
 #[cfg(test)]
 mod tests {
+    use std::error::Error;
+
     use common::{hashset, read_all_lines};
 
     use super::*;
@@ -214,24 +217,28 @@ mod tests {
     }
 
     impl TestInterface {
-        pub fn new(module: &str, file: &str) -> Result<TestInterface, ExteriorError> {
+        pub fn new(module: &str, file: &str) -> Result<TestInterface, Box<dyn Error>> {
             let data = read_all_lines(module, file)?;
             Ok(TestInterface { data })
         }
     }
 
     impl ExteriorInterface for TestInterface {
-        fn get_picture(&mut self) -> Result<Vec<String>, ExteriorError> {
+        fn get_picture(&mut self) -> Result<Vec<String>, Box<dyn Error>> {
             Ok(self.data.clone())
         }
 
-        fn send_data(&mut self, _data: &[String], _run_silent: bool) -> Result<i64, ExteriorError> {
+        fn send_data(
+            &mut self,
+            _data: &[String],
+            _run_silent: bool,
+        ) -> Result<i64, Box<dyn Error>> {
             unimplemented!()
         }
     }
 
     #[test]
-    fn test_scrossings() -> Result<(), ExteriorError> {
+    fn test_scrossings() -> Result<(), Box<dyn Error>> {
         let interface = TestInterface::new("day17", "example1.txt")?;
         let exterior = Exterior::new(interface)?;
         let result = exterior.get_crossings();
@@ -248,7 +255,7 @@ mod tests {
     }
 
     #[test]
-    fn test_alignment() -> Result<(), ExteriorError> {
+    fn test_alignment() -> Result<(), Box<dyn Error>> {
         let interface = TestInterface::new("day17", "example1.txt")?;
         let exterior = Exterior::new(interface)?;
         let result = exterior.get_alignment();
@@ -260,7 +267,7 @@ mod tests {
     }
 
     #[test]
-    fn test_as_path() -> Result<(), ExteriorError> {
+    fn test_as_path() -> Result<(), Box<dyn Error>> {
         let interface = TestInterface::new("day17", "example2.txt")?;
         let exterior = Exterior::new(interface)?;
         let path = exterior.as_path()?;
@@ -273,7 +280,7 @@ mod tests {
     }
 
     #[test]
-    fn test_get_parts() -> Result<(), ExteriorError> {
+    fn test_get_parts() -> Result<(), Box<dyn Error>> {
         let interface = TestInterface::new("day17", "example2.txt")?;
         let exterior = Exterior::new(interface)?;
         let path = exterior.break_into_parts();
