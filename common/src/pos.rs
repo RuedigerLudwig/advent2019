@@ -7,6 +7,10 @@ use crate::{math::gcd, Direction};
 pub struct Pos<T>(T, T);
 
 impl Pos<i32> {
+    pub const fn new_const(x: i32, y: i32) -> Pos<i32> {
+        Pos(x, y)
+    }
+
     pub fn abs(&self) -> i32 {
         self.0.abs() + self.1.abs()
     }

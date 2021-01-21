@@ -32,6 +32,20 @@ pub struct Area<T> {
     upper_right: Pos<T>,
 }
 
+impl Area<i32> {
+    pub const fn new_const(
+        lower_left_x: i32,
+        lower_left_y: i32,
+        upper_right_x: i32,
+        upper_right_y: i32,
+    ) -> Area<i32> {
+        Area {
+            lower_left: Pos::new_const(lower_left_x, lower_left_y),
+            upper_right: Pos::new_const(upper_right_x, upper_right_y),
+        }
+    }
+}
+
 impl<T> Area<T>
 where
     T: Ord + Copy,
@@ -69,6 +83,13 @@ where
 
     pub fn get_upper_right(&self) -> Pos<T> {
         self.upper_right
+    }
+
+    pub fn contains(&self, pos: Pos<T>) -> bool {
+        self.lower_left.x() >= pos.x()
+            && pos.x() >= self.upper_right.x()
+            && self.lower_left.y() >= pos.y()
+            && pos.y() >= self.upper_right.y()
     }
 }
 
