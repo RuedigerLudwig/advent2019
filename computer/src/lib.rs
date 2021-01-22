@@ -2,7 +2,6 @@ mod code;
 mod computer_error;
 mod cpu;
 mod input;
-mod io;
 mod modes;
 mod output;
 mod text_input;

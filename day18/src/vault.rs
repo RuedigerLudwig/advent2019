@@ -1,9 +1,6 @@
-use crate::{
-    explorer::Explorer, map::Map, multi_maze::MultiContent, single_maze::Content,
-    vault_error::VaultError,
-};
+use crate::{content::Content, explorer::Explorer, map::Map, path::Path, vault_error::VaultError};
 
-fn extract_minimum<T: Ord>(list: &mut Vec<T>) -> Option<T> {
+fn pop_minimum(list: &mut Vec<Content>) -> Option<Content> {
     if let Some(min) = list.iter().min() {
         let index = list
             .iter()
@@ -15,40 +12,28 @@ fn extract_minimum<T: Ord>(list: &mut Vec<T>) -> Option<T> {
     }
 }
 
-pub fn find_all_keys(map: &Map) -> Result<usize, VaultError> {
-    let path = Explorer::new(map).explore()?;
-    let key_count = path.key_count();
-    let mut check_list = Vec::new();
-    let mut next_item = Some(Content::new());
-    while let Some(item) = next_item.take() {
-        if item.count_keys() == key_count {
-            return Ok(item.steps);
-        }
+fn do_search(paths: Vec<Path>) -> Result<usize, VaultError> {
+    let key_count = paths.iter().map(|path| path.key_count()).sum();
+    let mut check_list = vec![Default::default()];
 
-        let neighbors = item.get_neighbors(&path);
-        Content::clean_up(&mut check_list, neighbors);
-        next_item = extract_minimum(&mut check_list);
+    while let Some(item) = pop_minimum(&mut check_list) {
+        if item.count_keys() == key_count {
+            return Ok(item.get_steps());
+        }
+        Content::merge_clean(&mut check_list, item.get_neighbors(&paths));
     }
 
     Err(VaultError::NoPath)
 }
 
-pub fn find_all_keys2(map: &Map) -> Result<usize, VaultError> {
-    let paths = Explorer::new(map).explore2()?;
-    let key_count = paths.iter().map(|path| path.key_count()).sum();
-    let mut check_list = Vec::new();
-    let mut next_item = Some(MultiContent::new(paths.len()));
-    while let Some(item) = next_item.take() {
-        if item.count_keys() == key_count {
-            return Ok(item.steps);
-        }
+pub fn find_all_keys_part1(map: &Map) -> Result<usize, VaultError> {
+    let path = Explorer::new(map).explore_part1()?;
+    do_search(vec![path])
+}
 
-        let neighbors = item.get_neighbors(&paths);
-        MultiContent::clean_up(&mut check_list, neighbors);
-        next_item = extract_minimum(&mut check_list);
-    }
-
-    Err(VaultError::NoPath)
+pub fn find_all_keys_part2(map: &Map) -> Result<usize, VaultError> {
+    let paths = Explorer::new(map).explore_part2()?;
+    do_search(paths)
 }
 
 #[cfg(test)]
@@ -62,7 +47,7 @@ mod tests {
         let input = read_all_lines("day18", "example1.txt")?;
         let map = Map::new(&input)?;
         let expected = 8;
-        let result = find_all_keys(&map)?;
+        let result = find_all_keys_part1(&map)?;
         assert_eq!(expected, result);
         Ok(())
     }
@@ -72,7 +57,7 @@ mod tests {
         let input = read_all_lines("day18", "example2.txt")?;
         let map = Map::new(&input)?;
         let expected = 86;
-        let result = find_all_keys(&map)?;
+        let result = find_all_keys_part1(&map)?;
         assert_eq!(expected, result);
         Ok(())
     }
@@ -82,7 +67,7 @@ mod tests {
         let input = read_all_lines("day18", "example3.txt")?;
         let map = Map::new(&input)?;
         let expected = 132;
-        let result = find_all_keys(&map)?;
+        let result = find_all_keys_part1(&map)?;
         assert_eq!(expected, result);
         Ok(())
     }
@@ -93,7 +78,7 @@ mod tests {
         let input = read_all_lines("day18", "example4.txt")?;
         let map = Map::new(&input)?;
         let expected = 136;
-        let result = find_all_keys(&map)?;
+        let result = find_all_keys_part1(&map)?;
         assert_eq!(expected, result);
         Ok(())
     }
@@ -103,7 +88,7 @@ mod tests {
         let input = read_all_lines("day18", "example5.txt")?;
         let map = Map::new(&input)?;
         let expected = 81;
-        let result = find_all_keys(&map)?;
+        let result = find_all_keys_part1(&map)?;
         assert_eq!(expected, result);
         Ok(())
     }
@@ -113,7 +98,7 @@ mod tests {
         let input = read_all_lines("day18", "example7.txt")?;
         let map = Map::new(&input)?;
         let expected = 8;
-        let result = find_all_keys2(&map)?;
+        let result = find_all_keys_part2(&map)?;
         assert_eq!(expected, result);
         Ok(())
     }
@@ -123,7 +108,7 @@ mod tests {
         let input = read_all_lines("day18", "example8.txt")?;
         let map = Map::new(&input)?;
         let expected = 24;
-        let result = find_all_keys2(&map)?;
+        let result = find_all_keys_part2(&map)?;
         assert_eq!(expected, result);
         Ok(())
     }
@@ -133,7 +118,7 @@ mod tests {
         let input = read_all_lines("day18", "example9.txt")?;
         let map = Map::new(&input)?;
         let expected = 72;
-        let result = find_all_keys2(&map)?;
+        let result = find_all_keys_part2(&map)?;
         assert_eq!(expected, result);
         Ok(())
     }

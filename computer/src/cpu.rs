@@ -76,14 +76,13 @@ impl<I> Cpu<I> {
 
 impl<I> Cpu<I> {
     fn get_next_instruction(&self) -> Result<i64, ComputerError> {
-        if let Some(instruction) = self._memory.get(&self._pointer) {
-            Ok(*instruction)
-        } else {
-            Err(ComputerError::IllegalAddress(format!(
+        self._memory
+            .get(&self._pointer)
+            .copied()
+            .ok_or(ComputerError::IllegalAddress(format!(
                 "{} for next instruction",
                 self._pointer
             )))
-        }
     }
 
     fn get_relative_address(&self, addr: usize, offset: i64) -> Result<usize, ComputerError> {

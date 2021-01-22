@@ -22,10 +22,5 @@ pub fn read_as_string(module: &str, file: &str) -> Result<String, CommonError> {
 
 pub fn read_single_line(module: &str, file: &str) -> Result<String, CommonError> {
     let lines = read_from_file(module, file)?;
-
-    if let Some(line) = lines.lines().next() {
-        Ok(line.to_owned())
-    } else {
-        Ok("".to_owned())
-    }
+    Ok(lines.lines().next().unwrap_or_default().to_owned())
 }

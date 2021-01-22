@@ -7,30 +7,26 @@ use crate::map::ENTRANCE;
 
 #[derive(Debug, Clone)]
 struct Content {
-    steps: usize,
-    required: HashSet<char>,
+    _steps: usize,
+    _required: HashSet<char>,
 }
 type RefKeyContent<'a> = (&'a char, &'a Content);
 
 impl Content {
-    fn new(steps: usize, required: HashSet<char>) -> Content {
-        Content { steps, required }
-    }
-
     fn clone_with_steps(&self, steps: usize) -> Content {
         let mut clone = self.clone();
-        clone.steps += steps;
+        clone._steps += steps;
         clone
     }
 
     fn clone_with_required(&self, blocking: char) -> Content {
         let mut clone = self.clone();
-        clone.required.insert(blocking);
+        clone._required.insert(blocking);
         clone
     }
 
     fn inc_steps(&mut self, steps: usize) {
-        self.steps += steps;
+        self._steps += steps;
     }
 }
 
@@ -39,8 +35,8 @@ impl Display for Content {
         write!(
             f,
             "{}; {:?}",
-            self.steps,
-            self.required //, self.blocking
+            self._steps,
+            self._required //, self.blocking
         )
     }
 }
@@ -87,7 +83,7 @@ impl Path {
                         for (snd_char, snd_content) in second {
                             next_map.insert(
                                 *snd_char,
-                                snd_content.clone_with_steps(fst_content.steps - correct),
+                                snd_content.clone_with_steps(fst_content._steps - correct),
                             );
                         }
                     }
@@ -104,7 +100,13 @@ impl Path {
 
     pub fn add_from_entrance(&mut self, key: &char, steps: usize, required: &HashSet<char>) {
         let entry = self.content.entry(ENTRANCE).or_insert(HashMap::new());
-        entry.insert(*key, Content::new(steps, required.clone()));
+        entry.insert(
+            *key,
+            Content {
+                _steps: steps,
+                _required: required.clone(),
+            },
+        );
     }
 
     pub fn merge_on_key(&mut self, from: &char, other: Path) {
@@ -161,7 +163,7 @@ pub struct Connection {
 }
 
 pub struct ConnectionIterator<'a> {
-    to_map: Option<Box<dyn Iterator<Item = RefKeyContent<'a>> + 'a>>,
+    _iter: Option<Box<dyn Iterator<Item = RefKeyContent<'a>> + 'a>>,
 }
 
 impl<'a> ConnectionIterator<'a> {
@@ -171,11 +173,11 @@ impl<'a> ConnectionIterator<'a> {
                 Box::new(
                     map.iter()
                         .filter(move |(key, _)| !keyring.contains(*key))
-                        .filter(move |(_, content)| keyring.is_superset(&content.required)),
+                        .filter(move |(_, content)| keyring.is_superset(&content._required)),
                 ) as Box<dyn Iterator<Item = RefKeyContent>>
             });
 
-        ConnectionIterator { to_map: iter }
+        ConnectionIterator { _iter: iter }
     }
 }
 
@@ -183,11 +185,11 @@ impl<'a> Iterator for ConnectionIterator<'a> {
     type Item = Connection;
 
     fn next(&mut self) -> Option<Self::Item> {
-        if let Some(ref mut to_map) = self.to_map {
+        if let Some(ref mut to_map) = self._iter {
             if let Some((to, content)) = to_map.next() {
                 Some(Connection {
                     to: *to,
-                    steps: content.steps,
+                    steps: content._steps,
                 })
             } else {
                 None

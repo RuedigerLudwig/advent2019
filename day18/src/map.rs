@@ -56,15 +56,11 @@ pub struct Map {
 impl Map {
     pub fn new(lines: &[String]) -> Result<Map, VaultError> {
         let mut _data = HashMap::new();
-        for (row, line) in (0..).zip(lines.iter()) {
-            if line.is_empty() {
-                break;
-            }
+        for (row, line) in (0..).zip(lines.iter().rev()) {
             for (col, ch) in (0..).zip(line.chars()) {
                 let tile: Tile = ch.try_into()?;
-                if let Tile::Wall = tile {
-                } else {
-                    _data.insert(Pos::new(col, -row), tile);
+                if tile != Tile::Wall {
+                    _data.insert(Pos::new(col, row), tile);
                 }
             }
         }
@@ -124,7 +120,7 @@ mod tests {
     fn test_get_entrance() -> Result<(), Box<dyn Error>> {
         let input = read_all_lines("day18", "example1.txt")?;
         let map = Map::new(&input)?;
-        let expected = Pos::new(5, -1);
+        let expected = Pos::new(5, 1);
         let result = map.get_entrance()?;
         assert_eq!(expected, result);
         Ok(())

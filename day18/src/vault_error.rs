@@ -3,6 +3,7 @@ pub enum VaultError {
     UnknownTile(char),
     ExactlyOneEntrance,
     NoPath,
+    NotSpecial,
 }
 
 impl std::error::Error for VaultError {
@@ -11,6 +12,7 @@ impl std::error::Error for VaultError {
             VaultError::UnknownTile(_) => None,
             VaultError::ExactlyOneEntrance => None,
             VaultError::NoPath => None,
+            VaultError::NotSpecial => None,
         }
     }
 }
@@ -26,6 +28,9 @@ impl std::fmt::Display for VaultError {
             }
             VaultError::NoPath => {
                 write!(f, "Did not find a path to all keys")
+            }
+            VaultError::NotSpecial => {
+                write!(f, "can only do this on special mazes")
             }
         }
     }
