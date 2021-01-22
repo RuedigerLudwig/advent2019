@@ -15,7 +15,6 @@ use crate::{
 pub struct Explorer<'a> {
     _map: &'a Map,
     _explored: HashSet<Pos>,
-    _is_special: bool,
 }
 
 impl<'a> Explorer<'a> {
@@ -23,7 +22,6 @@ impl<'a> Explorer<'a> {
         Explorer {
             _map: map,
             _explored: HashSet::new(),
-            _is_special: false,
         }
     }
 
@@ -39,31 +37,36 @@ impl<'a> Explorer<'a> {
         None
     }
 
-    fn prepare_special(&mut self, start: Pos) {
+    fn check_and_prepare_special(&mut self, start: Pos) -> bool {
         for x in 0..3 {
             for y in 0..3 {
                 if (x != 1 || y != 1) && self._map.get_tile(start + Pos::new(x - 1, y - 1)) != Floor
                 {
-                    return;
+                    return false;
                 }
             }
         }
 
-        self._is_special = true;
         for i in 0..2 {
             self._explored.insert(start + Pos::new(1 - 2 * i, 0));
             self._explored.insert(start + Pos::new(0, 1 - 2 * i));
         }
+        true
     }
 
     fn get_special_start_tile(&mut self, start: Pos) -> Option<(Pos, usize)> {
-        for iter in 0..4 {
-            let x = 1 - (iter / 2) * 2;
-            let y = 1 - (iter % 3i32).signum() * 2;
-            let next_pos = start + Pos::new(x, y);
-            if !self._explored.contains(&next_pos) {
-                self._explored.insert(next_pos);
-                return Some((next_pos, 2));
+        let relative_start = vec![
+            Pos::new(1, 1),
+            Pos::new(1, -1),
+            Pos::new(-1, -1),
+            Pos::new(-1, 1),
+        ];
+
+        for corner in relative_start {
+            let actual_start = start + corner;
+            if !self._explored.contains(&actual_start) {
+                self._explored.insert(actual_start);
+                return Some((actual_start, 2));
             }
         }
         None
@@ -82,8 +85,8 @@ impl<'a> Explorer<'a> {
         result
     }
 
-    fn next_tile(&mut self, start: Pos, at_special_entrance: bool) -> Option<(Pos, usize)> {
-        if at_special_entrance {
+    fn next_tile(&mut self, start: Pos, is_special: bool) -> Option<(Pos, usize)> {
+        if is_special {
             self.get_special_start_tile(start)
         } else {
             loop {
@@ -116,10 +119,10 @@ impl<'a> Explorer<'a> {
         &mut self,
         start: Pos,
         required: &HashSet<char>,
-        at_special_entrance: bool,
+        is_special: bool,
     ) -> Option<Path> {
         let mut result = Vec::new();
-        while let Some((next_position, steps)) = self.next_tile(start, at_special_entrance) {
+        while let Some((next_position, steps)) = self.next_tile(start, is_special) {
             let branch_result = match self._map.get_tile(next_position) {
                 Floor => self.go_deeper(next_position, required, false),
 
@@ -151,16 +154,16 @@ impl<'a> Explorer<'a> {
         match result.len() {
             0 => None,
             1 => Some(result.swap_remove(0)),
-            _ => Some(Path::merge(result, at_special_entrance)),
+            _ => Some(Path::merge(result, is_special)),
         }
     }
 
     pub fn explore(&mut self) -> Result<Path, VaultError> {
         let start = self._map.get_entrance()?;
         self._explored.insert(start);
-        self.prepare_special(start);
+        let is_special = self.check_and_prepare_special(start);
 
-        if let Some(path) = self.go_deeper(start, &HashSet::new(), self._is_special) {
+        if let Some(path) = self.go_deeper(start, &HashSet::new(), is_special) {
             Ok(path)
         } else {
             Err(VaultError::NoPath)
@@ -170,26 +173,46 @@ impl<'a> Explorer<'a> {
     pub fn explore2(&mut self) -> Result<Vec<Path>, VaultError> {
         let start = self._map.get_entrance()?;
         self._explored.insert(start);
-        self.prepare_special(start);
+        self.check_and_prepare_special(start);
 
-        let paths = vec![
+        let relative_start = vec![
             Pos::new(1, 1),
             Pos::new(1, -1),
             Pos::new(-1, -1),
             Pos::new(-1, 1),
-        ]
-        .iter()
-        .map(|corner| {
-            let next_start = start + *corner;
-            self._explored.insert(next_start);
-            self.go_deeper(next_start, &HashSet::new(), false)
-        })
-        .collect::<Option<Vec<_>>>();
+        ];
+
+        let paths = relative_start
+            .iter()
+            .map(|corner| {
+                let actual_start = start + *corner;
+                self._explored.insert(actual_start);
+                self.go_deeper(actual_start, &HashSet::new(), false)
+            })
+            .collect::<Option<Vec<_>>>();
 
         if let Some(paths) = paths {
             Ok(paths)
         } else {
             Err(VaultError::NoPath)
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use common::read_all_lines;
+    use std::error::Error;
+
+    #[test]
+    #[ignore]
+    fn test_print_explored() -> Result<(), Box<dyn Error>> {
+        let input = read_all_lines("day18", "example5.txt")?;
+        let map = Map::new(&input)?;
+        let path = Explorer::new(&map).explore()?;
+        println!("{}", path);
+
+        Ok(())
     }
 }

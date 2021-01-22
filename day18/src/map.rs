@@ -64,7 +64,7 @@ impl Map {
                 let tile: Tile = ch.try_into()?;
                 if let Tile::Wall = tile {
                 } else {
-                    _data.insert(Pos::new(col, row), tile);
+                    _data.insert(Pos::new(col, -row), tile);
                 }
             }
         }
@@ -99,14 +99,18 @@ impl Map {
 impl Display for Map {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         let area = self._data.keys().copied().collect::<Area>();
+        let upper = "#".repeat((area.width() + 2) as usize);
+
+        writeln!(f, "{}", upper)?;
         for row in area.rows(false) {
+            write!(f, "#")?;
             for cell in row.cols(true) {
                 let tile = self.get_tile(cell);
                 write!(f, "{}", tile)?;
             }
-            writeln!(f, "")?;
+            writeln!(f, "#")?;
         }
-        writeln!(f, "--")
+        writeln!(f, "{}", upper)
     }
 }
 
@@ -119,10 +123,21 @@ mod tests {
     #[test]
     fn test_get_entrance() -> Result<(), Box<dyn Error>> {
         let input = read_all_lines("day18", "example1.txt")?;
-        let vault = Map::new(&input)?;
-        let expected = Pos::new(5, 1);
-        let result = vault.get_entrance()?;
+        let map = Map::new(&input)?;
+        let expected = Pos::new(5, -1);
+        let result = map.get_entrance()?;
         assert_eq!(expected, result);
+        Ok(())
+    }
+
+    #[test]
+    #[ignore]
+    fn test_print_path() -> Result<(), Box<dyn Error>> {
+        let input = read_all_lines("day18", "input.txt")?;
+        let map = Map::new(&input)?;
+
+        println!("{}", map);
+
         Ok(())
     }
 }

@@ -1,4 +1,3 @@
-use core::panic;
 use std::{
     collections::{HashMap, HashSet},
     fmt::Display,
@@ -10,28 +9,23 @@ use crate::map::ENTRANCE;
 struct Content {
     steps: usize,
     required: HashSet<char>,
-    blocking: HashSet<char>,
 }
 type RefKeyContent<'a> = (&'a char, &'a Content);
 
 impl Content {
     fn new(steps: usize, required: HashSet<char>) -> Content {
-        Content {
-            steps,
-            required,
-            blocking: HashSet::new(),
-        }
+        Content { steps, required }
     }
 
-    fn copy_inc_steps(&self, steps: usize) -> Content {
+    fn clone_with_steps(&self, steps: usize) -> Content {
         let mut clone = self.clone();
         clone.steps += steps;
         clone
     }
 
-    fn copy_add_blocking(&self, blocking: char) -> Content {
+    fn clone_with_required(&self, blocking: char) -> Content {
         let mut clone = self.clone();
-        clone.blocking.insert(blocking);
+        clone.required.insert(blocking);
         clone
     }
 
@@ -44,8 +38,9 @@ impl Display for Content {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(
             f,
-            "{}; {:?}; -{:?}",
-            self.steps, self.required, self.blocking
+            "{}; {:?}",
+            self.steps,
+            self.required //, self.blocking
         )
     }
 }
@@ -90,12 +85,10 @@ impl Path {
                     for (fst_char, fst_content) in first {
                         let next_map = merged.content.entry(*fst_char).or_insert(HashMap::new());
                         for (snd_char, snd_content) in second {
-                            if let Some(_) = next_map.insert(
+                            next_map.insert(
                                 *snd_char,
-                                snd_content.copy_inc_steps(fst_content.steps - correct),
-                            ) {
-                                panic!();
-                            }
+                                snd_content.clone_with_steps(fst_content.steps - correct),
+                            );
                         }
                     }
                 }
@@ -119,22 +112,16 @@ impl Path {
             if *other_from == ENTRANCE {
                 self.content.entry(ENTRANCE).and_modify(|tm| {
                     for (to, content) in other_map {
-                        if let Some(_) = tm.insert(*to, content.copy_add_blocking(*from)) {
-                            panic!();
-                        }
+                        tm.insert(*to, content.clone_with_required(*from));
                     }
                 });
 
                 let entry = self.content.entry(*from).or_insert(HashMap::new());
                 for (other_to, other_content) in other_map {
-                    if let Some(_) = entry.insert(*other_to, other_content.clone()) {
-                        panic!();
-                    }
+                    entry.insert(*other_to, other_content.clone());
                 }
             } else {
-                if let Some(_) = self.content.insert(*other_from, other_map.clone()) {
-                    panic!();
-                }
+                self.content.insert(*other_from, other_map.clone());
             }
         }
     }
@@ -168,16 +155,13 @@ impl Display for Path {
     }
 }
 
-pub struct Connection<'a> {
-    pub from: char,
+pub struct Connection {
     pub to: char,
     pub steps: usize,
-    pub required: &'a HashSet<char>,
 }
 
 pub struct ConnectionIterator<'a> {
     to_map: Option<Box<dyn Iterator<Item = RefKeyContent<'a>> + 'a>>,
-    from: char,
 }
 
 impl<'a> ConnectionIterator<'a> {
@@ -187,19 +171,16 @@ impl<'a> ConnectionIterator<'a> {
                 Box::new(
                     map.iter()
                         .filter(move |(key, _)| !keyring.contains(*key))
-                        .filter(move |(_, content)| {
-                            keyring.is_superset(&content.required)
-                                && keyring.is_superset(&content.blocking)
-                        }),
+                        .filter(move |(_, content)| keyring.is_superset(&content.required)),
                 ) as Box<dyn Iterator<Item = RefKeyContent>>
             });
 
-        ConnectionIterator { from, to_map: iter }
+        ConnectionIterator { to_map: iter }
     }
 }
 
 impl<'a> Iterator for ConnectionIterator<'a> {
-    type Item = Connection<'a>;
+    type Item = Connection;
 
     fn next(&mut self) -> Option<Self::Item> {
         if let Some(ref mut to_map) = self.to_map {
@@ -207,8 +188,6 @@ impl<'a> Iterator for ConnectionIterator<'a> {
                 Some(Connection {
                     to: *to,
                     steps: content.steps,
-                    required: &content.required,
-                    from: self.from,
                 })
             } else {
                 None

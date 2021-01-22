@@ -3,7 +3,7 @@ use crate::{
     vault_error::VaultError,
 };
 
-fn extract_minimum(list: &mut Vec<Content>) -> Option<Content> {
+fn extract_minimum<T: Ord>(list: &mut Vec<T>) -> Option<T> {
     if let Some(min) = list.iter().min() {
         let index = list
             .iter()
@@ -33,23 +33,11 @@ pub fn find_all_keys(map: &Map) -> Result<usize, VaultError> {
     Err(VaultError::NoPath)
 }
 
-fn extract_minimum2(list: &mut Vec<MultiContent>) -> Option<MultiContent> {
-    if let Some(min) = list.iter().min() {
-        let index = list
-            .iter()
-            .position(|content| content == min)
-            .unwrap_or_default();
-        Some(list.swap_remove(index))
-    } else {
-        None
-    }
-}
-
 pub fn find_all_keys2(map: &Map) -> Result<usize, VaultError> {
     let paths = Explorer::new(map).explore2()?;
     let key_count = paths.iter().map(|path| path.key_count()).sum();
     let mut check_list = Vec::new();
-    let mut next_item = Some(MultiContent::new(4));
+    let mut next_item = Some(MultiContent::new(paths.len()));
     while let Some(item) = next_item.take() {
         if item.count_keys() == key_count {
             return Ok(item.steps);
@@ -57,7 +45,7 @@ pub fn find_all_keys2(map: &Map) -> Result<usize, VaultError> {
 
         let neighbors = item.get_neighbors(&paths);
         MultiContent::clean_up(&mut check_list, neighbors);
-        next_item = extract_minimum2(&mut check_list);
+        next_item = extract_minimum(&mut check_list);
     }
 
     Err(VaultError::NoPath)
@@ -142,10 +130,10 @@ mod tests {
 
     #[test]
     fn test_find_all_keys_9() -> Result<(), Box<dyn Error>> {
-        let input = read_all_lines("day18", "input.txt")?;
+        let input = read_all_lines("day18", "example9.txt")?;
         let map = Map::new(&input)?;
         let expected = 72;
-        let result = find_all_keys(&map)?;
+        let result = find_all_keys2(&map)?;
         assert_eq!(expected, result);
         Ok(())
     }

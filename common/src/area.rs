@@ -1,49 +1,29 @@
-use std::{fmt::Display, iter::FromIterator};
+use std::{
+    fmt::Display,
+    iter::FromIterator,
+    ops::{Add, AddAssign, Mul, Sub, SubAssign},
+};
 
 use crate::Pos;
 
-pub trait SuccPrev: Ord + Copy {
-    fn step(self, ascending: bool) -> Self;
+pub trait HasOne:
+    Copy + Ord + AddAssign + SubAssign + Add<Output = Self> + Sub<Output = Self>
+{
+    const ONE: Self;
 }
 
-impl SuccPrev for i32 {
-    fn step(self, ascending: bool) -> Self {
-        if ascending {
-            self + 1
-        } else {
-            self - 1
-        }
-    }
+impl HasOne for i32 {
+    const ONE: i32 = 1;
 }
 
-impl SuccPrev for i64 {
-    fn step(self, ascending: bool) -> Self {
-        if ascending {
-            self + 1
-        } else {
-            self - 1
-        }
-    }
+impl HasOne for i64 {
+    const ONE: i64 = 1;
 }
 
 #[derive(Debug, Clone, Copy, Default)]
 pub struct Area<T> {
     lower_left: Pos<T>,
     upper_right: Pos<T>,
-}
-
-impl Area<i32> {
-    pub const fn new_const(
-        lower_left_x: i32,
-        lower_left_y: i32,
-        upper_right_x: i32,
-        upper_right_y: i32,
-    ) -> Area<i32> {
-        Area {
-            lower_left: Pos::new_const(lower_left_x, lower_left_y),
-            upper_right: Pos::new_const(upper_right_x, upper_right_y),
-        }
-    }
 }
 
 impl<T> Area<T>
@@ -93,6 +73,28 @@ where
     }
 }
 
+impl<T> Area<T>
+where
+    T: HasOne,
+{
+    pub fn width(&self) -> T {
+        self.upper_right.x() - self.lower_left.x() + T::ONE
+    }
+
+    pub fn height(&self) -> T {
+        self.upper_right.y() - self.lower_left.y() + T::ONE
+    }
+}
+
+impl<T> Area<T>
+where
+    T: HasOne + Mul<Output = T>,
+{
+    pub fn area(&self) -> T {
+        self.width() * self.height()
+    }
+}
+
 impl<_T> Display for Area<_T>
 where
     _T: Display,
@@ -106,7 +108,10 @@ impl<_T> FromIterator<Pos<_T>> for Area<_T>
 where
     _T: Ord + Copy,
 {
-    fn from_iter<T: IntoIterator<Item = Pos<_T>>>(iter: T) -> Self {
+    fn from_iter<T>(iter: T) -> Self
+    where
+        T: IntoIterator<Item = Pos<_T>>,
+    {
         let mut iter = iter.into_iter();
         if let Some(pos) = iter.next() {
             let mut area = Area::single(pos);
@@ -122,7 +127,7 @@ where
 
 impl<T> Area<T>
 where
-    T: SuccPrev,
+    T: Copy,
 {
     pub fn rows(&self, ascending: bool) -> RowIterator<T> {
         RowIterator {
@@ -145,7 +150,7 @@ pub struct RowIterator<'a, T> {
 
 impl<'a, T> Iterator for RowIterator<'a, T>
 where
-    T: SuccPrev,
+    T: HasOne,
 {
     type Item = Row<'a, T>;
 
@@ -157,7 +162,11 @@ where
                 area: self.area,
                 row: self.row,
             };
-            self.row = self.row.step(self.ascending);
+            if self.ascending {
+                self.row += T::ONE;
+            } else {
+                self.row -= T::ONE;
+            }
             Some(row)
         } else {
             None
@@ -172,7 +181,7 @@ pub struct Row<'a, T> {
 
 impl<'a, T> Row<'a, T>
 where
-    T: SuccPrev,
+    T: Copy,
 {
     pub fn cols(&self, ascending: bool) -> ColIterator<T> {
         ColIterator {
@@ -197,7 +206,7 @@ pub struct ColIterator<'a, T> {
 
 impl<'a, T> Iterator for ColIterator<'a, T>
 where
-    T: SuccPrev,
+    T: HasOne,
 {
     type Item = Pos<T>;
     fn next(&mut self) -> Option<Self::Item> {
@@ -205,7 +214,11 @@ where
             || (!self.ascending && self.col >= self.area.lower_left.x())
         {
             let pos = Pos::new(self.col, self.row);
-            self.col = self.col.step(self.ascending);
+            if self.ascending {
+                self.col += T::ONE
+            } else {
+                self.col -= T::ONE
+            };
             Some(pos)
         } else {
             None

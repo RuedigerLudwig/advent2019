@@ -1,10 +1,10 @@
 use std::ops::{Add, Div, Mul, Rem};
 
-pub trait GcdNum: Copy + Add + Mul + Div + Rem + Eq + PartialEq {
+pub trait GcdNum:
+    Copy + Add<Output = Self> + Mul<Output = Self> + Div<Output = Self> + Rem<Output = Self> + PartialEq
+{
     const ZERO: Self;
     fn abs(self) -> Self;
-    fn get_rem(self, other: Self) -> Self;
-    fn mul_and_div(self, fst: Self, snd: Self) -> Self;
 }
 
 impl GcdNum for i32 {
@@ -12,14 +12,6 @@ impl GcdNum for i32 {
 
     fn abs(self) -> Self {
         (self as i32).abs()
-    }
-
-    fn get_rem(self, other: Self) -> Self {
-        self % other
-    }
-
-    fn mul_and_div(self, fst: Self, snd: Self) -> Self {
-        self * fst / snd
     }
 }
 
@@ -29,28 +21,24 @@ impl GcdNum for i64 {
     fn abs(self) -> Self {
         (self as i64).abs()
     }
-
-    fn get_rem(self, other: Self) -> Self {
-        self % other
-    }
-
-    fn mul_and_div(self, fst: Self, snd: Self) -> Self {
-        self * fst / snd
-    }
 }
 
-fn non_zero_gcd<T: GcdNum>(a: T, b: T) -> T {
-    let mut a = a;
-    let mut b = b;
+fn non_zero_gcd<T>(mut a: T, mut b: T) -> T
+where
+    T: GcdNum,
+{
     while b != T::ZERO {
-        let t = a.get_rem(b);
+        let t = a % b;
         a = b;
         b = t;
     }
     a.abs()
 }
 
-pub fn gcd<T: GcdNum>(a: T, b: T) -> T {
+pub fn gcd<T>(a: T, b: T) -> T
+where
+    T: GcdNum,
+{
     if a == T::ZERO {
         b.abs()
     } else if b == T::ZERO {
@@ -60,10 +48,31 @@ pub fn gcd<T: GcdNum>(a: T, b: T) -> T {
     }
 }
 
-pub fn lcm<T: GcdNum>(a: T, b: T) -> T {
+pub fn lcm<T>(a: T, b: T) -> T
+where
+    T: GcdNum,
+{
     if a == T::ZERO || b == T::ZERO {
         T::ZERO
     } else {
-        a.mul_and_div(b, non_zero_gcd(a, b))
+        a * b / non_zero_gcd(a, b)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn some_simple_gcd() {
+        assert_eq!(5, gcd(10, 15));
+        assert_eq!(7, gcd(21, 49));
+        assert_eq!(1, gcd(13, 17));
+    }
+
+    #[test]
+    fn some_simple_lcm() {
+        assert_eq!(18, lcm(6, 9));
+        assert_eq!(20, lcm(5, 4));
     }
 }
