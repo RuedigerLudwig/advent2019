@@ -22,18 +22,10 @@ enum OperationResult {
 }
 use OperationResult::*;
 
-impl<I> Cpu<I>
-where
-    I: ComputerInput,
-{
-    pub fn create(code: &[i64], input: I) -> Cpu<I> {
-        let mut _memory = HashMap::new();
-        for (addr, inst) in code.iter().enumerate() {
-            _memory.insert(addr, *inst);
-        }
-
+impl<I> Cpu<I> {
+    pub fn new(code: HashMap<usize, i64>, input: I) -> Cpu<I> {
         Cpu {
-            _memory,
+            _memory: code,
             _relative_base: 0,
             _pointer: 0,
             _crashed: false,
@@ -41,22 +33,6 @@ where
         }
     }
 
-    pub fn step(&mut self) -> Result<Option<i64>, ComputerError> {
-        if self._crashed {
-            return Err(ComputerError::Terminated);
-        }
-
-        loop {
-            match self.process_next_instruction()? {
-                Proceed => (),
-                Output(value) => return Ok(Some(value)),
-                Exit => return Ok(None),
-            }
-        }
-    }
-}
-
-impl<I> Cpu<I> {
     pub fn patch_memory(&mut self, addr: usize, value: i64) {
         self.set_value(addr, value)
     }
@@ -72,9 +48,7 @@ impl<I> Cpu<I> {
         }
         result
     }
-}
 
-impl<I> Cpu<I> {
     fn get_next_instruction(&self) -> Result<i64, ComputerError> {
         self._memory
             .get(&self._pointer)
@@ -230,6 +204,20 @@ impl<I> Cpu<I>
 where
     I: ComputerInput,
 {
+    pub fn step(&mut self) -> Result<Option<i64>, ComputerError> {
+        if self._crashed {
+            return Err(ComputerError::Terminated);
+        }
+
+        loop {
+            match self.process_next_instruction()? {
+                Proceed => (),
+                Output(value) => return Ok(Some(value)),
+                Exit => return Ok(None),
+            }
+        }
+    }
+
     fn process_next_instruction(&mut self) -> Result<OperationResult, ComputerError> {
         let instruction = self.get_next_instruction()?;
         let (opcode, modes) = self.analyze_instruction(instruction)?;

@@ -1,9 +1,9 @@
 use common::{as_long, read_single_line, CommonError};
-use std::str::FromStr;
+use std::{collections::HashMap, str::FromStr};
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Code {
-    _code: Vec<i64>,
+    _code: HashMap<usize, i64>,
 }
 
 impl Code {
@@ -12,14 +12,22 @@ impl Code {
         input.parse()
     }
 
-    pub fn get<'a>(&'a self) -> &'a [i64] {
+    pub fn get<'a>(&'a self) -> &'a HashMap<usize, i64> {
         &self._code
+    }
+}
+
+impl From<HashMap<usize, i64>> for Code {
+    fn from(code: HashMap<usize, i64>) -> Self {
+        Code { _code: code }
     }
 }
 
 impl From<Vec<i64>> for Code {
     fn from(code: Vec<i64>) -> Self {
-        Code { _code: code }
+        Code {
+            _code: code.iter().copied().enumerate().collect(),
+        }
     }
 }
 
@@ -27,7 +35,12 @@ impl FromStr for Code {
     type Err = CommonError;
 
     fn from_str(input: &str) -> Result<Code, Self::Err> {
-        let code: Vec<_> = input.split(",").map(as_long).collect::<Result<_, _>>()?;
-        Ok(code.into())
+        let _code: HashMap<_, _> = input
+            .split(",")
+            .enumerate()
+            .map(|(pos, s)| as_long(s).map(|l| (pos, l)))
+            .collect::<Result<_, _>>()?;
+
+        Ok(Code { _code })
     }
 }

@@ -9,14 +9,14 @@ pub trait ExteriorInterface {
     fn send_data(&mut self, data: &[String], run_silent: bool) -> Result<i64, Box<dyn Error>>;
 }
 
-pub struct ExteriorComputerInterface {
-    vm: VirtualMachine<TextInput>,
+pub struct ExteriorComputerInterface<'a> {
+    vm: VirtualMachine<'a, TextInput>,
     input: TextInput,
     output: TextOutput,
 }
 
-impl ExteriorComputerInterface {
-    pub fn new(code: &Code) -> ExteriorComputerInterface {
+impl<'a> ExteriorComputerInterface<'a> {
+    pub fn new(code: &'a Code) -> ExteriorComputerInterface {
         let input = TextInput::new();
         let vm = VirtualMachine::with_input(code, input.clone());
         let output = TextOutput::new(vm.get_output());
@@ -24,7 +24,7 @@ impl ExteriorComputerInterface {
     }
 }
 
-impl ExteriorInterface for ExteriorComputerInterface {
+impl ExteriorInterface for ExteriorComputerInterface<'_> {
     fn get_picture(&mut self) -> Result<Vec<String>, Box<dyn Error>> {
         let mut result = Vec::new();
         while let Some(line) = self.output.read_line()? {

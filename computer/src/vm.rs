@@ -2,32 +2,35 @@ use std::{cell::RefCell, rc::Rc};
 
 use crate::{cpu::Cpu, input::ComputerInput, output::Output, Code, ComputerError, ListInput};
 
-pub struct VirtualMachine<I>
+pub struct VirtualMachine<'a, I>
 where
     I: ComputerInput,
 {
     _input: I,
+    _code: &'a Code,
     _cpu: CpuWrapper<I>,
 }
 
-impl VirtualMachine<ListInput> {
+impl<'a> VirtualMachine<'a, ListInput> {
     pub fn new(code: &Code) -> VirtualMachine<ListInput> {
         let input = ListInput::new();
-        let cpu = CpuWrapper::new(Cpu::create(code.get(), input.clone()));
+        let cpu = CpuWrapper::new(Cpu::new(code.get().clone(), input.clone()));
         VirtualMachine {
+            _code: code,
             _input: input,
             _cpu: cpu,
         }
     }
 }
 
-impl<I> VirtualMachine<I>
+impl<'a, I> VirtualMachine<'a, I>
 where
     I: ComputerInput,
 {
-    pub fn with_input(code: &Code, input: I) -> VirtualMachine<I> {
-        let cpu = CpuWrapper::new(Cpu::create(code.get(), input.clone()));
+    pub fn with_input(code: &'a Code, input: I) -> VirtualMachine<I> {
+        let cpu = CpuWrapper::new(Cpu::new(code.get().clone(), input.clone()));
         VirtualMachine {
+            _code: code,
             _input: input,
             _cpu: cpu,
         }
@@ -47,6 +50,10 @@ where
 
     pub fn get_input(&self) -> I {
         self._input.clone()
+    }
+
+    pub fn restart(&mut self) {
+        self._cpu = CpuWrapper::new(Cpu::new(self._code.get().clone(), self._input.clone()));
     }
 }
 

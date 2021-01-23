@@ -4,12 +4,12 @@ use computer::{Code, ComputerError, ComputerInput, ListInput, VirtualMachine};
 
 use crate::permutations::LexPermutations;
 
-pub struct Amplifier {
-    computers: VecDeque<VirtualMachine<ListInput>>,
+pub struct Amplifier<'a> {
+    computers: VecDeque<VirtualMachine<'a, ListInput>>,
 }
 
-impl Amplifier {
-    pub fn new(code: &Code, setting: &Vec<i64>) -> Amplifier {
+impl<'a> Amplifier<'a> {
+    pub fn new(code: &'a Code, setting: &Vec<i64>) -> Amplifier<'a> {
         let computers = setting
             .iter()
             .map(|input| {
