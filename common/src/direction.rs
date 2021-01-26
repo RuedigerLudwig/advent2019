@@ -102,6 +102,14 @@ impl Add<Pos<i32>> for Direction {
     }
 }
 
+impl Add<Pos<i32>> for &Direction {
+    type Output = Pos<i32>;
+
+    fn add(self, rhs: Pos<i32>) -> Self::Output {
+        rhs + self.as_pos()
+    }
+}
+
 impl Add<Turn> for Direction {
     type Output = Self;
 
