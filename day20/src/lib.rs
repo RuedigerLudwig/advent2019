@@ -20,7 +20,7 @@ pub fn result() -> Result<(), Box<dyn Error>> {
     println!("Day 20 - Result 1: {}", result1);
 
     let result2 = ExplorerTwo::new(&map).explore()?;
-    println!("Day 20 - Result 1: {}", result2);
+    println!("Day 20 - Result 2: {}", result2);
 
     Ok(())
 }
