@@ -1,11 +1,11 @@
 use std::error::Error;
 
-use computer::{Code, ComputerError, VirtualMachine};
+use computer::{Code, ComputerError, NoInput, VirtualMachine};
 
 pub fn result() -> Result<(), Box<dyn Error>> {
     let code = Code::from_file("day02", "input.txt")?;
 
-    let vm = VirtualMachine::new(&code);
+    let vm = VirtualMachine::new(&code, &NoInput {});
 
     vm.patch_memory(1, 12);
     vm.patch_memory(2, 2);
@@ -24,7 +24,7 @@ pub fn result() -> Result<(), Box<dyn Error>> {
 fn test_numbers(code: &Code) -> Result<(i64, i64), ComputerError> {
     for noun in 0..100 {
         for verb in 0..100 {
-            let vm = VirtualMachine::new(&code);
+            let vm = VirtualMachine::new(&code, &NoInput {});
 
             vm.patch_memory(1, noun);
             vm.patch_memory(2, verb);
@@ -48,7 +48,7 @@ mod tests {
     fn test_parse() -> Result<(), Box<dyn Error>> {
         let input = "1,9,10,3,2,3,11,0,99,30,40,50";
         let code: Code = input.parse()?;
-        let vm = VirtualMachine::new(&code);
+        let vm = VirtualMachine::new(&code, &NoInput {});
         let result = vm.get_memory();
         let expected = vec![1, 9, 10, 3, 2, 3, 11, 0, 99, 30, 40, 50];
         assert_eq!(result, expected);
@@ -61,7 +61,7 @@ mod tests {
         let input = vec![1, 9, 10, 3, 2, 3, 11, 0, 99, 30, 40, 50];
 
         let code = input.into();
-        let vm = VirtualMachine::new(&code);
+        let vm = VirtualMachine::new(&code, &NoInput {});
         vm.get_output().get_all()?;
         let result = vm.get_memory();
 

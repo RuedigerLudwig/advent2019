@@ -5,8 +5,8 @@ use computer::{Code, TextInput, TextOutput, VirtualMachine};
 use crate::exterior_error::ExteriorError;
 
 pub trait ExteriorInterface {
-    fn get_picture(&mut self) -> Result<Vec<String>, Box<dyn Error>>;
-    fn send_data(&mut self, data: &[String], run_silent: bool) -> Result<i64, Box<dyn Error>>;
+    fn get_picture(&self) -> Result<Vec<String>, Box<dyn Error>>;
+    fn send_data(&self, data: &[String], run_silent: bool) -> Result<i64, Box<dyn Error>>;
 }
 
 pub struct ExteriorComputerInterface<'a> {
@@ -18,14 +18,14 @@ pub struct ExteriorComputerInterface<'a> {
 impl<'a> ExteriorComputerInterface<'a> {
     pub fn new(code: &'a Code) -> ExteriorComputerInterface {
         let input = TextInput::new();
-        let vm = VirtualMachine::with_input(code, input.clone());
+        let vm = VirtualMachine::new(code, &input);
         let output = TextOutput::new(vm.get_output());
         ExteriorComputerInterface { vm, input, output }
     }
 }
 
 impl ExteriorInterface for ExteriorComputerInterface<'_> {
-    fn get_picture(&mut self) -> Result<Vec<String>, Box<dyn Error>> {
+    fn get_picture(&self) -> Result<Vec<String>, Box<dyn Error>> {
         let mut result = Vec::new();
         while let Some(line) = self.output.read_line()? {
             result.push(line)
@@ -34,7 +34,7 @@ impl ExteriorInterface for ExteriorComputerInterface<'_> {
         Ok(result)
     }
 
-    fn send_data(&mut self, data: &[String], run_silent: bool) -> Result<i64, Box<dyn Error>> {
+    fn send_data(&self, data: &[String], run_silent: bool) -> Result<i64, Box<dyn Error>> {
         if !run_silent {
             print!("{esc}[2J{esc}[1;1H", esc = 27 as char);
         }
@@ -59,8 +59,8 @@ impl ExteriorInterface for ExteriorComputerInterface<'_> {
             }
         }
 
-        if let Some(result) = self.output.next() {
-            Ok(result?)
+        if let Some(result) = self.output.int_value()? {
+            Ok(result)
         } else {
             Err(Box::new(ExteriorError::NoData))
         }

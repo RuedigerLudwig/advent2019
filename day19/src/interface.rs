@@ -1,5 +1,5 @@
 #![allow(dead_code)]
-use computer::{Code, ComputerInput, ListInput, VirtualMachine};
+use computer::{Code, ListInput, VirtualMachine};
 use std::error::Error;
 
 use common::Pos as RawPos;
@@ -19,7 +19,7 @@ pub struct TractorComputerInterface<'a> {
 impl<'a> TractorComputerInterface<'a> {
     pub fn new(code: &'a Code) -> TractorComputerInterface {
         TractorComputerInterface {
-            _vm: VirtualMachine::new(code),
+            _vm: VirtualMachine::new(code, &ListInput::new_()),
         }
     }
 }

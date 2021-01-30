@@ -8,11 +8,11 @@ pub struct TextInput {
 impl TextInput {
     pub fn new() -> TextInput {
         TextInput {
-            _input: ListInput::new(),
+            _input: ListInput::new_(),
         }
     }
 
-    pub fn write_input(&mut self, text: &str) -> Result<(), ComputerError> {
+    pub fn write_input(&self, text: &str) -> Result<(), ComputerError> {
         for ch in text.chars() {
             let val = ch as i64;
             if 0 <= val && val <= 127 {
@@ -28,10 +28,6 @@ impl TextInput {
 }
 
 impl ComputerInput for TextInput {
-    fn provide_input(&self, input: i64) {
-        self._input.provide_input(input)
-    }
-
     fn get_next_input(&self) -> Option<i64> {
         self._input.get_next_input()
     }

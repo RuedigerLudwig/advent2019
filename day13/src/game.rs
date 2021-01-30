@@ -6,7 +6,7 @@ use std::{
 };
 
 use common::{Area as RawArea, Pos as RawPos};
-use computer::{Code, ComputerError, ComputerInput, ListInput, VirtualMachine};
+use computer::{Code, ComputerError, ListInput, VirtualMachine};
 
 type Pos = RawPos<i64>;
 type Area = RawArea<i64>;
@@ -67,7 +67,7 @@ pub struct Game {
 
 impl Game {
     pub fn paint_board(code: &Code) -> Result<Game, ComputerError> {
-        let vm = VirtualMachine::new(code);
+        let vm = VirtualMachine::new(code, &ListInput::new_());
         let mut board = HashMap::new();
         while let Some(Command::Tile(pos, tile)) = Game::get_tile(&vm)? {
             board.insert(pos, tile);
@@ -77,7 +77,7 @@ impl Game {
     }
 
     fn get_tile(computer: &VirtualMachine<ListInput>) -> Result<Option<Command>, ComputerError> {
-        let mut output = computer.get_output();
+        let output = computer.get_output();
         let result = if let Some(result) = output.take_exactly(3)? {
             let x = result[0];
             let y = result[1];
@@ -99,8 +99,8 @@ impl Game {
     }
 
     pub fn free_game(code: &Code) -> Result<i64, ComputerError> {
-        let mut vm = VirtualMachine::new(code);
-        let input_device = vm.get_input();
+        let input = ListInput::new_();
+        let mut vm = VirtualMachine::new(code, &input);
         vm.patch_memory(0, 2);
 
         loop {
@@ -125,7 +125,7 @@ impl Game {
                         let direction = paddle
                             .map(|paddle| (pos.x() - paddle).signum())
                             .unwrap_or(0);
-                        input_device.provide_input(direction);
+                        input.provide_input(direction);
                     }
                     Command::Tile(_, Tile::Wall) => (),
                 }

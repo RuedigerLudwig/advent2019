@@ -1,5 +1,5 @@
 use common::Direction;
-use computer::{Code, ComputerError, ComputerInput, ListInput, Output, VirtualMachine};
+use computer::{Code, ComputerError, ListInput, Output, VirtualMachine};
 
 #[derive(Debug)]
 pub enum Report {
@@ -19,8 +19,8 @@ pub struct ComputerInterface {
 
 impl ComputerInterface {
     pub fn new(code: &Code) -> ComputerInterface {
-        let input = ListInput::new();
-        let vm = VirtualMachine::with_input(code, input.clone());
+        let input = ListInput::new_();
+        let vm = VirtualMachine::new(code, &input);
         ComputerInterface {
             input,
             output: vm.get_output(),

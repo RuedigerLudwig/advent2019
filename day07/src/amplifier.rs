@@ -1,6 +1,6 @@
 use std::collections::VecDeque;
 
-use computer::{Code, ComputerError, ComputerInput, ListInput, VirtualMachine};
+use computer::{Code, ComputerError, ListInput, VirtualMachine};
 
 use crate::permutations::LexPermutations;
 
@@ -12,10 +12,9 @@ impl<'a> Amplifier<'a> {
     pub fn new(code: &'a Code, setting: &Vec<i64>) -> Amplifier<'a> {
         let computers = setting
             .iter()
-            .map(|input| {
-                let vm = VirtualMachine::new(&code);
-                vm.get_input().provide_input(*input);
-                vm
+            .map(|value| {
+                let input = ListInput::single(*value);
+                VirtualMachine::new(&code, &input)
             })
             .collect();
         Amplifier { computers }

@@ -78,7 +78,7 @@ pub struct SpringBotComputer<'a> {
 impl<'a> SpringBotComputer<'a> {
     pub fn new(code: &'a Code) -> SpringBotComputer {
         let input = TextInput::new();
-        let vm = VirtualMachine::with_input(code, input.clone());
+        let vm = VirtualMachine::new(code, &input);
         SpringBotComputer { vm, input }
     }
 
@@ -89,7 +89,7 @@ impl<'a> SpringBotComputer<'a> {
         be_silent: bool,
     ) -> Result<i64, Box<dyn Error>> {
         self.vm.restart();
-        let mut output = TextOutput::new(self.vm.get_output());
+        let output = TextOutput::new(self.vm.get_output());
 
         if let Some(question) = output.read_line()? {
             if !be_silent {
@@ -114,8 +114,7 @@ impl<'a> SpringBotComputer<'a> {
             }
         }
 
-        if let Some(result) = output.next() {
-            let result = result?;
+        if let Some(result) = output.int_value()? {
             if result == 10 {
                 Err(SpringError::DoesNotFinish)?
             } else {

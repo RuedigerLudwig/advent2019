@@ -224,15 +224,11 @@ mod tests {
     }
 
     impl ExteriorInterface for TestInterface {
-        fn get_picture(&mut self) -> Result<Vec<String>, Box<dyn Error>> {
+        fn get_picture(&self) -> Result<Vec<String>, Box<dyn Error>> {
             Ok(self.data.clone())
         }
 
-        fn send_data(
-            &mut self,
-            _data: &[String],
-            _run_silent: bool,
-        ) -> Result<i64, Box<dyn Error>> {
+        fn send_data(&self, _data: &[String], _run_silent: bool) -> Result<i64, Box<dyn Error>> {
             unimplemented!()
         }
     }
