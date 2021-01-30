@@ -1,6 +1,6 @@
 use std::{fmt::Debug, ops::Index, str::FromStr};
 
-use common::{as_int, lcm};
+use common::{as_int, math};
 use regex::Regex;
 
 use crate::jupiter_error::JupiterError;
@@ -161,7 +161,7 @@ impl Jupiter {
                         .collect(),
                 )
             })
-            .fold(1, |a, b| lcm(a, b))
+            .fold(1, |a, b| math::lcm(a, b))
     }
 }
 

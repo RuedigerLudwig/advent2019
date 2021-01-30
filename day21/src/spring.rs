@@ -1,10 +1,10 @@
-#![allow(dead_code)]
 use std::{error::Error, fmt::Display};
 
 use computer::{Code, TextInput, TextOutput, VirtualMachine};
 
 use crate::spring_error::SpringError;
 
+#[allow(dead_code)]
 #[derive(Debug, Clone, Copy)]
 pub enum ReadRegister {
     A,

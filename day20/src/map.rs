@@ -72,35 +72,19 @@ impl PortalData {
     }
 
     pub fn is_outer(&self) -> bool {
-        if let PortalType::Inner = self.portal_type {
-            false
-        } else {
-            true
-        }
+        !matches!(self.portal_type, PortalType::Inner)
     }
 
     pub fn is_entrance(&self) -> bool {
-        if let PortalType::Entrance = self.portal_type {
-            true
-        } else {
-            false
-        }
+        matches!(self.portal_type, PortalType::Entrance)
     }
 
     pub fn is_exit(&self) -> bool {
-        if let PortalType::Exit = self.portal_type {
-            true
-        } else {
-            false
-        }
+        matches!(self.portal_type, PortalType::Exit)
     }
 
     pub fn is_portal(&self) -> bool {
-        if let PortalType::Inner | PortalType::Outer = self.portal_type {
-            true
-        } else {
-            false
-        }
+        matches!(self.portal_type, PortalType::Inner | PortalType::Outer)
     }
 }
 
