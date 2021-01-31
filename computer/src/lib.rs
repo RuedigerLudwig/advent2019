@@ -1,4 +1,5 @@
 mod code;
+mod common;
 mod computer_error;
 mod cpu;
 mod input;
@@ -11,6 +12,7 @@ mod vm;
 
 pub use code::Code;
 pub use computer_error::ComputerError;
+pub use cpu::{debug, StepResult};
 pub use input::{ComputerInput, NoInput};
 pub use list_input::ListInput;
 pub use output::Output;

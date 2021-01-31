@@ -1,3 +1,5 @@
+use std::fmt::Display;
+
 use crate::computer_error::ComputerError;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -16,6 +18,14 @@ impl AddrMode {
             _ => Err(ComputerError::UnknownMode(value)),
         }
     }
+
+    pub fn format<T: Display>(&self, value: T, width: usize) -> String {
+        match *self {
+            AddrMode::Absolut => format!(" {:>width$} ", value, width = width),
+            AddrMode::Direct => format!("[{:>width$}]", value, width = width),
+            AddrMode::Relative => format!("{{{:>width$}}}", value, width = width),
+        }
+    }
 }
 
 impl Default for AddrMode {
@@ -24,6 +34,7 @@ impl Default for AddrMode {
     }
 }
 
+#[derive(Debug)]
 pub struct AddrModes {
     _modes: Vec<AddrMode>,
 }

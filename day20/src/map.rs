@@ -138,7 +138,7 @@ impl Map {
                                 if outer_col_end.is_none() {
                                     outer_col_end = Some(col - 1);
                                 } else if inner_col_start.is_none()
-                                    && outer_col_end.map(|c| col < c).unwrap_or(false)
+                                    && outer_col_end.map_or(false, |c| col < c)
                                 {
                                     inner_col_start = Some(col - 1);
                                     inner_row_start = Some(row - 1);
@@ -148,7 +148,7 @@ impl Map {
                             if outer_row_end.is_none()
                                 && inner_row_end.is_some()
                                 && col >= 2
-                                && outer_col_end.map(|c| col <= c).unwrap_or(false)
+                                && outer_col_end.map_or(false, |c| col <= c)
                             {
                                 outer_row_end = Some(row - 1)
                             }
@@ -162,8 +162,8 @@ impl Map {
 
                         if inner_row_end.is_none()
                             && inner_row_start.is_some()
-                            && inner_col_start.map(|c| col > c).unwrap_or(false)
-                            && inner_col_end.map(|c| col < c).unwrap_or(false)
+                            && inner_col_start.map_or(false, |c| col > c)
+                            && inner_col_end.map_or(false, |c| col < c)
                         {
                             inner_row_end = Some(row)
                         }

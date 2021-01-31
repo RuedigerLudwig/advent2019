@@ -1,7 +1,13 @@
 use std::{cell::RefCell, rc::Rc};
 
-use crate::{cpu::Cpu, input::ComputerInput, output::Output, Code, ComputerError};
+use crate::{
+    cpu::{Cpu, StepResult},
+    input::ComputerInput,
+    output::Output,
+    Code, ComputerError,
+};
 
+#[derive(Debug)]
 pub struct VirtualMachine<'a, I>
 where
     I: ComputerInput,
@@ -24,8 +30,23 @@ where
         }
     }
 
+    pub fn with_id(code: &'a Code, input: &'_ I, id: &str) -> VirtualMachine<'a, I> {
+        let mut cpu = Cpu::new(code.get().clone(), input.clone());
+        cpu.set_id(id);
+        let cpu = CpuWrapper::new(cpu);
+        VirtualMachine {
+            _code: code,
+            _input: input.clone(),
+            _cpu: cpu,
+        }
+    }
+
+    pub fn set_debug_level(&self, debug_level: u8) {
+        self._cpu.set_debug_level(debug_level);
+    }
+
     pub fn patch_memory(&self, addr: usize, value: i64) {
-        self._cpu.patch_memory(addr, value)
+        self._cpu.patch_memory(addr, value);
     }
 
     pub fn get_memory(&self) -> Vec<i64> {
@@ -60,6 +81,10 @@ where
         }
     }
 
+    pub fn set_debug_level(&self, debug_level: u8) {
+        (*self._cpu.borrow_mut()).set_debug_level(debug_level);
+    }
+
     pub fn patch_memory(&self, addr: usize, value: i64) {
         (*self._cpu.borrow_mut()).patch_memory(addr, value)
     }
@@ -68,7 +93,18 @@ where
         (*self._cpu.borrow()).get_memory()
     }
 
-    pub fn step(&self) -> Result<Option<i64>, ComputerError> {
+    pub fn next_output(&self) -> Result<Option<i64>, ComputerError> {
+        let mut cpu = self._cpu.borrow_mut();
+        loop {
+            match cpu.step()? {
+                StepResult::Value(value) => return Ok(Some(value)),
+                StepResult::Stop => return Ok(None),
+                StepResult::Proceed => (),
+            }
+        }
+    }
+
+    pub fn step(&self) -> Result<StepResult, ComputerError> {
         (*self._cpu.borrow_mut()).step()
     }
 }
