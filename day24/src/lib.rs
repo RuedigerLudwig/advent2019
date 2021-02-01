@@ -14,7 +14,7 @@ pub fn result() -> Result<(), Box<dyn Error>> {
     println!("Day 24 - Result 1: {}", result1);
 
     let eris2 = ErisRecursive::parse(&input);
-    let result2 = eris2.repeat(200).count_ants();
+    let result2 = eris2.repeat(200).count_bugs();
     println!("Day 24 - Result 2: {}", result2);
 
     Ok(())

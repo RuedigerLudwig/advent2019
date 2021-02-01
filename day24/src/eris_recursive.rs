@@ -79,14 +79,14 @@ impl ErisRecursive {
         let mut map = HashSet::new();
         let mut max_level = self._max_level;
         let mut min_level = self._min_level;
-        for level in self._min_level..=self._max_level {
-            for col in 0..5 {
-                for row in 0..5 {
-                    if col == 2 && row == 2 {
-                        continue;
-                    }
+        for col in 0..5 {
+            for row in 0..5 {
+                if col == 2 && row == 2 {
+                    continue;
+                }
 
-                    let pos = Pos::new(col, row);
+                let pos = Pos::new(col, row);
+                for level in self._min_level..=self._max_level {
                     let bug_is_here = match self.count_neighbors(&pos, level) {
                         1 => true,
                         2 => !self._map.contains(&(pos, level)),
@@ -126,7 +126,7 @@ impl ErisRecursive {
         run
     }
 
-    pub fn count_ants(&self) -> usize {
+    pub fn count_bugs(&self) -> usize {
         self._map.len()
     }
 }
@@ -141,7 +141,7 @@ mod test {
         let input = ErisRecursive::parse(&read_all_lines("day24", "example1.txt")?);
         let expected = 99;
 
-        let result = input.repeat(10).count_ants();
+        let result = input.repeat(10).count_bugs();
 
         assert_eq!(expected, result);
 
