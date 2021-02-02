@@ -4,6 +4,7 @@ use computer::ComputerError;
 pub enum DroneError {
     InvalidRoomDescription,
     NoSecurityCheckpoint,
+    NoSecurityExit,
     NoWeightFits,
     UnknownSecurityMessage,
     ComputerError(ComputerError),
@@ -14,6 +15,7 @@ impl std::error::Error for DroneError {
         match self {
             DroneError::InvalidRoomDescription => None,
             DroneError::NoSecurityCheckpoint => None,
+            DroneError::NoSecurityExit => None,
             DroneError::NoWeightFits => None,
             DroneError::UnknownSecurityMessage => None,
             DroneError::ComputerError(err) => Some(err),
@@ -29,6 +31,9 @@ impl std::fmt::Display for DroneError {
             }
             DroneError::NoSecurityCheckpoint => {
                 write!(f, "Did not find a Security Checkpoint")
+            }
+            DroneError::NoSecurityExit => {
+                write!(f, "Security Checkpoint does not have an exit for me")
             }
             DroneError::NoWeightFits => {
                 write!(f, "Did not find a fitting weight")

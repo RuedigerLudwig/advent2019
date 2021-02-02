@@ -67,7 +67,7 @@ impl<'a> Drone<'a> {
 
             for item in &room.items {
                 if !self._avoid.contains(item) {
-                    if !self.take_item_first_time(item)? {
+                    if !self.take_item_and_check(item)? {
                         return Ok(ExploreResult::Restart);
                     }
                 }
@@ -76,7 +76,7 @@ impl<'a> Drone<'a> {
             if room.name != "Security Checkpoint" {
                 for exit in &room.exits {
                     if from.map(|from| from != *exit).unwrap_or(true) {
-                        self.say_direction(exit)?;
+                        self.say_direction(*exit)?;
                         let dir_result = self.explore(Some(exit.turn_back()))?;
                         match dir_result {
                             ExploreResult::Restart => return Ok(ExploreResult::Restart),
@@ -95,7 +95,7 @@ impl<'a> Drone<'a> {
                     result = ExploreResult::SecurityPath(path);
                 }
 
-                self.say_direction(&from)?;
+                self.say_direction(from)?;
                 self._ship.get_text()?;
             }
             Ok(result)
@@ -148,13 +148,13 @@ impl<'a> Drone<'a> {
         name.map(|name| Room { name, exits, items })
     }
 
-    fn take_item_first_time(&mut self, item: &String) -> Result<bool, ComputerError> {
+    fn take_item_and_check(&mut self, item: &String) -> Result<bool, ComputerError> {
         self._ship.send_command(&format!("take {}", item))?;
-        let (state, _lines) = self._ship.get_text()?;
+        let (state, _) = self._ship.get_text()?;
 
         if let ShipState::Text = state {
             self._ship.send_command("inv")?;
-            let (_state, lines) = self._ship.get_text()?;
+            let (_, lines) = self._ship.get_text()?;
 
             for line in lines {
                 if line.starts_with("- ") && &line[2..] == item {
@@ -168,11 +168,11 @@ impl<'a> Drone<'a> {
         Ok(false)
     }
 
-    fn go_to_security_check(&mut self, path: &[Direction]) -> Result<Direction, ComputerError> {
+    fn go_to_security_check(&mut self, path: &[Direction]) -> Result<Direction, DroneError> {
         let mut last_lines = None;
 
         for dir in path.iter().rev() {
-            self.say_direction(dir)?;
+            self.say_direction(*dir)?;
             let (_, lines) = self._ship.get_text()?;
             last_lines = Some(lines);
         }
@@ -185,7 +185,15 @@ impl<'a> Drone<'a> {
             }
         }
 
-        unreachable!();
+        Err(DroneError::NoSecurityExit)
+    }
+
+    fn drop_single_item(&mut self, item: &str) -> Result<(), DroneError> {
+        self._ship.send_command(&format!("drop {}", item))?;
+        self._ship.get_text()?;
+        self._carrying.retain(|carry| carry != item);
+
+        Ok(())
     }
 
     fn drop_all(&mut self) -> Result<(), DroneError> {
@@ -197,15 +205,10 @@ impl<'a> Drone<'a> {
         Ok(())
     }
 
-    fn take_item_safely(&self, item: &str) -> Result<(), DroneError> {
+    fn take_item(&mut self, item: &str) -> Result<(), DroneError> {
         self._ship.send_command(&format!("take {}", item))?;
         self._ship.get_text()?;
-        Ok(())
-    }
-
-    fn drop_item_safely(&self, item: &str) -> Result<(), DroneError> {
-        self._ship.send_command(&format!("drop {}", item))?;
-        self._ship.get_text()?;
+        self._carrying.push(item.to_owned());
         Ok(())
     }
 
@@ -215,47 +218,47 @@ impl<'a> Drone<'a> {
                 return Ok(SecurityCheck::TooHeavy);
             } else if line.contains("heavier") {
                 return Ok(SecurityCheck::TooLight);
-            } else if line.contains("typing") {
-                let mut result = String::new();
-                for ch in line.chars() {
-                    if ch.is_digit(10) {
-                        result.push(ch)
-                    }
-                }
-                return Ok(SecurityCheck::Pass(result));
+            } else if line.starts_with("\"Oh, hello!") {
+                let password = line
+                    .chars()
+                    .filter(|ch| ch.is_digit(10))
+                    .collect::<String>();
+
+                return Ok(SecurityCheck::Pass(password));
             }
         }
         return Err(DroneError::UnknownSecurityMessage);
     }
 
     fn test_with_weights(
-        &self,
+        &mut self,
         items: &[String],
         direction: Direction,
     ) -> Result<Option<String>, DroneError> {
-        for pos in 0..items.len() {
-            let item = &items[pos];
-            self.take_item_safely(item)?;
-            self.say_direction(&direction)?;
-            let (_, lines) = self._ship.get_text()?;
-            match self.analyze_security_output(&lines)? {
-                SecurityCheck::TooHeavy => self.drop_item_safely(&item)?,
-
-                SecurityCheck::TooLight => {
-                    if pos < items.len() - 1 {
-                        if let Some(result) =
-                            self.test_with_weights(&items[pos + 1..], direction)?
-                        {
-                            return Ok(Some(result));
-                        }
-                    }
-                    self.drop_item_safely(item)?;
-                }
-                SecurityCheck::Pass(result) => return Ok(Some(result)),
-            }
+        if items.is_empty() {
+            return Ok(None);
         }
 
-        Ok(None)
+        let item = &items[0];
+        self.take_item(item)?;
+
+        self.say_direction(direction)?;
+        let (_, lines) = self._ship.get_text()?;
+
+        match self.analyze_security_output(&lines)? {
+            SecurityCheck::TooHeavy => (),
+
+            SecurityCheck::TooLight => {
+                if let Some(result) = self.test_with_weights(&items[1..], direction)? {
+                    return Ok(Some(result));
+                }
+            }
+
+            SecurityCheck::Pass(result) => return Ok(Some(result)),
+        }
+
+        self.drop_single_item(item)?;
+        self.test_with_weights(&items[1..], direction)
     }
 
     fn try_to_pass(&mut self, direction: Direction) -> Result<String, DroneError> {
@@ -269,7 +272,7 @@ impl<'a> Drone<'a> {
         Err(DroneError::NoWeightFits)
     }
 
-    fn say_direction(&self, dir: &Direction) -> Result<(), ComputerError> {
+    fn say_direction(&self, dir: Direction) -> Result<(), ComputerError> {
         let direction = match dir {
             Direction::East => "east",
             Direction::North => "north",
