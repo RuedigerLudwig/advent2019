@@ -1,4 +1,3 @@
-#![allow(dead_code)]
 
 use common::{Direction, Pos as RawPos};
 use std::collections::HashSet;

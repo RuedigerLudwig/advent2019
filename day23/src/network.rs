@@ -1,5 +1,3 @@
-#![allow(dead_code)]
-
 use computer::{Code, ComputerInput, Output, StepResult, VirtualMachine};
 use std::{cell::RefCell, collections::VecDeque, rc::Rc};
 

@@ -1,4 +1,3 @@
-#![allow(dead_code)]
 use computer::{Code, ListInput, VirtualMachine};
 use std::error::Error;
 

@@ -1,10 +1,8 @@
 #[derive(Debug)]
 pub enum CardError {
     UnknownTechnique(String),
-    RepeatForNotCoprime,
     IllegalDeckSize(i64),
     NotCoprime(i64, i64),
-    IllegalIncrement(i64, i64),
     NotImplemented,
 }
 
@@ -13,10 +11,8 @@ impl std::error::Error for CardError {
         match self {
             CardError::UnknownTechnique(_) => None,
             CardError::NotImplemented => None,
-            CardError::RepeatForNotCoprime => None,
             CardError::IllegalDeckSize(_) => None,
             CardError::NotCoprime(_, _) => None,
-            CardError::IllegalIncrement(_, _) => None,
         }
     }
 }
@@ -30,9 +26,6 @@ impl std::fmt::Display for CardError {
             CardError::NotImplemented => {
                 write!(f, "This in only implemented for shuffles with fixpoints, i.e. decksizes with prime cards")
             }
-            CardError::RepeatForNotCoprime => {
-                write!(f, "Repeat can only be used for coprimes")
-            }
             CardError::IllegalDeckSize(deck) => {
                 write!(f, "Illegal Decksize ({})", deck)
             }
@@ -42,9 +35,6 @@ impl std::fmt::Display for CardError {
                     "Increments must be coprime to descsize got ({}) and ({})",
                     card, deck
                 )
-            }
-            CardError::IllegalIncrement(increment, deck) => {
-                write!(f, "Illegal Increment ({}) for deck ({})", increment, deck)
             }
         }
     }

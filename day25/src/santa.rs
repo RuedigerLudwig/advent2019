@@ -1,5 +1,3 @@
-#![allow(dead_code)]
-
 use computer::{Code, ComputerError, TextInput, TextOutput, VirtualMachine};
 
 #[derive(Debug)]

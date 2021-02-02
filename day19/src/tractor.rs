@@ -1,12 +1,8 @@
-#![allow(dead_code)]
 use crate::{
     interface::{Pos, TractorInterface},
     tractor_error::TractorError,
 };
-use common::Area as RawArea;
 use std::{collections::HashMap, error::Error};
-
-type Area = RawArea<i32>;
 
 pub struct Tractor<I> {
     _interface: I,
