@@ -2,6 +2,7 @@ use std::{cell::RefCell, iter::Peekable};
 
 use crate::{ComputerError, Output, TextInput};
 
+#[derive(Debug)]
 pub struct TextOutput {
     _output: RefCell<Peekable<Output<TextInput>>>,
 }

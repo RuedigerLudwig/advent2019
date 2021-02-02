@@ -22,6 +22,7 @@ use day21;
 use day22;
 use day23;
 use day24;
+use day25;
 use std::{env, error::Error};
 
 fn main() -> Result<(), Box<dyn Error>> {
@@ -121,6 +122,14 @@ fn main() -> Result<(), Box<dyn Error>> {
 
     if days.is_empty() || days.contains(&String::from("day24")) {
         day24::result()?;
+    }
+
+    if days.is_empty() || days.contains(&String::from("day25")) {
+        day25::result()?;
+    }
+
+    if days.len() == 1 && days.contains(&String::from("game")) {
+        day25::interactive()?;
     }
 
     Ok(())
