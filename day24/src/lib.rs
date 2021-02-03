@@ -1,12 +1,12 @@
-mod eris;
+#![warn(rust_2018_idioms, missing_debug_implementations)]
+mod eris_plain;
 mod eris_recursive;
 
-use common::read_all_lines;
-use eris::Eris;
+use common::{error::CommonError, read_all_lines};
+use eris_plain::Eris;
 use eris_recursive::ErisRecursive;
-use std::error::Error;
 
-pub fn result() -> Result<(), Box<dyn Error>> {
+pub fn result() -> Result<(), CommonError> {
     let input = read_all_lines("day24", "input.txt")?;
 
     let eris = Eris::parse(&input);

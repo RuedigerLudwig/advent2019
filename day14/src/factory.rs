@@ -1,8 +1,5 @@
+use crate::error::FactoryError;
 use std::collections::{HashMap, VecDeque};
-
-use common::as_long;
-
-use crate::factory_error::FactoryError;
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Reaction<'a> {
@@ -23,7 +20,7 @@ impl<'a> Reaction<'a> {
         if parts.len() != 2 {
             Err(FactoryError::IngredientError(String::from(input)))
         } else {
-            let num = as_long(parts[0])?;
+            let num = parts[0].parse()?;
             Ok((parts[1], num))
         }
     }
@@ -36,7 +33,7 @@ impl<'a> Reaction<'a> {
         Ok(result)
     }
 
-    pub fn parse(line: &'a str) -> Result<(&'a str, Reaction), FactoryError> {
+    pub fn parse(line: &'a str) -> Result<(&'a str, Reaction<'_>), FactoryError> {
         let parts: Vec<&str> = line.split("=>").collect();
         if parts.len() != 2 {
             Err(FactoryError::ReactionError(String::from(line)))
@@ -64,20 +61,18 @@ impl<'a> Factory<'a> {
     }
 
     pub fn get_amount_for(&self, amount: i64, ingredient: &str) -> Option<Vec<(&'a str, i64)>> {
-        let result = self.reactions.get(ingredient).map(|reaction| {
-            let mut result = reaction._ingredients.clone();
-
+        self.reactions.get(ingredient).map(|reaction| {
             let packets = 1 + (amount - 1) / reaction._amount;
             if packets != 1 {
-                result = result
-                    .into_iter()
-                    .map(|(key, value)| (key, value * packets))
-                    .collect();
+                reaction
+                    ._ingredients
+                    .iter()
+                    .map(|(key, value)| (*key, value * packets))
+                    .collect::<Vec<_>>()
+            } else {
+                reaction._ingredients.clone()
             }
-            result
-        });
-
-        result
+        })
     }
 
     pub fn ore_per_fuel(&self, desired: i64) -> Result<i64, FactoryError> {
@@ -96,14 +91,10 @@ impl<'a> Factory<'a> {
             }
         }
 
-        if let Some(ore) = found.get("ORE") {
-            let sum: i64 = ore.values().sum();
-            Ok(sum)
-        } else {
-            Err(FactoryError::MessageError(String::from(
-                "Did not produce ore",
-            )))
-        }
+        found
+            .get("ORE")
+            .map(|ore| ore.values().sum())
+            .ok_or(FactoryError::NoOre)
     }
 
     pub fn fuel_for_ore(&self, ore: i64) -> Result<i64, FactoryError> {
@@ -147,7 +138,9 @@ mod tests {
     fn get_amount() -> Result<(), FactoryError> {
         let input = read_all_lines("day14", "example1.txt")?;
         let factory = Factory::new(&input)?;
-        let result = factory.get_amount_for(1, "B").unwrap();
+        let result = factory
+            .get_amount_for(1, "B")
+            .expect("Should not fail because of input");
         let expected = vec![("ORE", 1)];
         assert_eq!(expected, result);
 
@@ -158,7 +151,9 @@ mod tests {
     fn get_amount2() -> Result<(), FactoryError> {
         let input = read_all_lines("day14", "example1.txt")?;
         let factory = Factory::new(&input)?;
-        let result = factory.get_amount_for(11, "A").unwrap();
+        let result = factory
+            .get_amount_for(11, "A")
+            .expect("Should not fail because of input");
         let expected = vec![("ORE", 20)];
         assert_eq!(expected, result);
 

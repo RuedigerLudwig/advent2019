@@ -1,16 +1,17 @@
+#![warn(rust_2018_idioms, missing_debug_implementations)]
 use common::read_all_lines;
+use error::VaultError;
 use map::Map;
-use std::error::Error;
 use vault::{find_all_keys_part1, find_all_keys_part2};
 
 mod content;
+mod error;
 mod explorer;
 mod map;
 mod path;
 mod vault;
-mod vault_error;
 
-pub fn result() -> Result<(), Box<dyn Error>> {
+pub fn result() -> Result<(), VaultError> {
     let input = read_all_lines("day18", "input.txt")?;
     let map = Map::new(&input)?;
     let result1 = find_all_keys_part1(&map)?;

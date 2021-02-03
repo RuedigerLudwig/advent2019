@@ -1,34 +1,26 @@
-use std::{cell::RefCell, iter::Peekable};
-
 use crate::{ComputerError, Output, TextInput};
 
 #[derive(Debug)]
 pub struct TextOutput {
-    _output: RefCell<Peekable<Output<TextInput>>>,
+    _output: Output<TextInput>,
 }
 
 impl TextOutput {
     pub fn new(output: Output<TextInput>) -> TextOutput {
-        TextOutput {
-            _output: RefCell::new(output.peekable()),
-        }
+        TextOutput { _output: output }
     }
 
     pub fn read_line(&self) -> Result<Option<String>, ComputerError> {
-        let mut output = self._output.borrow_mut();
-
-        match output.peek() {
-            Some(Ok(n)) => match n {
+        if let Some(peeked) = self._output.peek()? {
+            match peeked {
                 0..=127 => (),
                 _ => return Ok(None),
-            },
-            Some(Err(err)) => return Err(err.clone()),
-            None => (),
+            }
         }
 
         let mut result = String::new();
-        while let Some(item) = output.next() {
-            match item? {
+        while let Some(item) = self._output.next()? {
+            match item {
                 10 => return Ok(Some(result)),
                 n @ 0..=127 => result.push((n as u8) as char),
                 n => return Err(ComputerError::NotValidAsciiInt(n)),
@@ -38,9 +30,8 @@ impl TextOutput {
     }
 
     pub fn int_value(&self) -> Result<Option<i64>, ComputerError> {
-        let mut output = self._output.borrow_mut();
-        if let Some(result) = output.next() {
-            Ok(Some(result?))
+        if let Some(result) = self._output.next()? {
+            Ok(Some(result))
         } else {
             Ok(None)
         }

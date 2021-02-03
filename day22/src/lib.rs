@@ -1,13 +1,12 @@
-#![warn(rust_2018_idioms)]
-mod card_error;
+#![warn(rust_2018_idioms, missing_debug_implementations)]
 mod cards;
-
-use std::error::Error;
+mod error;
 
 use cards::{CardShuffle, Techniques};
 use common::read_all_lines;
+use error::CardError;
 
-pub fn result() -> Result<(), Box<dyn Error>> {
+pub fn result() -> Result<(), CardError> {
     let input = Techniques::parse(&read_all_lines("day22", "input.txt")?)?;
 
     let shuffle = CardShuffle::create(&input, 10_007)?.invert()?;

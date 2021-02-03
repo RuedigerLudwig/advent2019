@@ -1,46 +1,39 @@
-use common::{as_long, read_single_line, CommonError};
+use crate::ComputerError;
+use common::read_single_line;
 use std::{collections::HashMap, str::FromStr};
 
 #[derive(Debug, Clone)]
-pub struct Code {
-    _code: HashMap<usize, i64>,
-}
+pub struct Code(HashMap<usize, i64>);
 
 impl Code {
-    pub fn from_file(module: &str, file: &str) -> Result<Code, CommonError> {
-        let input = read_single_line(module, file)?;
-        input.parse()
-    }
-
-    pub fn get<'a>(&'a self) -> &'a HashMap<usize, i64> {
-        &self._code
+    pub fn from_file(module: &str, file: &str) -> Result<Code, ComputerError> {
+        read_single_line(module, file)?.parse()
     }
 }
 
-impl From<HashMap<usize, i64>> for Code {
-    fn from(code: HashMap<usize, i64>) -> Self {
-        Code { _code: code }
+impl AsRef<HashMap<usize, i64>> for Code {
+    fn as_ref(&self) -> &HashMap<usize, i64> {
+        &self.0
     }
 }
 
-impl From<Vec<i64>> for Code {
-    fn from(code: Vec<i64>) -> Self {
-        Code {
-            _code: code.iter().copied().enumerate().collect(),
-        }
+impl<T> From<T> for Code
+where
+    T: IntoIterator<Item = i64>,
+{
+    fn from(code: T) -> Self {
+        Code(code.into_iter().enumerate().collect())
     }
 }
 
 impl FromStr for Code {
-    type Err = CommonError;
+    type Err = ComputerError;
 
     fn from_str(input: &str) -> Result<Code, Self::Err> {
-        let _code: HashMap<_, _> = input
+        Ok(input
             .split(",")
-            .enumerate()
-            .map(|(pos, s)| as_long(s).map(|l| (pos, l)))
-            .collect::<Result<_, _>>()?;
-
-        Ok(Code { _code })
+            .map(|s| s.trim().parse())
+            .collect::<Result<Vec<_>, _>>()?
+            .into())
     }
 }

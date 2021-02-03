@@ -1,3 +1,8 @@
+use crate::{
+    error::VaultError,
+    map::{Map, Tile},
+    path::Path,
+};
 use std::collections::HashSet;
 
 use common::{Direction, Pos as RawPos};
@@ -5,12 +10,6 @@ use common::{Direction, Pos as RawPos};
 type Pos = RawPos<i32>;
 
 use Tile::*;
-
-use crate::{
-    map::{Map, Tile},
-    path::Path,
-    vault_error::VaultError,
-};
 
 pub struct Explorer<'a> {
     _map: &'a Map,
@@ -195,11 +194,10 @@ impl<'a> Explorer<'a> {
 mod tests {
     use super::*;
     use common::read_all_lines;
-    use std::error::Error;
 
     #[test]
     #[ignore]
-    fn test_print_explored() -> Result<(), Box<dyn Error>> {
+    fn test_print_explored() -> Result<(), VaultError> {
         let input = read_all_lines("day18", "example5.txt")?;
         let map = Map::new(&input)?;
         let path = Explorer::new(&map).explore_part1()?;
@@ -210,7 +208,7 @@ mod tests {
 
     #[test]
     #[ignore]
-    fn test_print_explored2() -> Result<(), Box<dyn Error>> {
+    fn test_print_explored2() -> Result<(), VaultError> {
         let input = read_all_lines("day18", "input.txt")?;
         let map = Map::new(&input)?;
         let paths = Explorer::new(&map).explore_part2()?;

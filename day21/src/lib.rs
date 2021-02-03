@@ -1,16 +1,16 @@
+#![warn(rust_2018_idioms, missing_debug_implementations)]
+mod error;
 mod spring;
-mod spring_error;
-
-use std::error::Error;
 
 use computer::Code;
+use error::SpringError;
 use spring::{Instruction, ReadRegister, SpringBotComputer, WriteRegister};
 
 use Instruction::*;
 use ReadRegister::*;
 use WriteRegister::*;
 
-pub fn result() -> Result<(), Box<dyn Error>> {
+pub fn result() -> Result<(), SpringError> {
     let code = Code::from_file("day21", "input.txt")?;
     let mut springbot = SpringBotComputer::new(&code);
 
@@ -38,7 +38,7 @@ mod test {
     use super::*;
 
     #[test]
-    fn test_part_one() -> Result<(), Box<dyn Error>> {
+    fn test_part_one() -> Result<(), SpringError> {
         let code = Code::from_file("day21", "input.txt")?;
         let mut springbot = SpringBotComputer::new(&code);
 
@@ -49,7 +49,7 @@ mod test {
     }
 
     #[test]
-    fn test_part_two() -> Result<(), Box<dyn Error>> {
+    fn test_part_two() -> Result<(), SpringError> {
         let code = Code::from_file("day21", "input.txt")?;
         let mut springbot = SpringBotComputer::new(&code);
 

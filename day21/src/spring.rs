@@ -1,8 +1,6 @@
-use std::{error::Error, fmt::Display};
-
+use crate::error::SpringError;
 use computer::{Code, TextInput, TextOutput, VirtualMachine};
-
-use crate::spring_error::SpringError;
+use std::fmt::Display;
 
 #[allow(dead_code)]
 #[derive(Debug, Clone, Copy)]
@@ -76,7 +74,7 @@ pub struct SpringBotComputer<'a> {
 }
 
 impl<'a> SpringBotComputer<'a> {
-    pub fn new(code: &'a Code) -> SpringBotComputer {
+    pub fn new(code: &'a Code) -> SpringBotComputer<'_> {
         let input = TextInput::new();
         let vm = VirtualMachine::new(code, &input);
         SpringBotComputer { vm, input }
@@ -87,7 +85,7 @@ impl<'a> SpringBotComputer<'a> {
         instructions: &[Instruction],
         enter: &str,
         be_silent: bool,
-    ) -> Result<i64, Box<dyn Error>> {
+    ) -> Result<i64, SpringError> {
         self.vm.restart();
         let output = TextOutput::new(self.vm.get_output());
 
@@ -121,7 +119,7 @@ impl<'a> SpringBotComputer<'a> {
                 Ok(result)
             }
         } else {
-            Err(Box::new(SpringError::NoData))
+            Err(SpringError::NoData)
         }
     }
 
@@ -129,7 +127,7 @@ impl<'a> SpringBotComputer<'a> {
         &mut self,
         instructions: &[Instruction],
         be_silent: bool,
-    ) -> Result<i64, Box<dyn Error>> {
+    ) -> Result<i64, SpringError> {
         self.go(instructions, "WALK", be_silent)
     }
 
@@ -137,7 +135,7 @@ impl<'a> SpringBotComputer<'a> {
         &mut self,
         instructions: &[Instruction],
         be_silent: bool,
-    ) -> Result<i64, Box<dyn Error>> {
+    ) -> Result<i64, SpringError> {
         self.go(instructions, "RUN", be_silent)
     }
 }

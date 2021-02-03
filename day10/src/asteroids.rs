@@ -3,17 +3,19 @@ use std::{
     collections::{HashMap, HashSet},
 };
 
-use common::{CommonError, Pos};
+use common::Pos;
+
+use crate::error::AsteroidError;
 
 pub struct Asteroids {
     field: HashSet<Pos<i32>>,
 }
 
 impl Asteroids {
-    pub fn parse(input: &Vec<String>) -> Asteroids {
+    pub fn parse<T: AsRef<str>>(input: &[T]) -> Asteroids {
         let mut field = HashSet::new();
         for (y, line) in (0..).zip(input.iter()) {
-            for (x, place) in (0..).zip(line.chars()) {
+            for (x, place) in (0..).zip(line.as_ref().chars()) {
                 if place == '#' {
                     field.insert(Pos::new(x, -y));
                 }
@@ -22,72 +24,69 @@ impl Asteroids {
         Asteroids { field }
     }
 
-    pub fn get_visible(&self, center: Pos<i32>) -> HashSet<Pos<i32>> {
-        let mut visible_map = HashMap::new();
+    fn get_visible(&self, center: &Pos<i32>) -> HashSet<Pos<i32>> {
+        let mut visible_map: HashMap<Pos<i32>, i32> = HashMap::new();
         for asteroid in &self.field {
-            if *asteroid != center {
-                let diff = *asteroid - center;
+            if asteroid != center {
+                let diff = asteroid - center;
                 let (normal, factor) = diff.normalize();
-                if let Some(old_factor) = visible_map.get_mut(&normal) {
-                    if *old_factor > factor {
-                        *old_factor = factor;
-                    }
-                } else {
-                    visible_map.insert(normal, factor);
-                }
+
+                visible_map
+                    .entry(normal)
+                    .and_modify(|old_factor| *old_factor = factor.min(*old_factor))
+                    .or_insert(factor);
             }
         }
 
-        let mut result = HashSet::new();
-        for (normal, factor) in visible_map {
-            result.insert(normal * factor + center);
-        }
-
-        result
+        visible_map
+            .iter()
+            .map(|(&normal, &factor)| normal * factor + center)
+            .collect()
     }
 
-    pub fn get_best_position(&self) -> Result<(Pos<i32>, usize), CommonError> {
-        let mut result = Vec::new();
+    pub fn get_best_position(&self) -> Result<(Pos<i32>, usize), AsteroidError> {
+        let mut best_center = None;
         let mut max = 0;
+        let mut count_best = 0;
         for center in &self.field {
-            let visible = self.get_visible(*center).len();
+            let visible = self.get_visible(center).len();
 
             if visible > max {
                 max = visible;
-                result = Vec::new();
-            }
-            if visible == max {
-                result.push(*center);
+                count_best = 1;
+                best_center = Some(*center)
+            } else if visible == max {
+                count_best += 1;
             }
         }
 
-        if result.len() != 1 {
-            Err(CommonError::MessageError(String::from(
-                "Did not find a best center",
-            )))
+        if count_best == 1 {
+            Ok((best_center.expect("We know we have a center"), max))
         } else {
-            Ok((*result.get(0).unwrap(), max))
+            Err(AsteroidError::NoBestCenter)
         }
     }
 
     fn pos_cmp<'a, 'b>(pos1: &'a Pos<i32>, pos2: &'b Pos<i32>) -> Ordering {
-        pos1.angle2().partial_cmp(&pos2.angle2()).unwrap()
+        pos1.angle2()
+            .partial_cmp(&pos2.angle2())
+            .expect("We hope for the best that we do not find a NaN asteroid somewhere")
     }
 
     pub fn get_lasered_asteroids(&self, center: Pos<i32>) -> Vec<Pos<i32>> {
         let mut visible_map: HashMap<Pos<i32>, Vec<i32>> = HashMap::new();
         for asteroid in &self.field {
             if *asteroid != center {
-                let diff = *asteroid - center;
+                let diff = asteroid - center;
                 let (normal, factor) = diff.normalize();
-                if let Some(lst) = visible_map.get_mut(&normal) {
-                    lst.push(factor);
-                    lst.sort_by(|a, b| b.cmp(a));
-                } else {
-                    let mut lst = Vec::new();
-                    lst.push(factor);
-                    visible_map.insert(normal, lst);
-                }
+
+                visible_map
+                    .entry(normal)
+                    .and_modify(|lst| {
+                        lst.push(factor);
+                        lst.sort_by(|a, b| b.cmp(a))
+                    })
+                    .or_insert(vec![factor]);
             }
         }
 
@@ -96,16 +95,16 @@ impl Asteroids {
 
         let mut result = Vec::new();
         loop {
-            let mut found_any = false;
+            let mut lasered_any = false;
             for normal in &sorted_normals {
                 if let Some(lst) = visible_map.get_mut(normal) {
                     if let Some(factor) = lst.pop() {
-                        result.push(center + *normal * factor);
-                        found_any = true;
+                        result.push(center + normal * factor);
+                        lasered_any = true;
                     }
                 }
             }
-            if !found_any {
+            if !lasered_any {
                 break;
             }
         }
@@ -117,10 +116,10 @@ impl Asteroids {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use common::{hashset, read_all_lines, CommonError};
+    use common::{hashset, read_all_lines};
 
     #[test]
-    fn test_parse_asteroids() -> Result<(), CommonError> {
+    fn test_parse_asteroids() -> Result<(), AsteroidError> {
         let input = read_all_lines("day10", "example1.txt")?;
         let asteroids = Asteroids::parse(&input);
         let expected = 10;
@@ -130,7 +129,7 @@ mod tests {
     }
 
     #[test]
-    fn test_visible_asteroids() -> Result<(), CommonError> {
+    fn test_visible_asteroids() -> Result<(), AsteroidError> {
         let input = read_all_lines("day10", "example1.txt")?;
         let asteroids = Asteroids::parse(&input);
         let expected = hashset!(
@@ -140,14 +139,14 @@ mod tests {
             Pos::new(4, -3),
             Pos::new(3, -4)
         );
-        let result = asteroids.get_visible(Pos::new(4, -2));
+        let result = asteroids.get_visible(&Pos::new(4, -2));
         assert_eq!(result, expected);
 
         Ok(())
     }
 
     #[test]
-    fn test_best_position() -> Result<(), CommonError> {
+    fn test_best_position() -> Result<(), AsteroidError> {
         let input = read_all_lines("day10", "example1.txt")?;
         let asteroids = Asteroids::parse(&input);
         let expected = (Pos::new(3, -4), 8);
@@ -158,7 +157,7 @@ mod tests {
     }
 
     #[test]
-    fn test_best_position2() -> Result<(), CommonError> {
+    fn test_best_position2() -> Result<(), AsteroidError> {
         let input = read_all_lines("day10", "example2.txt")?;
         let asteroids = Asteroids::parse(&input);
         let expected = (Pos::new(5, -8), 33);
@@ -169,7 +168,7 @@ mod tests {
     }
 
     #[test]
-    fn test_laser_order() -> Result<(), CommonError> {
+    fn test_laser_order() -> Result<(), AsteroidError> {
         let input = read_all_lines("day10", "example3.txt")?;
         let asteroids = Asteroids::parse(&input);
         let expected = vec![

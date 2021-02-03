@@ -2,9 +2,11 @@ use std::{collections::HashMap, fmt::Display};
 
 use common::Pos as RawPos;
 use common::{Area as RawArea, Direction};
-use computer::ComputerError;
 
-use crate::interface::{DroidComputerInterface, Report};
+use crate::{
+    error::DroidError,
+    interface::{DroidComputerInterface, Report},
+};
 
 type Pos = RawPos<i32>;
 type Area = RawArea<i32>;
@@ -37,6 +39,7 @@ enum Status {
     AllClear,
 }
 
+#[derive(Debug)]
 pub struct Droid<I> {
     _interface: I,
     _layout: HashMap<Pos, Tile>,
@@ -109,10 +112,7 @@ where
         }
     }
 
-    fn backtrack_exploring(
-        &mut self,
-        path: &mut Vec<Direction>,
-    ) -> Result<Direction, ComputerError> {
+    fn backtrack_exploring(&mut self, path: &mut Vec<Direction>) -> Result<Direction, DroidError> {
         loop {
             if let Some(prev_dir) = path.pop() {
                 let facing = prev_dir.turn_back();
@@ -125,23 +125,18 @@ where
                     }
 
                     into => {
-                        return Err(ComputerError::MessageError(format!(
-                            "Droid error by backtracking into {:?}",
-                            into
-                        )));
+                        return Err(DroidError::BacktracingInto(into));
                     }
                 }
             } else {
-                return Err(ComputerError::MessageError(format!("Backtrack to start")));
+                return Err(DroidError::BacktracingToStart);
             }
         }
     }
 
-    pub fn explore(&mut self) -> Result<usize, ComputerError> {
+    pub fn explore(&mut self) -> Result<usize, DroidError> {
         if self._status != Status::Unexplored {
-            return Err(ComputerError::MessageError(String::from(
-                "Can only search in newly created szenario",
-            )));
+            return Err(DroidError::AlreadyExplored);
         }
         self._status = Status::Exploring;
 
@@ -153,9 +148,9 @@ where
             match self._interface.send_direction(facing)? {
                 Report::Wall => {
                     self._layout.insert(self._position + facing, Tile::Wall);
-                    match self.next_for_exploring() {
-                        Some(next_face) => facing = next_face,
-                        None => facing = self.backtrack_exploring(&mut path)?,
+                    facing = match self.next_for_exploring() {
+                        Some(next_face) => next_face,
+                        None => self.backtrack_exploring(&mut path)?,
                     }
                 }
 
@@ -178,35 +173,26 @@ where
     fn backtrack_oxygenizing(
         &mut self,
         path: &mut Vec<Direction>,
-    ) -> Result<Option<Direction>, ComputerError> {
-        loop {
-            if let Some(prev_dir) = path.pop() {
-                let facing = prev_dir.turn_back();
-                match self._interface.send_direction(facing)? {
-                    Report::Moved | Report::Oxygen => {
-                        self._position = self._position + facing;
-                        if let Some(facing) = self.next_for_oxygenizing() {
-                            return Ok(Some(facing));
-                        }
-                    }
-
-                    Report::Wall => {
-                        return Err(ComputerError::MessageError(format!(
-                            "Droid error by backtracking into Wall",
-                        )))
+    ) -> Result<Option<Direction>, DroidError> {
+        while let Some(prev_dir) = path.pop() {
+            let facing = prev_dir.turn_back();
+            match self._interface.send_direction(facing)? {
+                Report::Moved | Report::Oxygen => {
+                    self._position = self._position + facing;
+                    if let Some(facing) = self.next_for_oxygenizing() {
+                        return Ok(Some(facing));
                     }
                 }
-            } else {
-                return Ok(None);
+
+                Report::Wall => return Err(DroidError::BacktracingInto(Report::Wall)),
             }
         }
+        Ok(None)
     }
 
-    pub fn oxygenize(&mut self) -> Result<usize, ComputerError> {
+    pub fn oxygenize(&mut self) -> Result<usize, DroidError> {
         if self._status != Status::RepairedOxygenSystem {
-            return Err(ComputerError::MessageError(String::from(
-                "Can only oxygenize directly after I repaired the oxygen system",
-            )));
+            return Err(DroidError::NotReadyToOxygenize);
         }
         self._status = Status::Oxygenizing;
 
@@ -238,9 +224,7 @@ where
                         max_time = max_time.max(time);
                         self._layout.insert(self._position, Tile::Oxygen(time));
                     } else {
-                        return Err(ComputerError::MessageError(String::from(
-                            "This tile is not oxygenized",
-                        )));
+                        return Err(DroidError::NotOxygenized);
                     }
                 }
             }

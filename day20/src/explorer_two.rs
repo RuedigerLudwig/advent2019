@@ -1,8 +1,8 @@
 use std::{collections::HashMap, fmt::Display};
 
 use crate::{
+    error::MapError,
     map::{Map, PortalData},
-    map_error::MapError,
     paths::Paths,
 };
 

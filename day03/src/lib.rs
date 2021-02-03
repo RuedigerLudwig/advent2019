@@ -1,11 +1,12 @@
-use common::read_all_lines;
-use std::str::FromStr;
-use wire::Wire;
-use wire_error::WireError;
-
+#![warn(rust_2018_idioms, missing_debug_implementations)]
+mod error;
 mod section;
 mod wire;
-mod wire_error;
+
+use common::read_all_lines;
+use error::WireError;
+use std::str::FromStr;
+use wire::Wire;
 
 pub fn result() -> Result<(), WireError> {
     let input = read_all_lines("day03", "input.txt")?;
@@ -15,13 +16,13 @@ pub fn result() -> Result<(), WireError> {
     if let Some(result) = wire1.get_closest_intersection(&wire2) {
         println!("Day 03 - Result 1: {}", result.abs());
     } else {
-        return Err(WireError::MessageError(String::from("No crossing found")));
+        return Err(WireError::NoCrossing);
     }
 
     if let Some(result) = wire1.get_shortest_intersection(&wire2) {
         println!("Day 03 - Result 2: {}", result);
     } else {
-        return Err(WireError::MessageError(String::from("No crossing found")));
+        return Err(WireError::NoCrossing);
     }
 
     Ok(())

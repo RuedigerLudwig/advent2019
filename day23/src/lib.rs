@@ -1,11 +1,12 @@
+#![warn(rust_2018_idioms, missing_debug_implementations)]
+mod error;
 mod network;
-mod network_error;
 
 use computer::Code;
+use error::NetworkError;
 use network::Switch;
-use std::error::Error;
 
-pub fn result() -> Result<(), Box<dyn Error>> {
+pub fn result() -> Result<(), NetworkError> {
     let code = Code::from_file("day23", "input.txt")?;
 
     let mut switch1 = Switch::new(&code, 50);

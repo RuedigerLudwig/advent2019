@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-use crate::orbit_error::OrbitError;
+use crate::error::OrbitError;
 
 pub struct System<'a> {
     pub name: &'a str,
@@ -8,8 +8,8 @@ pub struct System<'a> {
 }
 
 impl<'a> System<'a> {
-    pub fn parse(input: &[String]) -> Result<System, OrbitError> {
-        let map = System::to_map(&input)?;
+    pub fn parse<T: AsRef<str>>(input: &[T]) -> Result<System<'_>, OrbitError> {
+        let map = System::to_map(input)?;
         let center = System::find_center(&map)?;
 
         System::build_system(&center, &map)
@@ -64,10 +64,10 @@ impl<'a> System<'a> {
         (found_from, found_to, None)
     }
 
-    fn to_map(input: &'a [String]) -> Result<HashMap<&'a str, Vec<&'a str>>, OrbitError> {
+    fn to_map<T: AsRef<str>>(input: &'a [T]) -> Result<HashMap<&'a str, Vec<&'a str>>, OrbitError> {
         let mut map: HashMap<_, Vec<&'a str>> = HashMap::new();
         for line in input {
-            let mut parts = line.split(")");
+            let mut parts = line.as_ref().split(")");
 
             let (center, orbiter) = if let Some((c, o)) = parts.next().zip(parts.next()) {
                 (c, o)
@@ -126,5 +126,43 @@ impl<'a> System<'a> {
                 subsystems: vec![],
             })
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use common::read_all_lines;
+
+    use super::*;
+
+    #[test]
+    fn parse() -> Result<(), OrbitError> {
+        let input = read_all_lines("day06", "example1.txt")?;
+        let system = System::parse(&input)?;
+        let expected = "COM";
+        assert_eq!(system.name, expected);
+
+        Ok(())
+    }
+
+    #[test]
+    fn path_length() -> Result<(), OrbitError> {
+        let input = read_all_lines("day06", "example1.txt")?;
+        let system = System::parse(&input)?;
+        let expected = 42;
+        assert_eq!(system.count_orbits(), expected);
+
+        Ok(())
+    }
+
+    #[test]
+    fn transfers_required() -> Result<(), OrbitError> {
+        let input = read_all_lines("day06", "example2.txt")?;
+        let system = System::parse(&input)?;
+        let expected = 4;
+        let result = system.count_transfers("YOU", "SAN")?;
+        assert_eq!(result, expected);
+
+        Ok(())
     }
 }

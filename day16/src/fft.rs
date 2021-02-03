@@ -1,6 +1,6 @@
-use std::fmt::Display;
+use std::{fmt::Display, str::FromStr};
 
-use common::CommonError;
+use crate::error::FftError;
 
 #[derive(Debug)]
 pub struct Transmission {
@@ -9,18 +9,6 @@ pub struct Transmission {
 }
 
 impl Transmission {
-    pub fn parse(input: &str) -> Result<Transmission, CommonError> {
-        let mut values = Vec::new();
-        for digit in input.chars() {
-            if let Some(number) = digit.to_digit(10) {
-                values.push(number as u8);
-            } else {
-                return Err(CommonError::MessageError(format!("Not a digit: {}", digit)));
-            }
-        }
-        Ok(Transmission { values, offset: 0 })
-    }
-
     fn calc_next_offset(&self) -> usize {
         let mut result: usize = 0;
         for i in 0..7 {
@@ -62,13 +50,13 @@ impl Transmission {
                         1 => {
                             sum += values[input_pos..end_pos]
                                 .iter()
-                                .map(|n| *n as i64)
+                                .map(|&n| n as i64)
                                 .sum::<i64>()
                         }
                         3 => {
                             sum -= values[input_pos..end_pos]
                                 .iter()
-                                .map(|n| *n as i64)
+                                .map(|&n| n as i64)
                                 .sum::<i64>()
                         }
                         _ => (),
@@ -108,9 +96,25 @@ impl Transmission {
     }
 }
 
+impl FromStr for Transmission {
+    type Err = FftError;
+
+    fn from_str(input: &str) -> Result<Self, Self::Err> {
+        let mut values = Vec::new();
+        for digit in input.chars() {
+            if let Some(number) = digit.to_digit(10) {
+                values.push(number as u8);
+            } else {
+                return Err(FftError::NotADigit(digit));
+            }
+        }
+        Ok(Transmission { values, offset: 0 })
+    }
+}
+
 impl Display for Transmission {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        let s: String = self.values.iter().map(|i| i.to_string()).take(8).collect();
+        let s: String = self.values.iter().map(|&i| i.to_string()).take(8).collect();
         write!(f, "{}", s)
     }
 }
@@ -120,9 +124,9 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_parse() -> Result<(), CommonError> {
+    fn test_parse() -> Result<(), FftError> {
         let input = "12345678";
-        let fft = Transmission::parse(input)?;
+        let fft: Transmission = input.parse()?;
         let result = fft.to_string();
         let expected = "12345678";
 
@@ -132,9 +136,9 @@ mod tests {
     }
 
     #[test]
-    fn test_step() -> Result<(), CommonError> {
+    fn test_step() -> Result<(), FftError> {
         let input = "12345678";
-        let fft = Transmission::parse(input)?;
+        let fft: Transmission = input.parse()?;
         let result = fft.run_phases(1).to_string();
         let expected = "48226158";
 
@@ -144,9 +148,9 @@ mod tests {
     }
 
     #[test]
-    fn test_step_4() -> Result<(), CommonError> {
+    fn test_step_4() -> Result<(), FftError> {
         let input = "80871224585914546619083218645595";
-        let fft = Transmission::parse(input)?;
+        let fft: Transmission = input.parse()?;
         let result = &fft.run_phases(100).to_string()[..8];
         let expected = "24176176";
 
@@ -156,9 +160,9 @@ mod tests {
     }
 
     #[test]
-    fn test_large_100() -> Result<(), CommonError> {
+    fn test_large_100() -> Result<(), FftError> {
         let input = "12345678";
-        let fft = Transmission::parse(input)?;
+        let fft: Transmission = input.parse()?;
         let result = fft.run_phases(4).to_string();
         let expected = "01029498";
 
@@ -168,9 +172,9 @@ mod tests {
     }
 
     #[test]
-    fn test_get_offset() -> Result<(), CommonError> {
+    fn test_get_offset() -> Result<(), FftError> {
         let input = "03036732577212944063491565474664";
-        let fft = Transmission::parse(input)?;
+        let fft: Transmission = input.parse()?;
         let expected = 303673;
         let result = fft.calc_next_offset();
 
@@ -180,9 +184,9 @@ mod tests {
     }
 
     #[test]
-    fn test_repeat_pattern() -> Result<(), CommonError> {
+    fn test_repeat_pattern() -> Result<(), FftError> {
         let input = "12345678";
-        let fft = Transmission::parse(input)?;
+        let fft: Transmission = input.parse()?;
         let expected = (1, 4);
         let result = fft.get_pattern(3, 3);
 
@@ -192,9 +196,9 @@ mod tests {
     }
 
     #[test]
-    fn test_repeat_pattern2() -> Result<(), CommonError> {
+    fn test_repeat_pattern2() -> Result<(), FftError> {
         let input = "12345678";
-        let fft = Transmission::parse(input)?;
+        let fft: Transmission = input.parse()?;
         let expected = (0, 2);
         let result = fft.get_pattern(2, 4);
 
@@ -204,9 +208,9 @@ mod tests {
     }
 
     #[test]
-    fn test_repeat_pattern3() -> Result<(), CommonError> {
+    fn test_repeat_pattern3() -> Result<(), FftError> {
         let input = "12345678";
-        let mut fft = Transmission::parse(input)?;
+        let mut fft: Transmission = input.parse()?;
         fft.offset = 1;
         let expected = (0, 2);
         let result = fft.get_pattern(1, 3);
@@ -217,9 +221,9 @@ mod tests {
     }
 
     #[test]
-    fn test_big() -> Result<(), CommonError> {
+    fn test_big() -> Result<(), FftError> {
         let input = "03036732577212944063491565474664";
-        let fft = Transmission::parse(input)?;
+        let fft: Transmission = input.parse()?;
         let result = fft.run_big();
         let expected = "84462026";
 

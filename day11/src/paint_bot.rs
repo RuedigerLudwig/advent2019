@@ -3,17 +3,21 @@ use std::{
     fmt::{Display, Formatter},
 };
 
-use common::{Area, Direction, Pos};
-use computer::ComputerError;
+use common::{Area as RawArea, Direction, Pos as RawPos};
 
-use crate::interface::{BotComputerInterface, Color};
+use crate::{
+    error::PaintError,
+    interface::{BotComputerInterface, Color},
+};
 
-type IPos = Pos<i32>;
-type IArea = Area<i32>;
+type Pos = RawPos<i32>;
+type Area = RawArea<i32>;
+
+#[derive(Debug)]
 pub struct Bot<T> {
     interface: T,
-    board: HashMap<IPos, Color>,
-    position: IPos,
+    board: HashMap<Pos, Color>,
+    position: Pos,
     facing: Direction,
 }
 
@@ -27,16 +31,14 @@ impl<T: BotComputerInterface> Bot<T> {
         }
     }
 
-    pub fn run(&mut self) -> Result<(), ComputerError> {
-        loop {
-            let color = self.board.get(&self.position).copied().unwrap_or_default();
-            if let Some((paint_color, turn)) = self.interface.accept_input(color)? {
-                self.board.insert(self.position, paint_color);
-                self.facing = self.facing.turn(turn);
-                self.position = self.position + self.facing.as_pos();
-            } else {
-                break;
-            }
+    pub fn run(&mut self, start_color: Color) -> Result<(), PaintError> {
+        self.board.insert(self.position, start_color);
+        let mut color = start_color;
+        while let Some((paint_color, turn)) = self.interface.accept_input(color)? {
+            self.board.insert(self.position, paint_color);
+            self.facing = self.facing.turn(turn);
+            self.position = self.position + self.facing.as_pos();
+            color = self.board.get(&self.position).copied().unwrap_or_default();
         }
 
         Ok(())
@@ -44,24 +46,14 @@ impl<T: BotComputerInterface> Bot<T> {
 }
 
 impl<T> Bot<T> {
-    pub fn paint_current_board(&mut self, color: Color) {
-        self.board.insert(self.position, color);
-    }
-
     pub fn count_painted_boards(&self) -> usize {
         self.board.len()
-    }
-
-    fn get_extend(&self) -> IArea {
-        self.board
-            .keys()
-            .fold(Area::default(), |area, pos| area.extend(*pos))
     }
 }
 
 impl<T> Display for Bot<T> {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        let extent = self.get_extend();
+        let extent: Area = self.board.keys().collect();
         for row in extent.rows(false) {
             for pos in row.cols(true) {
                 write!(f, "{}", self.board.get(&pos).copied().unwrap_or_default())?;
@@ -74,16 +66,15 @@ impl<T> Display for Bot<T> {
 
 #[cfg(test)]
 mod tests {
+    use super::*;
     use common::Turn;
 
-    use super::*;
-
     #[test]
-    fn test_dummy_paint() -> Result<(), ComputerError> {
+    fn test_dummy_paint() -> Result<(), PaintError> {
         let instruction = vec![(1, 0), (0, 0), (1, 0), (1, 0), (0, 1), (1, 0), (1, 0)];
         let interface = TestInterface::new(instruction);
         let mut bot = Bot::new(interface);
-        bot.run()?;
+        bot.run(Color::Black)?;
         let expected = 6;
         assert_eq!(bot.board.len(), expected);
 
@@ -102,7 +93,7 @@ mod tests {
     }
 
     impl BotComputerInterface for TestInterface {
-        fn accept_input(&mut self, _color: Color) -> Result<Option<(Color, Turn)>, ComputerError> {
+        fn accept_input(&mut self, _color: Color) -> Result<Option<(Color, Turn)>, PaintError> {
             if self.index < self.list.len() {
                 let (paint, turn) = self.list[self.index];
                 self.index += 1;

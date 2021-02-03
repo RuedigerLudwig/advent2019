@@ -1,6 +1,6 @@
 use std::fmt::Display;
 
-use crate::computer_error::ComputerError;
+use crate::error::ComputerError;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum AddrMode {

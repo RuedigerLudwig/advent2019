@@ -1,4 +1,5 @@
-use common::{as_int, read_all_lines, CommonError};
+#![warn(rust_2018_idioms, missing_debug_implementations)]
+use common::{error::CommonError, read_all_lines};
 
 fn calculate(mass: i32) -> i32 {
     mass / 3 - 2
@@ -24,7 +25,7 @@ where
 pub fn result() -> Result<(), CommonError> {
     let numbers = read_all_lines("day01", "input.txt")?
         .iter()
-        .map(|s| as_int(s))
+        .map(|s| s.parse())
         .collect::<Result<Vec<_>, _>>()?;
 
     let result1 = do_iter(&numbers, calculate);

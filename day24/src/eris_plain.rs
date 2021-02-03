@@ -1,4 +1,3 @@
-
 use common::{Direction, Pos as RawPos};
 use std::collections::HashSet;
 
@@ -10,10 +9,10 @@ pub struct Eris {
 }
 
 impl Eris {
-    pub fn parse(lines: &[String]) -> Eris {
+    pub fn parse<T: AsRef<str>>(lines: &[T]) -> Eris {
         let mut map = HashSet::new();
         for (row, line) in (0..).zip(lines) {
-            for (col, ch) in (0..).zip(line.chars()) {
+            for (col, ch) in (0..).zip(line.as_ref().chars()) {
                 if ch != '.' {
                     map.insert(Pos::new(col, row));
                 }
@@ -83,7 +82,7 @@ impl Eris {
 #[cfg(test)]
 mod test {
     use super::*;
-    use common::{read_all_lines, CommonError};
+    use common::{error::CommonError, read_all_lines};
 
     #[test]
     fn test_one() -> Result<(), CommonError> {

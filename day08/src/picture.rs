@@ -27,8 +27,10 @@ impl Picture<'_> {
         for _ in 0..self._layers {
             let mut map = HashMap::new();
             for _ in 0..(self._height * self._width) {
-                let pixel = chars.next().unwrap();
-                let count = map.entry(pixel).or_default();
+                let pixel = chars
+                    .next()
+                    .expect("We made sure that we have the right amount of chars");
+                let count = map.entry(pixel).or_insert(0);
                 *count = *count + 1;
             }
             result.push(map);
@@ -57,7 +59,9 @@ impl Picture<'_> {
         for _ in 0..self._layers {
             for row in 0..self._height {
                 for col in 0..self._width {
-                    let pixel = chars.next().unwrap();
+                    let pixel = chars
+                        .next()
+                        .expect("We made sure we have enough chars stored");
                     if result[row][col] == "?" {
                         match pixel {
                             '0' => result[row][col] = " ",

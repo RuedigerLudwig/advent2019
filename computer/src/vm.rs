@@ -22,7 +22,7 @@ where
     I: ComputerInput,
 {
     pub fn new(code: &'a Code, input: &'_ I) -> VirtualMachine<'a, I> {
-        let cpu = CpuWrapper::new(Cpu::new(code.get().clone(), input.clone()));
+        let cpu = CpuWrapper::new(Cpu::new(code.as_ref().clone(), input.clone()));
         VirtualMachine {
             _code: code,
             _input: input.clone(),
@@ -31,7 +31,7 @@ where
     }
 
     pub fn with_id(code: &'a Code, input: &'_ I, id: &str) -> VirtualMachine<'a, I> {
-        let mut cpu = Cpu::new(code.get().clone(), input.clone());
+        let mut cpu = Cpu::new(code.as_ref().clone(), input.clone());
         cpu.set_id(id);
         let cpu = CpuWrapper::new(cpu);
         VirtualMachine {
@@ -62,7 +62,7 @@ where
     }
 
     pub fn restart(&mut self) {
-        self._cpu = CpuWrapper::new(Cpu::new(self._code.get().clone(), self._input.clone()));
+        self._cpu = CpuWrapper::new(Cpu::new(self._code.as_ref().clone(), self._input.clone()));
     }
 }
 
@@ -91,17 +91,6 @@ where
 
     pub fn get_memory(&self) -> Vec<i64> {
         (*self._cpu.borrow()).get_memory()
-    }
-
-    pub fn next_output(&self) -> Result<Option<i64>, ComputerError> {
-        let mut cpu = self._cpu.borrow_mut();
-        loop {
-            match cpu.step()? {
-                StepResult::Value(value) => return Ok(Some(value)),
-                StepResult::Stop => return Ok(None),
-                StepResult::Proceed => (),
-            }
-        }
     }
 
     pub fn step(&self) -> Result<StepResult, ComputerError> {

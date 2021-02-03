@@ -1,9 +1,10 @@
+#![warn(rust_2018_idioms, missing_debug_implementations)]
 use common::read_all_lines;
+use error::FactoryError;
 use factory::Factory;
-use factory_error::FactoryError;
 
+mod error;
 mod factory;
-mod factory_error;
 
 pub fn result() -> Result<(), FactoryError> {
     let input = read_all_lines("day14", "input.txt")?;

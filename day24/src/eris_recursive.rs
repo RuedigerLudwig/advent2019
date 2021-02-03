@@ -1,4 +1,3 @@
-
 use common::{hashset, Direction, Pos as RawPos};
 use std::collections::HashSet;
 
@@ -12,10 +11,10 @@ pub struct ErisRecursive {
 }
 
 impl ErisRecursive {
-    pub fn parse(lines: &[String]) -> ErisRecursive {
+    pub fn parse<T: AsRef<str>>(lines: &[T]) -> ErisRecursive {
         let mut map = HashSet::new();
         for (row, line) in (0..).zip(lines) {
-            for (col, ch) in (0..).zip(line.chars()) {
+            for (col, ch) in (0..).zip(line.as_ref().chars()) {
                 if ch != '.' {
                     map.insert((Pos::new(col, row), 0));
                 }
@@ -23,8 +22,8 @@ impl ErisRecursive {
         }
         ErisRecursive {
             _map: map,
-            _min_level: -1,
-            _max_level: 1,
+            _min_level: 0,
+            _max_level: 0,
         }
     }
 
@@ -74,10 +73,10 @@ impl ErisRecursive {
         count
     }
 
-    fn step(&self) -> ErisRecursive {
+    fn step_recursive(&self) -> ErisRecursive {
         let mut map = HashSet::new();
-        let mut max_level = self._max_level;
-        let mut min_level = self._min_level;
+        let mut max_level = self._max_level + 1;
+        let mut min_level = self._min_level - 1;
         for col in 0..5 {
             for row in 0..5 {
                 if col == 2 && row == 2 {
@@ -85,7 +84,7 @@ impl ErisRecursive {
                 }
 
                 let pos = Pos::new(col, row);
-                for level in self._min_level..=self._max_level {
+                for level in self._min_level - 1..=self._max_level + 1 {
                     let bug_is_here = match self.count_neighbors(&pos, level) {
                         1 => true,
                         2 => !self._map.contains(&(pos, level)),
@@ -95,12 +94,11 @@ impl ErisRecursive {
                     if bug_is_here {
                         map.insert((pos, level));
 
-                        if level == self._max_level
+                        if level == self._max_level + 1
                             && (row == 0 || row == 4 || col == 0 || col == 4)
                         {
                             max_level += 1;
-                        }
-                        if level == self._min_level
+                        } else if level == self._min_level - 1
                             && ((col == 2 && (row == 1 || (row == 3)))
                                 || (row == 2 && (col == 1 || (col == 3))))
                         {
@@ -118,9 +116,9 @@ impl ErisRecursive {
     }
 
     pub fn repeat(&self, times: i32) -> ErisRecursive {
-        let mut run = self.step();
+        let mut run = self.step_recursive();
         for _ in 1..times {
-            run = run.step()
+            run = run.step_recursive()
         }
         run
     }
@@ -133,7 +131,7 @@ impl ErisRecursive {
 #[cfg(test)]
 mod test {
     use super::*;
-    use common::{read_all_lines, CommonError};
+    use common::{error::CommonError, read_all_lines};
 
     #[test]
     fn test_one() -> Result<(), CommonError> {

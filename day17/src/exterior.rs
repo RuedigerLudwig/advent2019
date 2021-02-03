@@ -1,12 +1,11 @@
 use std::{
     collections::{HashMap, HashSet},
-    error::Error,
     fmt::Display,
 };
 
 use common::{Area as RawArea, Direction, Pos as RawPos, Turn};
 
-use crate::{exterior_error::ExteriorError, interface::ExteriorInterface, path::Path};
+use crate::{error::ExteriorError, interface::ExteriorInterface, path::Path};
 type Pos = RawPos<i32>;
 type Area = RawArea<i32>;
 
@@ -67,21 +66,24 @@ impl<I> Exterior<I> {
     }
 
     fn get_crossings(&self) -> HashSet<Pos> {
-        let mut result = HashSet::new();
-        for (position, tile) in &self._data {
-            if *tile == Tile::Scaffold && self.is_crossing(*position) {
-                result.insert(*position);
-            }
-        }
-        result
+        self._data
+            .iter()
+            .filter_map(|(&position, &tile)| {
+                if matches!(tile, Tile::Scaffold) && self.is_crossing(position) {
+                    Some(position)
+                } else {
+                    None
+                }
+            })
+            .collect()
     }
 
     pub fn get_alignment(&self) -> i32 {
-        let mut result = 0;
-        for position in self.get_crossings() {
-            result += position.x() * position.y();
-        }
-        result.abs()
+        self.get_crossings()
+            .iter()
+            .map(|&position| position.x() * position.y())
+            .sum::<i32>()
+            .abs()
     }
 
     fn find_robot(&self) -> Option<(Pos, Direction)> {
@@ -140,21 +142,13 @@ impl<I> Exterior<I> {
     }
 
     fn break_into_parts(&self) -> Result<Vec<String>, ExteriorError> {
-        if let Some((main, modules)) = Path::extract_equal_parts(&self.as_path()?, 3) {
-            let main = Path::as_string(&main);
-            let modules = modules
-                .iter()
-                .map(|p| Path::as_string(p))
-                .collect::<Vec<_>>();
-
-            let mut result = Vec::new();
-            result.push(main);
-            result.extend(modules);
-
-            Ok(result)
-        } else {
-            Err(ExteriorError::NoPath)
-        }
+        Path::extract_equal_parts(&self.as_path()?, 3)
+            .map(|(main, modules)| {
+                let mut result = vec![Path::as_string(&main)];
+                result.extend(modules.iter().map(|p| Path::as_string(p)));
+                result
+            })
+            .ok_or(ExteriorError::NoPath)
     }
 }
 
@@ -162,14 +156,13 @@ impl<I> Exterior<I>
 where
     I: ExteriorInterface,
 {
-    pub fn new(mut _interface: I) -> Result<Exterior<I>, Box<dyn Error>> {
+    pub fn new(mut _interface: I) -> Result<Exterior<I>, ExteriorError> {
         let picture = _interface.get_picture()?;
         let mut _data = HashMap::new();
         for (row, line) in (0..).zip(picture) {
             for (col, item) in (0..).zip(line.chars()) {
                 let tile: Tile = item.into();
-                if let Tile::Space = tile {
-                } else {
+                if !matches!(tile, Tile::Space) {
                     _data.insert(Pos::new(col, -row), tile);
                 }
             }
@@ -178,7 +171,7 @@ where
         Ok(Exterior { _interface, _data })
     }
 
-    pub fn run_bot(&mut self, run_silent: bool) -> Result<i64, Box<dyn Error>> {
+    pub fn run_bot(&mut self, run_silent: bool) -> Result<i64, ExteriorError> {
         let mut answers = self.break_into_parts()?;
         if run_silent {
             answers.push(String::from("n"));
@@ -206,35 +199,32 @@ impl<I> Display for Exterior<I> {
 
 #[cfg(test)]
 mod tests {
-    use std::error::Error;
-
-    use common::{hashset, read_all_lines};
-
     use super::*;
+    use common::{hashset, read_all_lines};
 
     struct TestInterface {
         data: Vec<String>,
     }
 
     impl TestInterface {
-        pub fn new(module: &str, file: &str) -> Result<TestInterface, Box<dyn Error>> {
+        pub fn new(module: &str, file: &str) -> Result<TestInterface, ExteriorError> {
             let data = read_all_lines(module, file)?;
             Ok(TestInterface { data })
         }
     }
 
     impl ExteriorInterface for TestInterface {
-        fn get_picture(&self) -> Result<Vec<String>, Box<dyn Error>> {
+        fn get_picture(&self) -> Result<Vec<String>, ExteriorError> {
             Ok(self.data.clone())
         }
 
-        fn send_data(&self, _data: &[String], _run_silent: bool) -> Result<i64, Box<dyn Error>> {
+        fn send_data(&self, _data: &[String], _run_silent: bool) -> Result<i64, ExteriorError> {
             unimplemented!()
         }
     }
 
     #[test]
-    fn test_scrossings() -> Result<(), Box<dyn Error>> {
+    fn test_scrossings() -> Result<(), ExteriorError> {
         let interface = TestInterface::new("day17", "example1.txt")?;
         let exterior = Exterior::new(interface)?;
         let result = exterior.get_crossings();
@@ -251,7 +241,7 @@ mod tests {
     }
 
     #[test]
-    fn test_alignment() -> Result<(), Box<dyn Error>> {
+    fn test_alignment() -> Result<(), ExteriorError> {
         let interface = TestInterface::new("day17", "example1.txt")?;
         let exterior = Exterior::new(interface)?;
         let result = exterior.get_alignment();
@@ -263,7 +253,7 @@ mod tests {
     }
 
     #[test]
-    fn test_as_path() -> Result<(), Box<dyn Error>> {
+    fn test_as_path() -> Result<(), ExteriorError> {
         let interface = TestInterface::new("day17", "example2.txt")?;
         let exterior = Exterior::new(interface)?;
         let path = exterior.as_path()?;
@@ -276,7 +266,7 @@ mod tests {
     }
 
     #[test]
-    fn test_get_parts() -> Result<(), Box<dyn Error>> {
+    fn test_get_parts() -> Result<(), ExteriorError> {
         let interface = TestInterface::new("day17", "example2.txt")?;
         let exterior = Exterior::new(interface)?;
         let path = exterior.break_into_parts();

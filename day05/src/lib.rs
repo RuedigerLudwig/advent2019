@@ -1,8 +1,7 @@
-use std::error::Error;
+#![warn(rust_2018_idioms, missing_debug_implementations)]
+use computer::{Code, ComputerError, ListInput, VirtualMachine};
 
-use computer::{Code, ListInput, VirtualMachine};
-
-pub fn result() -> Result<(), Box<dyn Error>> {
+pub fn result() -> Result<(), ComputerError> {
     let code = Code::from_file("day05", "input.txt")?;
 
     let vm1 = VirtualMachine::new(&code, &ListInput::single(1));
@@ -25,7 +24,7 @@ mod tests {
     use super::*;
 
     #[test]
-    fn param_test() -> Result<(), Box<dyn Error>> {
+    fn param_test() -> Result<(), ComputerError> {
         let input = vec![1002, 4, 3, 4, 33];
         let code = input.into();
         let vm = VirtualMachine::new(&code, &NoInput {});
@@ -41,7 +40,7 @@ mod tests {
     }
 
     #[test]
-    fn negative_test() -> Result<(), Box<dyn Error>> {
+    fn negative_test() -> Result<(), ComputerError> {
         let input = "1101,100,-1,4,0";
         let code: Code = input.parse()?;
         let vm = VirtualMachine::new(&code, &NoInput {});

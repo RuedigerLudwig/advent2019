@@ -1,7 +1,6 @@
+use crate::error::NetworkError;
 use computer::{Code, ComputerInput, Output, StepResult, VirtualMachine};
 use std::{cell::RefCell, collections::VecDeque, rc::Rc};
-
-use crate::network_error::NetworkError;
 
 #[derive(Debug)]
 pub struct NodeInputQueue {
@@ -135,7 +134,7 @@ pub struct Switch<'a> {
 }
 
 impl<'a> Switch<'a> {
-    pub fn new(code: &Code, count: usize) -> Switch {
+    pub fn new(code: &Code, count: usize) -> Switch<'_> {
         let mut vms = Vec::with_capacity(count);
         let mut inputs = Vec::with_capacity(count);
 

@@ -9,3 +9,4 @@ edition = "2018"
 [dependencies]
 common = { path = "../common" }
 regex = "1.4.2"
+thiserror = "1.0.23"

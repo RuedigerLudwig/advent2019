@@ -1,5 +1,9 @@
+use std::fmt::Display;
+
 use common::Direction;
 use computer::{Code, ComputerError, ListInput, Output, VirtualMachine};
+
+use crate::error::DroidError;
 
 #[derive(Debug)]
 pub enum Report {
@@ -8,8 +12,18 @@ pub enum Report {
     Oxygen,
 }
 
+impl Display for Report {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match *self {
+            Report::Wall => write!(f, "Wall"),
+            Report::Moved => write!(f, "Moved"),
+            Report::Oxygen => write!(f, "Oxygen"),
+        }
+    }
+}
+
 pub trait DroidComputerInterface {
-    fn send_direction(&mut self, direction: Direction) -> Result<Report, ComputerError>;
+    fn send_direction(&mut self, direction: Direction) -> Result<Report, DroidError>;
 }
 
 pub struct ComputerInterface {
@@ -19,7 +33,7 @@ pub struct ComputerInterface {
 
 impl ComputerInterface {
     pub fn new(code: &Code) -> ComputerInterface {
-        let input = ListInput::new_();
+        let input = ListInput::new();
         let vm = VirtualMachine::new(code, &input);
         ComputerInterface {
             input,
@@ -38,24 +52,19 @@ impl ComputerInterface {
 }
 
 impl DroidComputerInterface for ComputerInterface {
-    fn send_direction(&mut self, direction: Direction) -> Result<Report, ComputerError> {
+    fn send_direction(&mut self, direction: Direction) -> Result<Report, DroidError> {
         let dir_number = ComputerInterface::dir_number(direction);
         self.input.provide_input(dir_number);
 
-        if let Some(report) = self.output.next() {
-            match report? {
+        if let Some(report) = self.output.next()? {
+            match report {
                 0 => Ok(Report::Wall),
                 1 => Ok(Report::Moved),
                 2 => Ok(Report::Oxygen),
-                code => Err(ComputerError::MessageError(format!(
-                    "Unknown result code: {}",
-                    code
-                ))),
+                code => Err(DroidError::UnknownTile(code)),
             }
         } else {
-            Err(ComputerError::MessageError(String::from(
-                "Unexpected end of transmission",
-            )))
+            Err(ComputerError::OutputEmpty.into())
         }
     }
 }

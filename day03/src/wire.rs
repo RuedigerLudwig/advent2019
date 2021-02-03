@@ -1,4 +1,4 @@
-use crate::{section::Section, wire_error::WireError};
+use crate::{error::WireError, section::Section};
 use common::Pos;
 use std::str::FromStr;
 
@@ -72,7 +72,7 @@ mod tests {
     use std::{collections::HashSet, iter::FromIterator};
 
     #[test]
-    fn parse() -> Result<(), WireError> {
+    fn test_parse() -> Result<(), WireError> {
         let wire = Wire::from_str(&"U7,R6,D14,L4")?;
         let expected = vec![
             Section::new(Direction::North, 7),
@@ -106,7 +106,7 @@ mod tests {
             assert_eq!(expected, result.abs());
             Ok(())
         } else {
-            Err(WireError::MessageError(String::from("No crossing found")))
+            Err(WireError::NoCrossing)
         }
     }
 
@@ -119,7 +119,7 @@ mod tests {
             assert_eq!(expected, result);
             Ok(())
         } else {
-            Err(WireError::MessageError(String::from("No crossing found")))
+            Err(WireError::NoCrossing)
         }
     }
 
@@ -132,7 +132,7 @@ mod tests {
             assert_eq!(expected, result);
             Ok(())
         } else {
-            Err(WireError::MessageError(String::from("No crossing found")))
+            Err(WireError::NoCrossing)
         }
     }
 }

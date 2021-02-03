@@ -1,9 +1,9 @@
-use crate::santa::{SantasShip, ShipState};
-use computer::Code;
-use std::{
-    error::Error,
-    io::{self, prelude::*},
+use crate::{
+    error::DroneError,
+    santa::{SantasShip, ShipState},
 };
+use computer::Code;
+use std::io::{self, prelude::*};
 
 #[derive(Debug)]
 pub struct Interactive {
@@ -17,7 +17,7 @@ impl Interactive {
         }
     }
 
-    pub fn run(&mut self) -> Result<(), Box<dyn Error>> {
+    pub fn run(&mut self) -> Result<(), DroneError> {
         let stdin = io::stdin();
         loop {
             let (state, lines) = self._ship.get_text()?;

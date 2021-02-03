@@ -2,7 +2,7 @@ use std::str::FromStr;
 
 use common::{Direction, Pos};
 
-use crate::wire_error::WireError;
+use crate::error::WireError;
 
 #[derive(Debug, PartialEq, Eq)]
 pub struct Section {
@@ -81,8 +81,12 @@ impl FromStr for Section {
         if input.len() <= 1 {
             Err(WireError::ParseError(String::from(input)))
         } else {
-            let number = input[1..].parse::<i32>()?;
-            match input.chars().nth(0).unwrap() {
+            let number = input[1..].parse()?;
+            match input
+                .chars()
+                .next()
+                .expect("We Checked, that we have at least one char")
+            {
                 'L' => Ok(Section::new(Direction::West, number)),
                 'R' => Ok(Section::new(Direction::East, number)),
                 'U' => Ok(Section::new(Direction::North, number)),

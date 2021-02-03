@@ -1,11 +1,14 @@
-use common::{read_single_line, CommonError};
-use fft::Transmission;
-
+#![warn(rust_2018_idioms, missing_debug_implementations)]
+mod error;
 mod fft;
 
-pub fn result() -> Result<(), CommonError> {
+use common::read_single_line;
+use error::FftError;
+use fft::Transmission;
+
+pub fn result() -> Result<(), FftError> {
     let input = read_single_line("day16", "input.txt")?;
-    let fft = Transmission::parse(&input)?;
+    let fft: Transmission = input.parse()?;
 
     let result1 = fft.run_small();
     println!("Day 16 - Result 1: {}", result1);

@@ -9,13 +9,14 @@ pub struct LexPermutations<T> {
 }
 
 impl<T: Clone + Sized> LexPermutations<T> {
-    pub fn new(lst: &Vec<T>) -> LexPermutations<T> {
+    pub fn new(lst: &[T]) -> LexPermutations<T> {
+        let list = lst.to_owned();
         LexPermutations {
             _start: 0,
             _current: 0,
-            _len: lst.len(),
+            _len: list.len(),
 
-            _list: Rc::new(RefCell::new(lst.clone())),
+            _list: Rc::new(RefCell::new(list)),
             _tail: None,
         }
     }

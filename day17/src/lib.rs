@@ -1,14 +1,15 @@
-use computer::Code;
-use exterior::Exterior;
-use interface::ExteriorComputerInterface;
-use std::error::Error;
-
+#![warn(rust_2018_idioms, missing_debug_implementations)]
+mod error;
 mod exterior;
-mod exterior_error;
 mod interface;
 mod path;
 
-pub fn result() -> Result<(), Box<dyn Error>> {
+use computer::Code;
+use error::ExteriorError;
+use exterior::Exterior;
+use interface::ExteriorComputerInterface;
+
+pub fn result() -> Result<(), ExteriorError> {
     let code = Code::from_file("day17", "input.txt")?;
     let interface = ExteriorComputerInterface::new(&code);
     let mut exterior = Exterior::new(interface)?;

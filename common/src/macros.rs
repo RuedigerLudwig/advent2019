@@ -24,3 +24,14 @@ macro_rules! hashset {
         set
     }}
 }
+
+#[macro_export]
+macro_rules! zip {
+    ($x: expr) => ($x);
+
+    ($x: expr, $($y: expr),+ $(,)?) => {
+        $x.zip (
+            zip!($($y), +))
+
+    }
+}

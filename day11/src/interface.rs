@@ -1,7 +1,9 @@
 use std::fmt::Display;
 
 use common::Turn;
-use computer::{Code, ComputerError, ListInput, Output, VirtualMachine};
+use computer::{Code, ListInput, Output, VirtualMachine};
+
+use crate::error::PaintError;
 
 #[derive(Debug, PartialEq, Eq, Clone, Copy)]
 pub enum Color {
@@ -25,7 +27,7 @@ impl Display for Color {
 }
 
 pub trait BotComputerInterface {
-    fn accept_input(&mut self, color: Color) -> Result<Option<(Color, Turn)>, ComputerError>;
+    fn accept_input(&mut self, color: Color) -> Result<Option<(Color, Turn)>, PaintError>;
 }
 
 pub struct ComputerInterface {
@@ -35,7 +37,7 @@ pub struct ComputerInterface {
 
 impl ComputerInterface {
     pub fn new(code: &Code) -> ComputerInterface {
-        let input = ListInput::new_();
+        let input = ListInput::new();
         let vm = VirtualMachine::new(&code, &input);
         ComputerInterface {
             input,
@@ -45,7 +47,7 @@ impl ComputerInterface {
 }
 
 impl BotComputerInterface for ComputerInterface {
-    fn accept_input(&mut self, color: Color) -> Result<Option<(Color, Turn)>, ComputerError> {
+    fn accept_input(&mut self, color: Color) -> Result<Option<(Color, Turn)>, PaintError> {
         self.input
             .provide_input(if color == Color::White { 1 } else { 0 });
 
@@ -53,13 +55,13 @@ impl BotComputerInterface for ComputerInterface {
             let paint = match output[0] {
                 0 => Color::Black,
                 1 => Color::White,
-                n => return Err(ComputerError::MessageError(format!("Unknown color: {}", n))),
+                color => return Err(PaintError::UnknownColor(color)),
             };
 
             let turn = match output[1] {
                 0 => Turn::Left,
                 1 => Turn::Right,
-                n => return Err(ComputerError::MessageError(format!("Unknown turn: {}", n))),
+                turn => return Err(PaintError::UnknownTurn(turn)),
             };
 
             Ok(Some((paint, turn)))

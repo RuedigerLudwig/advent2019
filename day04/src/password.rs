@@ -32,11 +32,12 @@ pub fn check(from: i32, to: i32) -> i32 {
 
 #[cfg(test)]
 mod tests {
+    use crate::error::PasswordError;
+
     use super::*;
-    use common::CommonError;
 
     #[test]
-    fn test_one() -> Result<(), CommonError> {
+    fn test_one() -> Result<(), PasswordError> {
         let input = "111111";
         let expected = true;
         let result = check_password(&input);
@@ -46,7 +47,7 @@ mod tests {
     }
 
     #[test]
-    fn test_two() -> Result<(), CommonError> {
+    fn test_two() -> Result<(), PasswordError> {
         let input = "223450";
         let expected = false;
         let result = check_password(&input);
@@ -56,7 +57,7 @@ mod tests {
     }
 
     #[test]
-    fn test_three() -> Result<(), CommonError> {
+    fn test_three() -> Result<(), PasswordError> {
         let input = "123789";
         let expected = false;
         let result = check_password(&input);
@@ -66,7 +67,7 @@ mod tests {
     }
 
     #[test]
-    fn test_four() -> Result<(), CommonError> {
+    fn test_four() -> Result<(), PasswordError> {
         let input = "123788";
         let expected = true;
         let result = check_password(&input);
@@ -76,7 +77,7 @@ mod tests {
     }
 
     #[test]
-    fn test_more() -> Result<(), CommonError> {
+    fn test_more() -> Result<(), PasswordError> {
         let expected = 2;
         let result = check(111110, 111112);
         assert_eq!(expected, result);

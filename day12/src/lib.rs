@@ -1,9 +1,10 @@
+#![warn(rust_2018_idioms, missing_debug_implementations)]
 use common::read_all_lines;
+use error::JupiterError;
 use jupiter::Jupiter;
-use jupiter_error::JupiterError;
 
+mod error;
 mod jupiter;
-mod jupiter_error;
 
 pub fn result() -> Result<(), JupiterError> {
     let input = read_all_lines("day12", "input.txt")?;

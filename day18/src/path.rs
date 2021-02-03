@@ -69,7 +69,7 @@ impl Path {
         }
 
         for one in 0..all_paths.len() {
-            let first = all_paths[one].content.get(&ENTRANCE).unwrap();
+            let first = &all_paths[one].content[&ENTRANCE];
             for two in 0..all_paths.len() {
                 if one != two {
                     let correct = if special_merge && (one % 2) != (two % 2) {
@@ -77,12 +77,12 @@ impl Path {
                     } else {
                         0
                     };
-                    let second = all_paths[two].content.get(&ENTRANCE).unwrap();
-                    for (fst_char, fst_content) in first {
-                        let next_map = merged.content.entry(*fst_char).or_insert(HashMap::new());
-                        for (snd_char, snd_content) in second {
+                    let second = &all_paths[two].content[&ENTRANCE];
+                    for (&fst_char, fst_content) in first {
+                        let next_map = merged.content.entry(fst_char).or_insert(HashMap::new());
+                        for (&snd_char, snd_content) in second {
                             next_map.insert(
-                                *snd_char,
+                                snd_char,
                                 snd_content.clone_with_steps(fst_content._steps - correct),
                             );
                         }
@@ -110,8 +110,8 @@ impl Path {
     }
 
     pub fn merge_on_key(&mut self, from: &char, other: Path) {
-        for (other_from, other_map) in &other.content {
-            if *other_from == ENTRANCE {
+        for (&other_from, other_map) in &other.content {
+            if other_from == ENTRANCE {
                 self.content.entry(ENTRANCE).and_modify(|tm| {
                     for (to, content) in other_map {
                         tm.insert(*to, content.clone_with_required(*from));
@@ -123,7 +123,7 @@ impl Path {
                     entry.insert(*other_to, other_content.clone());
                 }
             } else {
-                self.content.insert(*other_from, other_map.clone());
+                self.content.insert(other_from, other_map.clone());
             }
         }
     }
@@ -168,13 +168,13 @@ pub struct ConnectionIterator<'a> {
 
 impl<'a> ConnectionIterator<'a> {
     fn new(path: &'a Path, from: char, keyring: &'a HashSet<char>) -> ConnectionIterator<'a> {
-        let iter: Option<Box<dyn Iterator<Item = RefKeyContent>>> =
+        let iter: Option<Box<dyn Iterator<Item = RefKeyContent<'_>>>> =
             path.content.get(&from).map(move |map| {
                 Box::new(
                     map.iter()
                         .filter(move |(key, _)| !keyring.contains(*key))
                         .filter(move |(_, content)| keyring.is_superset(&content._required)),
-                ) as Box<dyn Iterator<Item = RefKeyContent>>
+                ) as Box<dyn Iterator<Item = RefKeyContent<'_>>>
             });
 
         ConnectionIterator { _iter: iter }
@@ -186,14 +186,10 @@ impl<'a> Iterator for ConnectionIterator<'a> {
 
     fn next(&mut self) -> Option<Self::Item> {
         if let Some(ref mut to_map) = self._iter {
-            if let Some((to, content)) = to_map.next() {
-                Some(Connection {
-                    to: *to,
-                    steps: content._steps,
-                })
-            } else {
-                None
-            }
+            to_map.next().map(|(&to, content)| Connection {
+                to,
+                steps: content._steps,
+            })
         } else {
             None
         }

@@ -8,7 +8,7 @@ pub struct TextInput {
 impl TextInput {
     pub fn new() -> TextInput {
         TextInput {
-            _input: ListInput::new_(),
+            _input: ListInput::new(),
         }
     }
 

@@ -191,7 +191,10 @@ impl<'a> Iterator for PathMatcher<'a> {
         if let Some(actual_cuts) = self.get_actual_cuts() {
             let mut result = Vec::new();
             let mut actual_cuts = actual_cuts.iter();
-            let mut last_cut = *actual_cuts.next().unwrap() + self.sub.len();
+            let mut last_cut = *actual_cuts
+                .next()
+                .expect("We made sure this always has len > 0")
+                + self.sub.len();
             for cut in actual_cuts {
                 result.push(Path::Function(self.level));
                 result.extend(&self.original[last_cut..*cut]);

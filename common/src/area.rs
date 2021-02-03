@@ -125,11 +125,32 @@ where
     }
 }
 
+impl<'a, _T> FromIterator<&'a Pos<_T>> for Area<_T>
+where
+    _T: 'a + Ord + Copy,
+{
+    fn from_iter<T>(iter: T) -> Self
+    where
+        T: IntoIterator<Item = &'a Pos<_T>>,
+    {
+        let mut iter = iter.into_iter();
+        if let Some(&pos) = iter.next() {
+            let mut area = Area::single(pos);
+            while let Some(&pos) = iter.next() {
+                area = area.extend(pos);
+            }
+            area
+        } else {
+            panic!("Need to have at least one position for an area");
+        }
+    }
+}
+
 impl<T> Area<T>
 where
     T: Copy,
 {
-    pub fn rows(&self, ascending: bool) -> RowIterator<T> {
+    pub fn rows(&self, ascending: bool) -> RowIterator<'_, T> {
         RowIterator {
             area: self,
             row: if ascending {
@@ -142,6 +163,7 @@ where
     }
 }
 
+#[derive(Debug)]
 pub struct RowIterator<'a, T> {
     area: &'a Area<T>,
     row: T,
@@ -174,6 +196,7 @@ where
     }
 }
 
+#[derive(Debug)]
 pub struct Row<'a, T> {
     area: &'a Area<T>,
     row: T,
@@ -183,7 +206,7 @@ impl<'a, T> Row<'a, T>
 where
     T: Copy,
 {
-    pub fn cols(&self, ascending: bool) -> ColIterator<T> {
+    pub fn cols(&self, ascending: bool) -> ColIterator<'a, T> {
         ColIterator {
             area: self.area,
             row: self.row,
@@ -197,6 +220,7 @@ where
     }
 }
 
+#[derive(Debug)]
 pub struct ColIterator<'a, T> {
     area: &'a Area<T>,
     row: T,

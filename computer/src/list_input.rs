@@ -8,14 +8,14 @@ pub struct ListInput {
 }
 
 impl ListInput {
-    pub fn new_() -> Self {
+    pub fn new() -> Self {
         Self {
             _list: Rc::new(RefCell::new(VecDeque::new())),
         }
     }
 
     pub fn single(value: i64) -> Self {
-        let list_input = Self::new_();
+        let list_input = Self::new();
         list_input.provide_input(value);
         list_input
     }

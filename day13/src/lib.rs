@@ -1,10 +1,12 @@
+#![warn(rust_2018_idioms, missing_debug_implementations)]
 use computer::Code;
+use error::GameError;
 use game::{Game, Tile};
-use std::error::Error;
 
+mod error;
 mod game;
 
-pub fn result() -> Result<(), Box<dyn Error>> {
+pub fn result() -> Result<(), GameError> {
     let code = Code::from_file("day13", "input.txt")?;
     let game = Game::paint_board(&code)?;
     let result = game.count_type(Tile::Block);

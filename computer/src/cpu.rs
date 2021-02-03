@@ -2,7 +2,7 @@ use std::{collections::HashMap, fmt::Display};
 
 use crate::{
     common::{analyze_instruction, disassemble},
-    computer_error::ComputerError,
+    error::ComputerError,
     input::ComputerInput,
     modes::{AddrMode, AddrModes},
 };
@@ -64,7 +64,7 @@ impl<'a, I> DebugInfo<'a, I> {
         self
     }
 
-    fn print(&self) {
+    fn print(&self) -> Result<(), ComputerError> {
         if self.cpu._debug_level & debug::HEAD != 0 {
             println!(
                 "({}-{}) | {{{}}} | \"{}\"",
@@ -76,7 +76,7 @@ impl<'a, I> DebugInfo<'a, I> {
         }
 
         if self.cpu._debug_level & debug::DISASSEMBLE != 0 {
-            let (output, _) = disassemble(&self.cpu._memory, self.range.0);
+            let (output, _) = disassemble(&self.cpu._memory, self.range.0)?;
             println!("    {}", output);
         }
 
@@ -86,12 +86,12 @@ impl<'a, I> DebugInfo<'a, I> {
                 "          Inst:    {}",
                 self.modes
                     .get(0)
-                    .format(self.cpu._memory.get(&self.range.0).unwrap(), 4)
+                    .format(self.cpu.get_direct_value(self.range.0)?, 4)
             );
             print!("          Raw:     ");
             for ad in self.range.0 + 1..self.range.1 {
                 let mode = self.modes.get(ad - self.range.0);
-                print!("{} ", mode.format(self.cpu._memory.get(&ad).unwrap(), 4));
+                print!("{} ", mode.format(self.cpu.get_direct_value(ad)?, 4));
             }
             println!();
             if let Some(processed_params) = self.processed_params {
@@ -106,6 +106,8 @@ impl<'a, I> DebugInfo<'a, I> {
         if self.cpu._debug_level & debug::TEXT_INFO != 0 {
             println!("    {}", self.info_text);
         }
+
+        Ok(())
     }
 }
 
@@ -122,28 +124,46 @@ pub struct Cpu<I> {
 
 #[derive(Debug, Clone, Copy)]
 enum OperationResult {
-    Proceed(usize),
-    Offset(i64, usize),
-    Write(usize, i64, usize),
-    Output(i64, usize),
-    Stop(usize),
+    Proceed {
+        pointer: usize,
+    },
+    Offset {
+        offset: i64,
+        pointer: usize,
+    },
+    Write {
+        addr: usize,
+        value: i64,
+        pointer: usize,
+    },
+    Output {
+        value: i64,
+        pointer: usize,
+    },
+    Stop {
+        pointer: usize,
+    },
 }
 
 impl Display for OperationResult {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match *self {
-            Write(addr, value, pointer) => write!(
+            Write {
+                addr,
+                value,
+                pointer,
+            } => write!(
                 f,
                 "Write {} to [{}] and proceed with ({})",
                 value, addr, pointer
             ),
-            Proceed(pointer) => write!(f, "Proceed with ({})", pointer),
-            Stop(pointer) => write!(f, "Stop at ({})", pointer),
-            Output(value, pointer) => {
+            Proceed { pointer } => write!(f, "Proceed with ({})", pointer),
+            Stop { pointer } => write!(f, "Stop at ({})", pointer),
+            Output { value, pointer } => {
                 write!(f, "Output {} and proceed with ({})", value, pointer)
             }
-            Offset(value, pointer) => {
-                write!(f, "Offset to {{{}}} and proceed with ({})", value, pointer)
+            Offset { offset, pointer } => {
+                write!(f, "Offset to {{{}}} and proceed with ({})", offset, pointer)
             }
         }
     }
@@ -193,19 +213,13 @@ impl<I> Cpu<I> {
         self._memory
             .get(&self._pointer)
             .copied()
-            .ok_or(ComputerError::IllegalAddress(format!(
-                "{} for next instruction",
-                self._pointer
-            )))
+            .ok_or(ComputerError::IllegalAddress(self._pointer as i64))
     }
 
     fn get_relative_address(&self, addr: usize, offset: i64) -> Result<usize, ComputerError> {
         let addr = self._memory.get(&addr).copied().unwrap_or_default() + offset;
         if addr < 0 {
-            Err(ComputerError::IllegalAddress(format!(
-                "{} for address with offset {}",
-                addr, offset
-            )))
+            Err(ComputerError::IllegalAddress(addr))
         } else {
             Ok(addr as usize)
         }
@@ -221,17 +235,22 @@ impl<I> Cpu<I> {
 
     fn get_value(&self, addr: usize, mode: AddrMode) -> Result<i64, ComputerError> {
         let addr = self.get_addr(addr, mode)?;
-        let value = self._memory.get(&addr).copied().unwrap_or_default();
+        let value = self._memory.get(&addr).copied().unwrap_or(0);
         Ok(value)
+    }
+
+    fn get_direct_value(&self, addr: usize) -> Result<i64, ComputerError> {
+        if let Some(value) = self._memory.get(&addr) {
+            Ok(*value)
+        } else {
+            Err(ComputerError::IllegalAddress(addr as i64))
+        }
     }
 
     fn get_value_as_address(&self, addr: usize, mode: AddrMode) -> Result<usize, ComputerError> {
         let addr = self.get_value(addr, mode)?;
         if addr < 0 {
-            Err(ComputerError::IllegalAddress(format!(
-                "{} for value address",
-                addr
-            )))
+            Err(ComputerError::IllegalAddress(addr))
         } else {
             Ok(addr as usize)
         }
@@ -249,7 +268,11 @@ impl<I> Cpu<I> {
         let op1 = self.get_value(self._pointer + 1, modes.get(0))?;
         let op2 = self.get_value(self._pointer + 2, modes.get(1))?;
         let addr = self.get_addr(self._pointer + 3, modes.get(2))?;
-        let outcome = Write(addr, op1 + op2, self._pointer + 4);
+        let outcome = Write {
+            addr,
+            value: op1 + op2,
+            pointer: self._pointer + 4,
+        };
 
         if self._debug_level != debug::NONE {
             DebugInfo::new(
@@ -262,7 +285,7 @@ impl<I> Cpu<I> {
             )
             .add_params(&vec![op1, op2])
             .add_write(op1 + op2, addr)
-            .print();
+            .print()?;
         }
 
         Ok(outcome)
@@ -272,7 +295,11 @@ impl<I> Cpu<I> {
         let op1 = self.get_value(self._pointer + 1, modes.get(0))?;
         let op2 = self.get_value(self._pointer + 2, modes.get(1))?;
         let addr = self.get_addr(self._pointer + 3, modes.get(2))?;
-        let outcome = Write(addr, op1 * op2, self._pointer + 4);
+        let outcome = Write {
+            addr,
+            value: op1 * op2,
+            pointer: self._pointer + 4,
+        };
 
         if self._debug_level != debug::NONE {
             DebugInfo::new(
@@ -285,7 +312,7 @@ impl<I> Cpu<I> {
             )
             .add_params(&vec![op1, op2])
             .add_write(op1 * op2, addr)
-            .print();
+            .print()?;
         }
 
         Ok(outcome)
@@ -294,7 +321,10 @@ impl<I> Cpu<I> {
     fn output(&self, modes: &AddrModes) -> Result<OperationResult, ComputerError> {
         let addr = self.get_addr(self._pointer + 1, modes.get(0))?;
         let value = self.get_value(addr, AddrMode::Direct)?;
-        let outcome = Output(value, self._pointer + 2);
+        let outcome = Output {
+            value,
+            pointer: self._pointer + 2,
+        };
 
         if self._debug_level != debug::NONE {
             DebugInfo::new(
@@ -306,7 +336,7 @@ impl<I> Cpu<I> {
                 outcome,
             )
             .add_params(&vec![addr as i64])
-            .print();
+            .print()?;
         }
         Ok(outcome)
     }
@@ -314,7 +344,9 @@ impl<I> Cpu<I> {
     fn jump_non_zero(&self, modes: &AddrModes) -> Result<OperationResult, ComputerError> {
         let cmp = self.get_value(self._pointer + 1, modes.get(0))?;
         let to = self.get_value_as_address(self._pointer + 2, modes.get(1))?;
-        let outcome = Proceed(if cmp != 0 { to } else { self._pointer + 3 });
+        let outcome = Proceed {
+            pointer: if cmp != 0 { to } else { self._pointer + 3 },
+        };
 
         if self._debug_level != debug::NONE {
             let info_text = if cmp != 0 {
@@ -332,7 +364,7 @@ impl<I> Cpu<I> {
                 outcome,
             )
             .add_params(&vec![cmp])
-            .print();
+            .print()?;
         }
 
         Ok(outcome)
@@ -341,7 +373,9 @@ impl<I> Cpu<I> {
     fn jump_zero(&self, modes: &AddrModes) -> Result<OperationResult, ComputerError> {
         let cmp = self.get_value(self._pointer + 1, modes.get(0))?;
         let to = self.get_value_as_address(self._pointer + 2, modes.get(1))?;
-        let outcome = Proceed(if cmp == 0 { to } else { self._pointer + 3 });
+        let outcome = Proceed {
+            pointer: if cmp == 0 { to } else { self._pointer + 3 },
+        };
 
         if self._debug_level != debug::NONE {
             let info_text = if cmp == 0 {
@@ -359,7 +393,7 @@ impl<I> Cpu<I> {
                 outcome,
             )
             .add_params(&vec![cmp])
-            .print();
+            .print()?;
         }
 
         Ok(outcome)
@@ -370,7 +404,11 @@ impl<I> Cpu<I> {
         let cmp2 = self.get_value(self._pointer + 2, modes.get(1))?;
         let addr = self.get_addr(self._pointer + 3, modes.get(2))?;
         let value = if cmp1 < cmp2 { 1 } else { 0 };
-        let outcome = Write(addr, value, self._pointer + 4);
+        let outcome = Write {
+            addr,
+            value,
+            pointer: self._pointer + 4,
+        };
 
         if self._debug_level != debug::NONE {
             let info_text = if cmp1 < cmp2 {
@@ -388,7 +426,7 @@ impl<I> Cpu<I> {
             )
             .add_params(&vec![cmp1, cmp2])
             .add_write(value, addr)
-            .print();
+            .print()?;
         }
 
         Ok(outcome)
@@ -399,7 +437,11 @@ impl<I> Cpu<I> {
         let cmp2 = self.get_value(self._pointer + 2, modes.get(1))?;
         let addr = self.get_addr(self._pointer + 3, modes.get(2))?;
         let value = if cmp1 == cmp2 { 1 } else { 0 };
-        let outcome = Write(addr, value, self._pointer + 4);
+        let outcome = Write {
+            addr,
+            value,
+            pointer: self._pointer + 4,
+        };
 
         if self._debug_level != debug::NONE {
             let info_text = if cmp1 == cmp2 {
@@ -417,7 +459,7 @@ impl<I> Cpu<I> {
             )
             .add_params(&vec![cmp1, cmp2])
             .add_write(value, addr)
-            .print();
+            .print()?;
         }
 
         Ok(outcome)
@@ -425,7 +467,10 @@ impl<I> Cpu<I> {
 
     fn change_offset(&self, modes: &AddrModes) -> Result<OperationResult, ComputerError> {
         let offset = self.get_value(self._pointer + 1, modes.get(0))?;
-        let outcome = Offset(self._offset + offset, self._pointer + 2);
+        let outcome = Offset {
+            offset: self._offset + offset,
+            pointer: self._pointer + 2,
+        };
 
         if self._debug_level != debug::NONE {
             DebugInfo::new(
@@ -437,14 +482,16 @@ impl<I> Cpu<I> {
                 outcome,
             )
             .add_params(&vec![offset])
-            .print();
+            .print()?;
         }
 
         Ok(outcome)
     }
 
     fn exit(&self, modes: &AddrModes) -> Result<OperationResult, ComputerError> {
-        let outcome = Stop(self._pointer + 1);
+        let outcome = Stop {
+            pointer: self._pointer + 1,
+        };
         if self._debug_level != debug::NONE {
             DebugInfo::new(
                 self,
@@ -454,7 +501,7 @@ impl<I> Cpu<I> {
                 "Stop",
                 outcome,
             )
-            .print();
+            .print()?;
         }
 
         Ok(outcome)
@@ -478,26 +525,30 @@ where
         }
 
         match self.process_next_instruction() {
-            Ok(Proceed(next_pointer)) => {
-                self._pointer = next_pointer;
+            Ok(Proceed { pointer }) => {
+                self._pointer = pointer;
                 Ok(StepResult::Proceed)
             }
-            Ok(Offset(next_offset, next_pointer)) => {
-                self._offset = next_offset;
-                self._pointer = next_pointer;
+            Ok(Offset { offset, pointer }) => {
+                self._offset = offset;
+                self._pointer = pointer;
                 Ok(StepResult::Proceed)
             }
-            Ok(Write(addr, value, next_pointer)) => {
+            Ok(Write {
+                addr,
+                value,
+                pointer,
+            }) => {
                 self.set_value(addr, value);
-                self._pointer = next_pointer;
+                self._pointer = pointer;
                 Ok(StepResult::Proceed)
             }
-            Ok(Stop(next_pointer)) => {
-                self._pointer = next_pointer;
+            Ok(Stop { pointer }) => {
+                self._pointer = pointer;
                 Ok(StepResult::Stop)
             }
-            Ok(Output(value, next_pointer)) => {
-                self._pointer = next_pointer;
+            Ok(Output { value, pointer }) => {
+                self._pointer = pointer;
                 Ok(StepResult::Value(value))
             }
             Err(err) => {
@@ -531,9 +582,13 @@ where
     }
 
     fn input(&self, modes: &AddrModes) -> Result<OperationResult, ComputerError> {
-        if let Some(input) = self._input.get_next_input() {
+        if let Some(value) = self._input.get_next_input() {
             let addr = self.get_addr(self._pointer + 1, modes.get(0))?;
-            let outcome = Write(addr, input, self._pointer + 2);
+            let outcome = Write {
+                addr,
+                value,
+                pointer: self._pointer + 2,
+            };
 
             if self._debug_level != debug::NONE {
                 DebugInfo::new(
@@ -541,11 +596,11 @@ where
                     "INP",
                     (self._pointer, self._pointer + 2),
                     modes,
-                    &format!("Input {} to [{}]", input, addr),
+                    &format!("Input {} to [{}]", value, addr),
                     outcome,
                 )
-                .add_write(input, addr)
-                .print();
+                .add_write(value, addr)
+                .print()?;
             }
 
             Ok(outcome)

@@ -1,10 +1,9 @@
-use common::Direction;
-use computer::{Code, ComputerError};
-
 use crate::{
-    drone_error::DroneError,
+    error::DroneError,
     santa::{SantasShip, ShipState},
 };
+use common::Direction;
+use computer::Code;
 
 #[derive(Debug)]
 struct Room {
@@ -148,7 +147,7 @@ impl<'a> Drone<'a> {
         name.map(|name| Room { name, exits, items })
     }
 
-    fn take_item_and_check(&mut self, item: &String) -> Result<bool, ComputerError> {
+    fn take_item_and_check(&mut self, item: &String) -> Result<bool, DroneError> {
         self._ship.send_command(&format!("take {}", item))?;
         let (state, _) = self._ship.get_text()?;
 
@@ -272,7 +271,7 @@ impl<'a> Drone<'a> {
         Err(DroneError::NoWeightFits)
     }
 
-    fn say_direction(&self, dir: Direction) -> Result<(), ComputerError> {
+    fn say_direction(&self, dir: Direction) -> Result<(), DroneError> {
         let direction = match dir {
             Direction::East => "east",
             Direction::North => "north",

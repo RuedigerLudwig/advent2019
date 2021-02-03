@@ -38,11 +38,12 @@ pub fn check_better(from: i32, to: i32) -> i32 {
 
 #[cfg(test)]
 mod tests {
+    use crate::error::PasswordError;
+
     use super::*;
-    use common::CommonError;
 
     #[test]
-    fn test_one() -> Result<(), CommonError> {
+    fn test_one() -> Result<(), PasswordError> {
         let input = "112233";
         let expected = true;
         let result = check_better_password(&input);
@@ -52,7 +53,7 @@ mod tests {
     }
 
     #[test]
-    fn test_two() -> Result<(), CommonError> {
+    fn test_two() -> Result<(), PasswordError> {
         let input = "123444";
         let expected = false;
         let result = check_better_password(&input);
@@ -62,7 +63,7 @@ mod tests {
     }
 
     #[test]
-    fn test_three() -> Result<(), CommonError> {
+    fn test_three() -> Result<(), PasswordError> {
         let input = "111122";
         let expected = true;
         let result = check_better_password(&input);
@@ -72,7 +73,7 @@ mod tests {
     }
 
     #[test]
-    fn test_more() -> Result<(), CommonError> {
+    fn test_more() -> Result<(), PasswordError> {
         let expected = 1;
         let result = check_better(111121, 111123);
         assert_eq!(expected, result);

@@ -1,12 +1,14 @@
-use computer::Code;
-use droid::Droid;
-use interface::ComputerInterface;
-use std::error::Error;
-
+#![warn(rust_2018_idioms, missing_debug_implementations)]
 mod droid;
+mod error;
 mod interface;
 
-pub fn result() -> Result<(), Box<dyn Error>> {
+use computer::Code;
+use droid::Droid;
+use error::DroidError;
+use interface::ComputerInterface;
+
+pub fn result() -> Result<(), DroidError> {
     let code = Code::from_file("day15", "input.txt")?;
     let interface = ComputerInterface::new(&code);
     let mut droid = Droid::new(interface);

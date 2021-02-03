@@ -1,15 +1,12 @@
-use crate::{content::Content, explorer::Explorer, map::Map, path::Path, vault_error::VaultError};
+use crate::{content::Content, error::VaultError, explorer::Explorer, map::Map, path::Path};
 
 fn pop_minimum(list: &mut Vec<Content>) -> Option<Content> {
-    if let Some(min) = list.iter().min() {
-        let index = list
-            .iter()
-            .position(|content| content == min)
-            .unwrap_or_default();
-        Some(list.swap_remove(index))
-    } else {
-        None
-    }
+    let min = list.iter().min()?;
+    let index = list
+        .iter()
+        .position(|content| content == min)
+        .unwrap_or_default();
+    Some(list.swap_remove(index))
 }
 
 fn do_search(paths: Vec<Path>) -> Result<usize, VaultError> {
@@ -40,10 +37,9 @@ pub fn find_all_keys_part2(map: &Map) -> Result<usize, VaultError> {
 mod tests {
     use super::*;
     use common::read_all_lines;
-    use std::error::Error;
 
     #[test]
-    fn test_find_all_keys() -> Result<(), Box<dyn Error>> {
+    fn test_find_all_keys() -> Result<(), VaultError> {
         let input = read_all_lines("day18", "example1.txt")?;
         let map = Map::new(&input)?;
         let expected = 8;
@@ -53,7 +49,7 @@ mod tests {
     }
 
     #[test]
-    fn test_find_all_keys_2() -> Result<(), Box<dyn Error>> {
+    fn test_find_all_keys_2() -> Result<(), VaultError> {
         let input = read_all_lines("day18", "example2.txt")?;
         let map = Map::new(&input)?;
         let expected = 86;
@@ -63,7 +59,7 @@ mod tests {
     }
 
     #[test]
-    fn test_find_all_keys_3() -> Result<(), Box<dyn Error>> {
+    fn test_find_all_keys_3() -> Result<(), VaultError> {
         let input = read_all_lines("day18", "example3.txt")?;
         let map = Map::new(&input)?;
         let expected = 132;
@@ -74,7 +70,7 @@ mod tests {
 
     #[test]
     #[ignore]
-    fn test_find_all_keys_4() -> Result<(), Box<dyn Error>> {
+    fn test_find_all_keys_4() -> Result<(), VaultError> {
         let input = read_all_lines("day18", "example4.txt")?;
         let map = Map::new(&input)?;
         let expected = 136;
@@ -84,7 +80,7 @@ mod tests {
     }
 
     #[test]
-    fn test_find_all_keys_5() -> Result<(), Box<dyn Error>> {
+    fn test_find_all_keys_5() -> Result<(), VaultError> {
         let input = read_all_lines("day18", "example5.txt")?;
         let map = Map::new(&input)?;
         let expected = 81;
@@ -94,7 +90,7 @@ mod tests {
     }
 
     #[test]
-    fn test_find_all_keys_7() -> Result<(), Box<dyn Error>> {
+    fn test_find_all_keys_7() -> Result<(), VaultError> {
         let input = read_all_lines("day18", "example7.txt")?;
         let map = Map::new(&input)?;
         let expected = 8;
@@ -104,7 +100,7 @@ mod tests {
     }
 
     #[test]
-    fn test_find_all_keys_8() -> Result<(), Box<dyn Error>> {
+    fn test_find_all_keys_8() -> Result<(), VaultError> {
         let input = read_all_lines("day18", "example8.txt")?;
         let map = Map::new(&input)?;
         let expected = 24;
@@ -114,7 +110,7 @@ mod tests {
     }
 
     #[test]
-    fn test_find_all_keys_9() -> Result<(), Box<dyn Error>> {
+    fn test_find_all_keys_9() -> Result<(), VaultError> {
         let input = read_all_lines("day18", "example9.txt")?;
         let map = Map::new(&input)?;
         let expected = 72;

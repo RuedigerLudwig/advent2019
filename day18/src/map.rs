@@ -1,4 +1,4 @@
-use crate::vault_error::VaultError;
+use crate::error::VaultError;
 use common::{Area as RawArea, Pos as RawPos};
 use std::{collections::HashMap, convert::TryFrom, convert::TryInto, fmt::Display};
 
@@ -54,10 +54,10 @@ pub struct Map {
 }
 
 impl Map {
-    pub fn new(lines: &[String]) -> Result<Map, VaultError> {
+    pub fn new<T: AsRef<str>>(lines: &[T]) -> Result<Map, VaultError> {
         let mut _data = HashMap::new();
         for (row, line) in (0..).zip(lines.iter().rev()) {
-            for (col, ch) in (0..).zip(line.chars()) {
+            for (col, ch) in (0..).zip(line.as_ref().chars()) {
                 let tile: Tile = ch.try_into()?;
                 if tile != Tile::Wall {
                     _data.insert(Pos::new(col, row), tile);
@@ -75,13 +75,7 @@ impl Map {
         let maybe = self
             ._data
             .iter()
-            .filter(|(_, tile)| {
-                if let Tile::Entrance = tile {
-                    true
-                } else {
-                    false
-                }
-            })
+            .filter(|(_, tile)| matches!(tile, Tile::Entrance))
             .collect::<Vec<_>>();
 
         if maybe.len() != 1 {
@@ -114,10 +108,9 @@ impl Display for Map {
 mod tests {
     use super::*;
     use common::read_all_lines;
-    use std::error::Error;
 
     #[test]
-    fn test_get_entrance() -> Result<(), Box<dyn Error>> {
+    fn test_get_entrance() -> Result<(), VaultError> {
         let input = read_all_lines("day18", "example1.txt")?;
         let map = Map::new(&input)?;
         let expected = Pos::new(5, 1);
@@ -128,7 +121,7 @@ mod tests {
 
     #[test]
     #[ignore]
-    fn test_print_path() -> Result<(), Box<dyn Error>> {
+    fn test_print_path() -> Result<(), VaultError> {
         let input = read_all_lines("day18", "input.txt")?;
         let map = Map::new(&input)?;
 

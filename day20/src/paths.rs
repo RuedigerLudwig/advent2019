@@ -1,8 +1,8 @@
 use common::{hashmap, hashset, Direction};
 
 use crate::{
+    error::MapError,
     map::{Map, PortalData, Pos, Tile},
-    map_error::MapError,
 };
 use std::{
     cell::RefCell,

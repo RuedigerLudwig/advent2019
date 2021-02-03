@@ -3,8 +3,8 @@ use std::collections::{HashMap, HashSet};
 use common::hashset;
 
 use crate::{
+    error::MapError,
     map::{Map, PortalData},
-    map_error::MapError,
     paths::Paths,
 };
 

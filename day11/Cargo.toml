@@ -9,3 +9,4 @@ edition = "2018"
 [dependencies]
 computer = { path = "../computer" }
 common = { path = "../common" }
+thiserror = "1.0.23"

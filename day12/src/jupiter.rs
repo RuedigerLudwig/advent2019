@@ -1,9 +1,7 @@
-use std::{fmt::Debug, ops::Index, str::FromStr};
-
-use common::{as_int, math};
+use crate::error::JupiterError;
+use common::math;
 use regex::Regex;
-
-use crate::jupiter_error::JupiterError;
+use std::{fmt::Debug, ops::Index, str::FromStr};
 
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
 pub struct Component {
@@ -23,23 +21,26 @@ impl Component {
         }
     }
 
-    pub fn calc_repeat(start: Vec<Component>) -> i64 {
+    fn calc_repeat(start: Vec<Component>) -> i64 {
         let mut current = start.clone();
-        for round in 1.. {
-            let mut next = current.clone();
-            for comp in next.iter_mut() {
-                let mut added = 0;
-                for other in &current {
-                    added += comp.apply_gravity(&other);
-                }
-                *comp = comp.apply_velocity(added);
-            }
+        let mut round = 0;
+        loop {
+            round += 1;
+            let next = current
+                .iter()
+                .map(|component| {
+                    let added = current
+                        .iter()
+                        .map(|other| component.apply_gravity(other))
+                        .sum();
+                    component.apply_velocity(added)
+                })
+                .collect::<Vec<_>>();
             if next == start {
-                return round;
+                break round;
             }
             current = next;
         }
-        -1
     }
 }
 
@@ -87,15 +88,12 @@ impl FromStr for Moon {
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         let re = Regex::new(r"<x=(?P<x>-?\d+), y=(?P<y>-?\d+), z=(?P<z>-?\d+)>")?;
         if let Some(items) = re.captures(s) {
-            let x = as_int(&items["x"])?;
-            let y = as_int(&items["y"])?;
-            let z = as_int(&items["z"])?;
+            let x = items["x"].parse()?;
+            let y = items["y"].parse()?;
+            let z = items["z"].parse()?;
             Ok(Moon::new(x, y, z))
         } else {
-            Err(JupiterError::MessageError(format!(
-                "Not a valid moon {}",
-                s
-            )))
+            Err(JupiterError::NoValidMoon(s.to_owned()))
         }
     }
 }
@@ -119,16 +117,15 @@ pub struct Jupiter {
 }
 
 impl Jupiter {
-    pub fn parse(input: &Vec<String>) -> Result<Jupiter, JupiterError> {
-        let moons = input
-            .iter()
-            .map(|line| Moon::from_str(line))
-            .collect::<Result<_, _>>()?;
-        Ok(Jupiter { moons })
+    pub fn parse<T: AsRef<str>>(input: &[T]) -> Result<Jupiter, JupiterError> {
+        Ok(Jupiter {
+            moons: input
+                .iter()
+                .map(|line| line.as_ref().parse())
+                .collect::<Result<_, _>>()?,
+        })
     }
-}
 
-impl Jupiter {
     pub fn step(&self, steps: i32) -> Jupiter {
         let mut moons = self.moons.clone();
         for _ in 0..steps {
@@ -154,12 +151,7 @@ impl Jupiter {
     pub fn get_repeat_steps(&self) -> i64 {
         (0..3)
             .map(|component| {
-                Component::calc_repeat(
-                    self.moons //
-                        .iter()
-                        .map(|moon| moon[component])
-                        .collect(),
-                )
+                Component::calc_repeat(self.moons.iter().map(|moon| moon[component]).collect())
             })
             .fold(1, |a, b| math::lcm(a, b))
     }

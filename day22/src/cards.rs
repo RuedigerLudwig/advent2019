@@ -1,8 +1,7 @@
-use crate::card_error::CardError;
-use common::{
-    as_long,
-    math::{modulus_exp, modulus_inv, modulus_mul},
-};
+use std::str::FromStr;
+
+use crate::error::CardError;
+use common::math::{modulus_exp, modulus_inv, modulus_mul};
 
 #[derive(Debug, PartialEq, Eq)]
 pub enum Techniques {
@@ -20,26 +19,28 @@ impl Techniques {
         }
     }
 
-    pub fn parse(lines: &[String]) -> Result<Vec<Techniques>, CardError> {
+    pub fn parse<T: AsRef<str>>(lines: &[T]) -> Result<Vec<Techniques>, CardError> {
         Ok(lines
             .iter()
-            .map(|s| Techniques::parse_single(s))
+            .map(|s| s.as_ref().parse())
             .collect::<Result<Vec<Techniques>, _>>()?)
     }
+}
 
-    fn parse_single(line: &str) -> Result<Self, CardError> {
+impl FromStr for Techniques {
+    type Err = CardError;
+
+    fn from_str(line: &str) -> Result<Self, Self::Err> {
+        use Techniques::*;
         if line == "deal into new stack" {
-            return Ok(Techniques::DealIntoNewStack);
+            Ok(DealIntoNewStack)
         } else if line.starts_with("cut ") {
-            if let Ok(number) = as_long(&line[4..]) {
-                return Ok(Techniques::Cut(number));
-            }
+            Ok(Cut(line[4..].parse()?))
         } else if line.starts_with("deal with increment ") {
-            if let Ok(number) = as_long(&line[20..]) {
-                return Ok(Techniques::DealWithIncrement(number));
-            }
+            Ok(DealWithIncrement(line[20..].parse()?))
+        } else {
+            Err(CardError::UnknownTechnique(line.to_owned()))
         }
-        Err(CardError::UnknownTechnique(line.to_owned()))
     }
 }
 
@@ -56,34 +57,33 @@ impl CardShuffle {
         if deck_size <= 0 {
             return Err(CardError::IllegalDeckSize(deck_size));
         }
-        let (mul, add) = techniques.iter().fold(Ok((1, 0)), |next, technique| {
-            if let Ok((mul, add)) = next {
+        let (mul, add) = techniques
+            .iter()
+            .try_fold((1, 0), |(mul, add), technique| {
                 let (m2, a2) = technique.get_params();
-                if let Some(invers) = modulus_inv(m2, deck_size) {
-                    let new_mul = modulus_mul(mul, invers, deck_size);
-                    let new_add = modulus_mul(add + a2, m2, deck_size);
-                    Ok((new_mul, new_add))
-                } else {
-                    Err(CardError::NotCoprime(m2, deck_size))
-                }
-            } else {
-                next
-            }
-        })?;
 
-        if let Some(inv_mul) = modulus_inv(mul, deck_size) {
-            let fixpoint =
-                modulus_inv(inv_mul - 1, deck_size).map(|tmp| modulus_mul(tmp, add, deck_size));
-            Ok(CardShuffle {
-                deck_size,
-                fixpoint,
-                mul,
-                add,
+                modulus_inv(m2, deck_size)
+                    .map(|invers| {
+                        let new_mul = modulus_mul(mul, invers, deck_size);
+                        let new_add = modulus_mul(add + a2, m2, deck_size);
+
+                        (new_mul, new_add)
+                    })
+                    .ok_or(CardError::NotCoprime(m2, deck_size))
+            })?;
+
+        modulus_inv(mul, deck_size)
+            .map(|inv_mul| {
+                let fixpoint =
+                    modulus_inv(inv_mul - 1, deck_size).map(|tmp| modulus_mul(tmp, add, deck_size));
+                CardShuffle {
+                    deck_size,
+                    fixpoint,
+                    mul,
+                    add,
+                }
             })
-        } else {
-            // This was checked beforehand, but we need to check anyway, so let#s just throw this error here
-            Err(CardError::NotCoprime(mul, deck_size))
-        }
+            .ok_or(CardError::NotCoprime(mul, deck_size))
     }
 
     pub fn invert(&self) -> Result<CardShuffle, CardError> {
@@ -91,23 +91,23 @@ impl CardShuffle {
     }
 
     pub fn repeat(&self, times: i64) -> Result<CardShuffle, CardError> {
-        if let Some(fixpoint) = self.fixpoint {
-            let times = times.rem_euclid(self.deck_size - 1);
-            let mul = modulus_exp(self.mul, times, self.deck_size);
+        self.fixpoint
+            .map(|fixpoint| {
+                let times = times.rem_euclid(self.deck_size - 1);
+                let mul = modulus_exp(self.mul, times, self.deck_size);
 
-            // I am sure I have a fixpoint, so the unwrap will always work safely
-            let inv_mul = modulus_inv(mul, self.deck_size).unwrap();
-            let add = modulus_mul(inv_mul - 1, fixpoint, self.deck_size);
+                let inv_mul = modulus_inv(mul, self.deck_size)
+                    .expect("I am sure I have a fixpoint, so this will always work safely");
+                let add = modulus_mul(inv_mul - 1, fixpoint, self.deck_size);
 
-            Ok(CardShuffle {
-                deck_size: self.deck_size,
-                fixpoint: self.fixpoint,
-                mul,
-                add,
+                CardShuffle {
+                    deck_size: self.deck_size,
+                    fixpoint: self.fixpoint,
+                    mul,
+                    add,
+                }
             })
-        } else {
-            Err(CardError::NotImplemented)
-        }
+            .ok_or(CardError::NotImplemented)
     }
 
     pub fn get_position_of_card(&self, card: i64) -> i64 {
@@ -120,10 +120,9 @@ impl CardShuffle {
 mod test {
     use super::*;
     use common::read_all_lines;
-    use std::error::Error;
 
     #[test]
-    fn simple_parse() -> Result<(), Box<dyn Error>> {
+    fn simple_parse() -> Result<(), CardError> {
         let input = read_all_lines("day22", "example2.txt")?;
         let expected = vec![
             Techniques::Cut(6),
@@ -138,7 +137,7 @@ mod test {
     }
 
     #[test]
-    fn test_new_stack_forward() -> Result<(), Box<dyn Error>> {
+    fn test_new_stack_forward() -> Result<(), CardError> {
         let shuffle = CardShuffle::create(&vec![Techniques::DealIntoNewStack], 10)?;
 
         let result = (0..10)
@@ -153,7 +152,7 @@ mod test {
     }
 
     #[test]
-    fn test_new_cut3_forward() -> Result<(), Box<dyn Error>> {
+    fn test_new_cut3_forward() -> Result<(), CardError> {
         let shuffle = CardShuffle::create(&vec![Techniques::Cut(3)], 10)?;
 
         let result = (0..10)
@@ -168,7 +167,7 @@ mod test {
     }
 
     #[test]
-    fn test_new_deal_with_increment3() -> Result<(), Box<dyn Error>> {
+    fn test_new_deal_with_increment3() -> Result<(), CardError> {
         let shuffle = CardShuffle::create(&vec![Techniques::DealWithIncrement(3)], 10)?;
 
         let result = (0..10)
@@ -183,7 +182,7 @@ mod test {
     }
 
     #[test]
-    fn test_two_techniques() -> Result<(), Box<dyn Error>> {
+    fn test_two_techniques() -> Result<(), CardError> {
         let shuffle = CardShuffle::create(
             &vec![Techniques::DealWithIncrement(3), Techniques::Cut(2)],
             10,
@@ -201,7 +200,7 @@ mod test {
     }
 
     #[test]
-    fn test_repeat() -> Result<(), Box<dyn Error>> {
+    fn test_repeat() -> Result<(), CardError> {
         let shuffle = CardShuffle::create(
             &vec![Techniques::DealWithIncrement(7), Techniques::Cut(5)],
             13,
@@ -220,7 +219,7 @@ mod test {
     }
 
     #[test]
-    fn test_repeat_back() -> Result<(), Box<dyn Error>> {
+    fn test_repeat_back() -> Result<(), CardError> {
         let shuffle = CardShuffle::create(
             &vec![Techniques::DealWithIncrement(7), Techniques::Cut(5)],
             13,
@@ -240,7 +239,7 @@ mod test {
     }
 
     #[test]
-    fn test_example1() -> Result<(), Box<dyn Error>> {
+    fn test_example1() -> Result<(), CardError> {
         let input = Techniques::parse(&read_all_lines("day22", "example1.txt")?)?;
         let shuffle = CardShuffle::create(&input, 10)?;
 
@@ -256,7 +255,7 @@ mod test {
     }
 
     #[test]
-    fn test_example2() -> Result<(), Box<dyn Error>> {
+    fn test_example2() -> Result<(), CardError> {
         let input = Techniques::parse(&read_all_lines("day22", "example2.txt")?)?;
         let shuffle = CardShuffle::create(&input, 10)?;
 
@@ -272,7 +271,7 @@ mod test {
     }
 
     #[test]
-    fn test_example4_forward() -> Result<(), Box<dyn Error>> {
+    fn test_example4_forward() -> Result<(), CardError> {
         let input = Techniques::parse(&read_all_lines("day22", "example4.txt")?)?;
         let shuffle = CardShuffle::create(&input, 10)?;
 
@@ -288,7 +287,7 @@ mod test {
     }
 
     #[test]
-    fn test_repeat_simple() -> Result<(), Box<dyn Error>> {
+    fn test_repeat_simple() -> Result<(), CardError> {
         let input = Techniques::parse(&read_all_lines("day22", "input.txt")?)?;
         let shuffle = CardShuffle::create(&input, 10_007)?;
         let shuffle2 = shuffle.repeat(1)?;
@@ -299,7 +298,7 @@ mod test {
     }
 
     #[test]
-    fn test_double_inv() -> Result<(), Box<dyn Error>> {
+    fn test_double_inv() -> Result<(), CardError> {
         let input = Techniques::parse(&read_all_lines("day22", "input.txt")?)?;
         let shuffle = CardShuffle::create(&input, 10_007)?;
         let shuffle2 = shuffle.invert()?.invert()?;

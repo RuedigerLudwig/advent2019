@@ -1,6 +1,5 @@
+use crate::error::CommonError;
 use std::fs;
-
-use crate::CommonError;
 
 fn read_from_file(module: &str, file: &str) -> Result<String, CommonError> {
     let mut result = fs::read_to_string(format!("{}/data/{}", module, file));

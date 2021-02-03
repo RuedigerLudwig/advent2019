@@ -1,3 +1,5 @@
+use crate::error::MapError;
+use common::zip;
 use std::{
     collections::{HashMap, HashSet},
     fmt::Display,
@@ -5,8 +7,6 @@ use std::{
 
 use common::Area as RawArea;
 use common::Pos as RawPos;
-
-use crate::map_error::MapError;
 
 pub type Pos = RawPos<i32>;
 pub type Area = RawArea<i32>;
@@ -119,7 +119,7 @@ pub struct Map {
 }
 
 impl Map {
-    pub fn parse(lines: &[String]) -> Result<Map, MapError> {
+    pub fn parse<T: AsRef<str>>(lines: &[T]) -> Result<Map, MapError> {
         let mut inner_col_start = None;
         let mut inner_row_start = None;
         let mut inner_col_end = None;
@@ -130,7 +130,7 @@ impl Map {
         let mut map = HashMap::new();
         let mut letters = HashMap::new();
         for (row, line) in (0..).zip(lines.iter()) {
-            for (col, ch) in (0..).zip(line.chars()) {
+            for (col, ch) in (0..).zip(line.as_ref().chars()) {
                 match ch {
                     ' ' => {
                         if row >= 2 {
@@ -178,28 +178,30 @@ impl Map {
                 }
             }
             if outer_col_end.is_none() && row >= 2 {
-                outer_col_end = Some(line.len() as i32 - 1);
+                outer_col_end = Some(line.as_ref().len() as i32 - 1);
             }
         }
 
-        if inner_row_start.is_none()
-            || inner_row_end.is_none()
-            || outer_row_end.is_none()
-            || inner_col_start.is_none()
-            || inner_col_end.is_none()
-            || outer_col_end.is_none()
-        {
+        let (outer, inner) = if let Some((
+            inner_row_start,
+            (inner_row_end, (outer_row_end, (inner_col_start, (inner_col_end, outer_col_end)))),
+        )) = zip!(
+            inner_row_start,
+            inner_row_end,
+            outer_row_end,
+            inner_col_start,
+            inner_col_end,
+            outer_col_end
+        ) {
+            let outer = Area::new(Pos::new(2, 2), Pos::new(outer_col_end, outer_row_end));
+            let inner = Area::new(
+                Pos::new(inner_col_start, inner_row_start),
+                Pos::new(inner_col_end, inner_row_end),
+            );
+            (outer, inner)
+        } else {
             return Err(MapError::InvalidMap);
-        }
-
-        let outer = Area::new(
-            Pos::new(2, 2),
-            Pos::new(outer_col_end.unwrap(), outer_row_end.unwrap()),
-        );
-        let inner = Area::new(
-            Pos::new(inner_col_start.unwrap(), inner_row_start.unwrap()),
-            Pos::new(inner_col_end.unwrap(), inner_row_end.unwrap()),
-        );
+        };
 
         let mut portals = Map::extract_portals(&mut map, &letters, &outer, true)?;
         portals.extend(Map::extract_portals(&mut map, &letters, &inner, false)?);
@@ -343,7 +345,6 @@ impl Map {
 
 #[cfg(test)]
 mod tests {
-    use std::error::Error;
 
     use common::read_all_lines;
 
@@ -352,7 +353,7 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_explore() -> Result<(), Box<dyn Error>> {
+    fn test_explore() -> Result<(), MapError> {
         let input = read_all_lines("day20", "example1.txt")?;
         let map = Map::parse(&input)?;
         let len = Explorer::new(&map).explore()?;
@@ -362,7 +363,7 @@ mod tests {
     }
 
     #[test]
-    fn test_explore2() -> Result<(), Box<dyn Error>> {
+    fn test_explore2() -> Result<(), MapError> {
         let input = read_all_lines("day20", "example2.txt")?;
         let map = Map::parse(&input)?;
         let len = Explorer::new(&map).explore()?;
@@ -372,7 +373,7 @@ mod tests {
     }
 
     #[test]
-    fn test_explore_part2_1() -> Result<(), Box<dyn Error>> {
+    fn test_explore_part2_1() -> Result<(), MapError> {
         let input = read_all_lines("day20", "example1.txt")?;
         let map = Map::parse(&input)?;
         let len = ExplorerTwo::new(&map).explore()?;
@@ -384,7 +385,7 @@ mod tests {
     #[test]
     #[ignore]
     // TODO: This does run forever for now. Still need to find a propert soloution
-    fn test_explore_part2_2() -> Result<(), Box<dyn Error>> {
+    fn test_explore_part2_2() -> Result<(), MapError> {
         let input = read_all_lines("day20", "example2.txt")?;
         let map = Map::parse(&input)?;
         let result = ExplorerTwo::new(&map).explore();
@@ -398,7 +399,7 @@ mod tests {
     }
 
     #[test]
-    fn test_explore_part2_3() -> Result<(), Box<dyn Error>> {
+    fn test_explore_part2_3() -> Result<(), MapError> {
         let input = read_all_lines("day20", "example3.txt")?;
         let map = Map::parse(&input)?;
         let len = ExplorerTwo::new(&map).explore()?;
@@ -409,7 +410,7 @@ mod tests {
 
     #[test]
     #[ignore]
-    fn test_explore_part2_n() -> Result<(), Box<dyn Error>> {
+    fn test_explore_part2_n() -> Result<(), MapError> {
         let input = read_all_lines("day20", "input.txt")?;
         let map = Map::parse(&input)?;
         let len = ExplorerTwo::new(&map).explore()?;

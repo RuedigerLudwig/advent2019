@@ -1,8 +1,8 @@
-use std::error::Error;
+#![warn(rust_2018_idioms, missing_debug_implementations)]
 
-use computer::{Code, ListInput, VirtualMachine};
+use computer::{Code, ComputerError, ListInput, VirtualMachine};
 
-pub fn result() -> Result<(), Box<dyn Error>> {
+pub fn result() -> Result<(), ComputerError> {
     let code = Code::from_file("day09", "input.txt")?;
 
     let input1 = ListInput::single(1);

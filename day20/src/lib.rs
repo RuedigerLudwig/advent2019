@@ -1,19 +1,18 @@
-#![warn(rust_2018_idioms)]
+#![warn(rust_2018_idioms, missing_debug_implementations)]
 
+mod error;
 mod explorer;
 mod explorer_two;
 mod map;
-mod map_error;
 mod paths;
 
-use std::error::Error;
-
 use common::read_all_lines;
+use error::MapError;
 use explorer::Explorer;
 use explorer_two::ExplorerTwo;
 use map::Map;
 
-pub fn result() -> Result<(), Box<dyn Error>> {
+pub fn result() -> Result<(), MapError> {
     let input = read_all_lines("day20", "input.txt")?;
     let map = Map::parse(&input)?;
     let result1 = Explorer::new(&map).explore()?;

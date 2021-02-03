@@ -1,8 +1,8 @@
 use crate::{
+    error::TractorError,
     interface::{Pos, TractorInterface},
-    tractor_error::TractorError,
 };
-use std::{collections::HashMap, error::Error};
+use std::collections::HashMap;
 
 pub struct Tractor<I> {
     _interface: I,
@@ -18,7 +18,7 @@ where
         }
     }
 
-    pub fn scan(&mut self, scan_range: i32) -> Result<i32, Box<dyn Error>> {
+    pub fn scan(&mut self, scan_range: i32) -> Result<i32, TractorError> {
         let mut count = 0;
         let mut tractor_start = 0;
         let mut tractor_end = 0;
@@ -46,7 +46,7 @@ where
         Ok(count)
     }
 
-    pub fn fit(&mut self, to_fit: i32) -> Result<i32, Box<dyn Error>> {
+    pub fn fit(&mut self, to_fit: i32) -> Result<i32, TractorError> {
         let mut map = HashMap::new();
 
         let mut tractor_start = 0;
@@ -92,7 +92,7 @@ mod tests {
     use std::collections::HashSet;
 
     #[test]
-    fn test_scan() -> Result<(), Box<dyn Error>> {
+    fn test_scan() -> Result<(), TractorError> {
         let lines = read_all_lines("day19", "example1.txt")?;
         let interface = TestInterface::new(&lines);
         let mut droid = Tractor::new(interface);
@@ -104,7 +104,7 @@ mod tests {
     }
 
     #[test]
-    fn test_fit() -> Result<(), Box<dyn Error>> {
+    fn test_fit() -> Result<(), TractorError> {
         let lines = read_all_lines("day19", "example1.txt")?;
         let interface = TestInterface::new(&lines);
         let mut droid = Tractor::new(interface);
@@ -134,7 +134,7 @@ mod tests {
     }
 
     impl TractorInterface for TestInterface {
-        fn check_pull(&mut self, position: Pos) -> Result<bool, Box<dyn std::error::Error>> {
+        fn check_pull(&mut self, position: Pos) -> Result<bool, TractorError> {
             Ok(self._map.contains(&position))
         }
     }
