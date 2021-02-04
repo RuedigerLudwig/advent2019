@@ -1,16 +1,16 @@
 #![warn(rust_2018_idioms, missing_debug_implementations)]
 
-use computer::{Code, ComputerError, ListInput, VirtualMachine};
+use computer::{Code, ComputerError, OnceInput, VirtualMachine};
 
 pub fn result() -> Result<(), ComputerError> {
     let code = Code::from_file("day09", "input.txt")?;
 
-    let input1 = ListInput::single(1);
+    let input1 = OnceInput::new(1);
     let vm1 = VirtualMachine::new(&code, &input1);
     let result1 = vm1.get_output().get_all()?;
     println!("Day 09 - Result 1: {:?}", result1);
 
-    let input2 = ListInput::single(2);
+    let input2 = OnceInput::new(2);
     let vm2 = VirtualMachine::new(&code, &input2);
     let result2 = vm2.get_output().get_all()?;
 

@@ -15,7 +15,7 @@ mod vm;
 pub use code::Code;
 pub use cpu::{debug, StepResult};
 pub use error::ComputerError;
-pub use input::{ComputerInput, NoInput};
+pub use input::{ComputerInput, Input, NoInput, OnceInput};
 pub use list_input::ListInput;
 pub use output::Output;
 pub use text_input::TextInput;

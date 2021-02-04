@@ -3,7 +3,7 @@ use std::{collections::HashMap, fmt::Display};
 use crate::{
     common::{analyze_instruction, disassemble},
     error::ComputerError,
-    input::ComputerInput,
+    input::{ComputerInput, Input},
     modes::{AddrMode, AddrModes},
 };
 pub mod debug {
@@ -143,6 +143,7 @@ enum OperationResult {
     Stop {
         pointer: usize,
     },
+    WaitForInput,
 }
 
 impl Display for OperationResult {
@@ -165,6 +166,7 @@ impl Display for OperationResult {
             Offset { offset, pointer } => {
                 write!(f, "Offset to {{{}}} and proceed with ({})", offset, pointer)
             }
+            WaitForInput => write!(f, "Waiting for Input"),
         }
     }
 }
@@ -513,6 +515,7 @@ pub enum StepResult {
     Value(i64),
     Stop,
     Proceed,
+    Blocked,
 }
 
 impl<I> Cpu<I>
@@ -551,6 +554,7 @@ where
                 self._pointer = pointer;
                 Ok(StepResult::Value(value))
             }
+            Ok(WaitForInput) => Ok(StepResult::Blocked),
             Err(err) => {
                 self._crashed = true;
                 Err(err)
@@ -582,30 +586,32 @@ where
     }
 
     fn input(&self, modes: &AddrModes) -> Result<OperationResult, ComputerError> {
-        if let Some(value) = self._input.get_next_input() {
-            let addr = self.get_addr(self._pointer + 1, modes.get(0))?;
-            let outcome = Write {
-                addr,
-                value,
-                pointer: self._pointer + 2,
-            };
+        match self._input.get_next_input() {
+            Input::Value(value) => {
+                let addr = self.get_addr(self._pointer + 1, modes.get(0))?;
+                let outcome = Write {
+                    addr,
+                    value,
+                    pointer: self._pointer + 2,
+                };
 
-            if self._debug_level != debug::NONE {
-                DebugInfo::new(
-                    self,
-                    "INP",
-                    (self._pointer, self._pointer + 2),
-                    modes,
-                    &format!("Input {} to [{}]", value, addr),
-                    outcome,
-                )
-                .add_write(value, addr)
-                .print()?;
+                if self._debug_level != debug::NONE {
+                    DebugInfo::new(
+                        self,
+                        "INP",
+                        (self._pointer, self._pointer + 2),
+                        modes,
+                        &format!("Input {} to [{}]", value, addr),
+                        outcome,
+                    )
+                    .add_write(value, addr)
+                    .print()?;
+                }
+
+                Ok(outcome)
             }
-
-            Ok(outcome)
-        } else {
-            Err(ComputerError::InputEmpty)
+            Input::NoMoreValues => Err(ComputerError::InputEmpty),
+            Input::WaitForValue => Ok(WaitForInput),
         }
     }
 }

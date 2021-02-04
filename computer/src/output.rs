@@ -55,6 +55,7 @@ where
                 StepResult::Value(value) => return Ok(Some(value)),
                 StepResult::Stop => return Ok(None),
                 StepResult::Proceed => (),
+                StepResult::Blocked => (),
             }
         }
     }

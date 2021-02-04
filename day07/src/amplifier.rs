@@ -13,7 +13,8 @@ impl<'a> Amplifier<'a> {
         let computers = setting
             .iter()
             .map(|value| {
-                let input = ListInput::single(*value);
+                let input = ListInput::new();
+                input.provide_input(*value);
                 VirtualMachine::new(&code, &input)
             })
             .collect();

@@ -1,15 +1,15 @@
 #![warn(rust_2018_idioms, missing_debug_implementations)]
-use computer::{Code, ComputerError, ListInput, VirtualMachine};
+use computer::{Code, ComputerError, OnceInput, VirtualMachine};
 
 pub fn result() -> Result<(), ComputerError> {
     let code = Code::from_file("day05", "input.txt")?;
 
-    let vm1 = VirtualMachine::new(&code, &ListInput::single(1));
+    let vm1 = VirtualMachine::new(&code, &OnceInput::new(1));
     let result1 = vm1.get_output().get_all()?;
 
     println!("Day 05 - Result 1: {:?}", result1);
 
-    let vm2 = VirtualMachine::new(&code, &ListInput::single(5));
+    let vm2 = VirtualMachine::new(&code, &OnceInput::new(5));
     let result2 = vm2.get_output().get_all()?;
 
     println!("Day 05 - Result 2: {:?}", result2);
@@ -58,7 +58,7 @@ mod tests {
     fn input_test() -> Result<(), ComputerError> {
         let input = vec![3, 3, 99, 0];
         let code = input.into();
-        let input = ListInput::single(123);
+        let input = OnceInput::new(123);
         let vm = VirtualMachine::new(&code, &input);
         vm.get_output().get_all()?;
         let result = vm.get_memory();
@@ -74,7 +74,7 @@ mod tests {
     fn io_test() -> Result<(), ComputerError> {
         let input = vec![3, 0, 4, 0, 99];
         let code = input.into();
-        let input = ListInput::single(123);
+        let input = OnceInput::new(123);
         let vm = VirtualMachine::new(&code, &input);
         let result = vm.get_output().get_all()?;
 
@@ -89,7 +89,7 @@ mod tests {
     fn is_eq_pos_eq() -> Result<(), ComputerError> {
         let input = vec![3, 9, 8, 9, 10, 9, 4, 9, 99, -1, 8];
         let code = input.into();
-        let input = ListInput::single(8);
+        let input = OnceInput::new(8);
         let vm = VirtualMachine::new(&code, &input);
         let result = vm.get_output().get_all()?;
 
@@ -104,7 +104,7 @@ mod tests {
     fn is_eq_pos_ne() -> Result<(), ComputerError> {
         let input = vec![3, 9, 8, 9, 10, 9, 4, 9, 99, -1, 8];
         let code = input.into();
-        let input = ListInput::single(9);
+        let input = OnceInput::new(9);
         let vm = VirtualMachine::new(&code, &input);
         let result = vm.get_output().get_all()?;
 
@@ -119,7 +119,7 @@ mod tests {
     fn is_lt_pos_eq() -> Result<(), ComputerError> {
         let input = vec![3, 9, 7, 9, 10, 9, 4, 9, 99, -1, 8];
         let code = input.into();
-        let input = ListInput::single(7);
+        let input = OnceInput::new(7);
         let vm = VirtualMachine::new(&code, &input);
         let result = vm.get_output().get_all()?;
 
@@ -134,7 +134,7 @@ mod tests {
     fn is_lt_pos_ne() -> Result<(), ComputerError> {
         let input = vec![3, 9, 7, 9, 10, 9, 4, 9, 99, -1, 8];
         let code = input.into();
-        let input = ListInput::single(9);
+        let input = OnceInput::new(9);
         let vm = VirtualMachine::new(&code, &input);
         let result = vm.get_output().get_all()?;
 
@@ -149,7 +149,7 @@ mod tests {
     fn is_eq_imm_eq() -> Result<(), ComputerError> {
         let input = vec![3, 3, 1108, -1, 8, 3, 4, 3, 99];
         let code = input.into();
-        let input = ListInput::single(8);
+        let input = OnceInput::new(8);
         let vm = VirtualMachine::new(&code, &input);
         let result = vm.get_output().get_all()?;
 
@@ -164,7 +164,7 @@ mod tests {
     fn is_eq_imm_ne() -> Result<(), ComputerError> {
         let input = vec![3, 3, 1108, -1, 8, 3, 4, 3, 99];
         let code = input.into();
-        let input = ListInput::single(9);
+        let input = OnceInput::new(9);
         let vm = VirtualMachine::new(&code, &input);
         let result = vm.get_output().get_all()?;
 
@@ -179,7 +179,7 @@ mod tests {
     fn is_lt_imm_eq() -> Result<(), ComputerError> {
         let input = vec![3, 3, 1107, -1, 8, 3, 4, 3, 99];
         let code = input.into();
-        let input = ListInput::single(7);
+        let input = OnceInput::new(7);
         let vm = VirtualMachine::new(&code, &input);
         let result = vm.get_output().get_all()?;
 
@@ -194,7 +194,7 @@ mod tests {
     fn is_lt_imm_ne() -> Result<(), ComputerError> {
         let input = vec![3, 3, 1107, -1, 8, 3, 4, 3, 99];
         let code = input.into();
-        let input = ListInput::single(9);
+        let input = OnceInput::new(9);
         let vm = VirtualMachine::new(&code, &input);
         let result = vm.get_output().get_all()?;
 
@@ -213,7 +213,7 @@ mod tests {
             20, 1105, 1, 46, 98, 99,
         ];
         let code = input.into();
-        let input = ListInput::single(7);
+        let input = OnceInput::new(7);
         let vm = VirtualMachine::new(&code, &input);
         let result = vm.get_output().get_all()?;
 
@@ -232,7 +232,7 @@ mod tests {
             20, 1105, 1, 46, 98, 99,
         ];
         let code = input.into();
-        let input = ListInput::single(8);
+        let input = OnceInput::new(8);
         let vm = VirtualMachine::new(&code, &input);
         let result = vm.get_output().get_all()?;
 
@@ -251,7 +251,7 @@ mod tests {
             20, 1105, 1, 46, 98, 99,
         ];
         let code = input.into();
-        let input = ListInput::single(9);
+        let input = OnceInput::new(9);
         let vm = VirtualMachine::new(&code, &input);
         let result = vm.get_output().get_all()?;
 

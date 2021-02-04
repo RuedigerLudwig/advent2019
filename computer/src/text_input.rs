@@ -1,4 +1,7 @@
-use crate::{input::ComputerInput, ComputerError, ListInput};
+use crate::{
+    input::{ComputerInput, Input},
+    ComputerError, ListInput,
+};
 
 #[derive(Debug, Clone)]
 pub struct TextInput {
@@ -28,7 +31,7 @@ impl TextInput {
 }
 
 impl ComputerInput for TextInput {
-    fn get_next_input(&self) -> Option<i64> {
+    fn get_next_input(&self) -> Input {
         self._input.get_next_input()
     }
 }

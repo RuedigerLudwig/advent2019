@@ -1,5 +1,5 @@
 use crate::error::NetworkError;
-use computer::{Code, ComputerInput, Output, StepResult, VirtualMachine};
+use computer::{Code, ComputerInput, Input, Output, StepResult, VirtualMachine};
 use std::{cell::RefCell, collections::VecDeque, rc::Rc};
 
 #[derive(Debug)]
@@ -61,8 +61,8 @@ impl NodeInput {
 }
 
 impl ComputerInput for NodeInput {
-    fn get_next_input(&self) -> Option<i64> {
-        Some((*self._node).borrow_mut().get_data())
+    fn get_next_input(&self) -> Input {
+        Input::Value((*self._node).borrow_mut().get_data())
     }
 }
 
@@ -115,6 +115,7 @@ impl<'a> NodeVm<'a> {
                     }
                 }
                 StepResult::Proceed => Ok(State::Active),
+                StepResult::Blocked => Ok(State::Active), // TODO
                 StepResult::Stop => Err(NetworkError::NodeStopped),
             }
         } else {
