@@ -5,7 +5,7 @@ use std::{
 };
 
 use common::{Area as RawArea, Pos as RawPos};
-use computer::{Code, ListInput, NoInput, Output, VirtualMachine};
+use computer::{Code, ListInput, NoInput, STOutput, STVirtualMachine};
 
 use crate::error::GameError;
 
@@ -67,7 +67,7 @@ pub struct Game {
 
 impl Game {
     pub fn paint_board(code: &Code) -> Result<Game, GameError> {
-        let vm = VirtualMachine::new(code, NoInput {});
+        let vm = STVirtualMachine::new(code, NoInput {});
         let mut board = HashMap::new();
         while let Some(Command::Tile(pos, tile)) = Game::get_tile(&vm.get_output())? {
             board.insert(pos, tile);
@@ -76,7 +76,7 @@ impl Game {
         Ok(Game { _board: board })
     }
 
-    fn get_tile(output: &Output<'_>) -> Result<Option<Command>, GameError> {
+    fn get_tile(output: &STOutput<'_>) -> Result<Option<Command>, GameError> {
         let result = if let Some(result) = output.take_exactly(3)? {
             let x = result[0];
             let y = result[1];
@@ -98,7 +98,7 @@ impl Game {
     }
 
     pub fn free_game(code: &Code) -> Result<i64, GameError> {
-        let vm = VirtualMachine::new(code, ListInput::new());
+        let vm = STVirtualMachine::new(code, ListInput::new());
         vm.patch_memory(0, 2);
         let output = vm.get_output();
 

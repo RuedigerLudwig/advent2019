@@ -1,9 +1,9 @@
-use computer::{Code, ComputerError, InputConverter, ListInput, TextOutput, VirtualMachine};
+use computer::{Code, ComputerError, InputConverter, ListInput, STTextOutput, STVirtualMachine};
 
 #[derive(Debug)]
 pub struct SantasShip<'a> {
-    _output: TextOutput<'a>,
-    _vm: VirtualMachine<'a>,
+    _output: STTextOutput<'a>,
+    _vm: STVirtualMachine<'a>,
 }
 
 #[derive(Debug)]
@@ -16,8 +16,8 @@ pub enum ShipState {
 impl SantasShip<'_> {
     pub fn new(code: &Code) -> SantasShip<'_> {
         let input = ListInput::new();
-        let vm = VirtualMachine::new(&code, input);
-        let output = TextOutput::new(vm.get_output());
+        let vm = STVirtualMachine::new(&code, input);
+        let output = STTextOutput::new(vm.get_output());
 
         SantasShip {
             _output: output,

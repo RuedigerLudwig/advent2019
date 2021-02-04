@@ -1,5 +1,5 @@
 use crate::error::NetworkError;
-use computer::{Code, ComputerInput, Input, Output, StepResult, VirtualMachine};
+use computer::{Code, ComputerInput, Input, MTOutput, MTVirtualMachine, StepResult};
 use std::{
     collections::VecDeque,
     sync::{Arc, Mutex},
@@ -100,8 +100,8 @@ enum State {
 
 #[derive(Debug)]
 struct NodeVm<'a> {
-    _vm: VirtualMachine<'a>,
-    _output: Output<'a>,
+    _vm: MTVirtualMachine<'a>,
+    _output: MTOutput<'a>,
     _node: Node,
 
     _next_receiver: Option<i64>,
@@ -112,7 +112,7 @@ impl<'a> NodeVm<'a> {
     pub fn new(code: &'a Code, id: i64) -> NodeVm<'a> {
         let node = Node::new(id);
         let input = NodeInput::new(node.clone());
-        let vm = VirtualMachine::with_id(&code, input, &id.to_string());
+        let vm = MTVirtualMachine::new_multi(&code, input, &id.to_string());
         let output = vm.get_output();
         NodeVm {
             _vm: vm,

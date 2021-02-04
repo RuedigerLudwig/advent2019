@@ -1,7 +1,7 @@
 use std::fmt::Display;
 
 use common::Direction;
-use computer::{Code, ComputerError, ListInput, Output, VirtualMachine};
+use computer::{Code, ComputerError, ListInput, STOutput, STVirtualMachine};
 
 use crate::error::DroidError;
 
@@ -27,13 +27,13 @@ pub trait DroidComputerInterface {
 }
 
 pub struct ComputerInterface<'a> {
-    output: Output<'a>,
-    vm: VirtualMachine<'a>,
+    output: STOutput<'a>,
+    vm: STVirtualMachine<'a>,
 }
 
 impl ComputerInterface<'_> {
     pub fn new(code: &Code) -> ComputerInterface<'_> {
-        let vm = VirtualMachine::new(code, ListInput::new());
+        let vm = STVirtualMachine::new(code, ListInput::new());
         ComputerInterface {
             output: vm.get_output(),
             vm,

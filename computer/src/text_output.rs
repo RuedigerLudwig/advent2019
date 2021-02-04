@@ -1,13 +1,26 @@
-use crate::{ComputerError, Output};
+use crate::{
+    cpu_wrapper::{CpuWrapper, MultiThreadWrapper, SingleThreadWrapper},
+    output::RawOutput,
+    ComputerError,
+};
+
+pub type STTextOutput<'a> = RawTextOutput<SingleThreadWrapper<'a>>;
+pub type MTTextOutput<'a> = RawTextOutput<MultiThreadWrapper<'a>>;
 
 #[derive(Debug)]
-pub struct TextOutput<'a> {
-    _output: Output<'a>,
+pub struct RawTextOutput<W>
+where
+    W: CpuWrapper,
+{
+    _output: RawOutput<W>,
 }
 
-impl<'a> TextOutput<'a> {
-    pub fn new(output: Output<'a>) -> TextOutput<'a> {
-        TextOutput { _output: output }
+impl<'a, W> RawTextOutput<W>
+where
+    W: CpuWrapper,
+{
+    pub fn new(output: RawOutput<W>) -> RawTextOutput<W> {
+        RawTextOutput { _output: output }
     }
 
     pub fn read_line(&self) -> Result<Option<String>, ComputerError> {

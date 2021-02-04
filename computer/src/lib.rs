@@ -3,6 +3,7 @@
 mod code;
 mod common;
 mod cpu;
+mod cpu_wrapper;
 mod error;
 mod input;
 mod input_converter;
@@ -18,6 +19,6 @@ pub use error::ComputerError;
 pub use input::{ComputerInput, Input, NoInput, OnceInput};
 pub use input_converter::InputConverter;
 pub use list_input::ListInput;
-pub use output::Output;
-pub use text_output::TextOutput;
-pub use vm::VirtualMachine;
+pub use output::{MTOutput, STOutput};
+pub use text_output::{MTTextOutput, STTextOutput};
+pub use vm::{MTVirtualMachine, STVirtualMachine};

@@ -1,16 +1,29 @@
 use std::cell::Cell;
 
-use crate::{cpu::StepResult, vm::CpuWrapper, ComputerError};
+use crate::{
+    cpu::StepResult,
+    cpu_wrapper::{CpuWrapper, MultiThreadWrapper, SingleThreadWrapper},
+    ComputerError,
+};
+
+pub type STOutput<'a> = RawOutput<SingleThreadWrapper<'a>>;
+pub type MTOutput<'a> = RawOutput<MultiThreadWrapper<'a>>;
 
 #[derive(Debug)]
-pub struct Output<'a> {
-    _cpu: CpuWrapper<'a>,
+pub struct RawOutput<W>
+where
+    W: CpuWrapper,
+{
+    _cpu: W,
     _peek: Cell<Option<Option<i64>>>,
 }
 
-impl<'a> Output<'a> {
-    pub fn new(cpu: CpuWrapper<'a>) -> Output<'a> {
-        Output {
+impl<W> RawOutput<W>
+where
+    W: CpuWrapper,
+{
+    pub fn new(cpu: W) -> RawOutput<W> {
+        RawOutput {
             _cpu: cpu,
             _peek: Cell::new(None),
         }
@@ -67,16 +80,3 @@ impl<'a> Output<'a> {
         }
     }
 }
-/*
-impl<I> Iterator for Output<I>
-where
-I: ComputerInput,
-{
-    type Item = Result<i64, ComputerError>;
-
-    fn next(&mut self) -> Option<Self::Item> {
-        self._cpu.next_output().transpose()
-    }
-}
-
-*/

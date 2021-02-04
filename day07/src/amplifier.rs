@@ -1,11 +1,11 @@
 use std::collections::VecDeque;
 
-use computer::{Code, ListInput, VirtualMachine};
+use computer::{Code, ListInput, STVirtualMachine};
 
 use crate::{error::AmplifierError, permutations::LexPermutations};
 
 pub struct Amplifier<'a> {
-    computers: VecDeque<VirtualMachine<'a>>,
+    computers: VecDeque<STVirtualMachine<'a>>,
 }
 
 impl Amplifier<'_> {
@@ -13,7 +13,7 @@ impl Amplifier<'_> {
         let computers = setting
             .iter()
             .map(|value| {
-                let vm = VirtualMachine::new(&code, ListInput::new());
+                let vm = STVirtualMachine::new(&code, ListInput::new());
                 vm.provide_input(*value);
                 vm
             })

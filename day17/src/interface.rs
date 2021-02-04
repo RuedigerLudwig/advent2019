@@ -1,4 +1,4 @@
-use computer::{Code, InputConverter, ListInput, TextOutput, VirtualMachine};
+use computer::{Code, InputConverter, ListInput, STTextOutput, STVirtualMachine};
 
 use crate::error::ExteriorError;
 
@@ -8,15 +8,15 @@ pub trait ExteriorInterface {
 }
 
 pub struct ExteriorComputerInterface<'a> {
-    vm: VirtualMachine<'a>,
-    output: TextOutput<'a>,
+    vm: STVirtualMachine<'a>,
+    output: STTextOutput<'a>,
 }
 
 impl<'a> ExteriorComputerInterface<'a> {
     pub fn new(code: &'a Code) -> ExteriorComputerInterface<'_> {
         let input = ListInput::new();
-        let vm = VirtualMachine::new(code, input);
-        let output = TextOutput::new(vm.get_output());
+        let vm = STVirtualMachine::new(code, input);
+        let output = STTextOutput::new(vm.get_output());
         ExteriorComputerInterface { vm, output }
     }
 }

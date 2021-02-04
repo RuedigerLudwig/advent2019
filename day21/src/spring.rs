@@ -1,5 +1,5 @@
 use crate::error::SpringError;
-use computer::{Code, InputConverter, ListInput, TextOutput, VirtualMachine};
+use computer::{Code, InputConverter, ListInput, STTextOutput, STVirtualMachine};
 use std::fmt::Display;
 
 #[allow(dead_code)]
@@ -59,14 +59,14 @@ pub enum Instruction {
 }
 
 impl InputConverter for Instruction {
-    fn send_to(self, vm: &VirtualMachine<'_>) -> Result<(), computer::ComputerError> {
+    fn send_to(self, vm: &STVirtualMachine<'_>) -> Result<(), computer::ComputerError> {
         let as_str = self.to_string();
         as_str.send_to(vm)
     }
 }
 
 impl InputConverter for &Instruction {
-    fn send_to(self, vm: &VirtualMachine<'_>) -> Result<(), computer::ComputerError> {
+    fn send_to(self, vm: &STVirtualMachine<'_>) -> Result<(), computer::ComputerError> {
         let as_str = self.to_string();
         as_str.send_to(vm)
     }
@@ -83,13 +83,13 @@ impl Display for Instruction {
 }
 
 pub struct SpringBotComputer<'a> {
-    vm: VirtualMachine<'a>,
+    vm: STVirtualMachine<'a>,
 }
 
 impl<'a> SpringBotComputer<'a> {
     pub fn new(code: &'a Code) -> SpringBotComputer<'_> {
         let input = ListInput::new();
-        let vm = VirtualMachine::new(code, input);
+        let vm = STVirtualMachine::new(code, input);
         SpringBotComputer { vm }
     }
 
@@ -100,7 +100,7 @@ impl<'a> SpringBotComputer<'a> {
         be_silent: bool,
     ) -> Result<i64, SpringError> {
         self.vm.restart();
-        let output = TextOutput::new(self.vm.get_output());
+        let output = STTextOutput::new(self.vm.get_output());
 
         if let Some(question) = output.read_line()? {
             if !be_silent {
