@@ -1,12 +1,12 @@
-use crate::{ComputerError, Output, TextInput};
+use crate::{ComputerError, Output};
 
 #[derive(Debug)]
-pub struct TextOutput {
-    _output: Output<TextInput>,
+pub struct TextOutput<'a> {
+    _output: Output<'a>,
 }
 
-impl TextOutput {
-    pub fn new(output: Output<TextInput>) -> TextOutput {
+impl<'a> TextOutput<'a> {
+    pub fn new(output: Output<'a>) -> TextOutput<'a> {
         TextOutput { _output: output }
     }
 

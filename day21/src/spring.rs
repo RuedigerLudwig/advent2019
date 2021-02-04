@@ -1,5 +1,5 @@
 use crate::error::SpringError;
-use computer::{Code, TextInput, TextOutput, VirtualMachine};
+use computer::{Code, InputConverter, ListInput, TextOutput, VirtualMachine};
 use std::fmt::Display;
 
 #[allow(dead_code)]
@@ -58,6 +58,20 @@ pub enum Instruction {
     NOT(ReadRegister, WriteRegister),
 }
 
+impl InputConverter for Instruction {
+    fn send_to(self, vm: &VirtualMachine<'_>) -> Result<(), computer::ComputerError> {
+        let as_str = self.to_string();
+        as_str.send_to(vm)
+    }
+}
+
+impl InputConverter for &Instruction {
+    fn send_to(self, vm: &VirtualMachine<'_>) -> Result<(), computer::ComputerError> {
+        let as_str = self.to_string();
+        as_str.send_to(vm)
+    }
+}
+
 impl Display for Instruction {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match *self {
@@ -69,15 +83,14 @@ impl Display for Instruction {
 }
 
 pub struct SpringBotComputer<'a> {
-    vm: VirtualMachine<'a, TextInput>,
-    input: TextInput,
+    vm: VirtualMachine<'a>,
 }
 
 impl<'a> SpringBotComputer<'a> {
     pub fn new(code: &'a Code) -> SpringBotComputer<'_> {
-        let input = TextInput::new();
-        let vm = VirtualMachine::new(code, &input);
-        SpringBotComputer { vm, input }
+        let input = ListInput::new();
+        let vm = VirtualMachine::new(code, input);
+        SpringBotComputer { vm }
     }
 
     fn go(
@@ -94,13 +107,13 @@ impl<'a> SpringBotComputer<'a> {
                 println!("{}", question);
             }
             for inst in instructions {
-                self.input.write_input(&inst.to_string())?;
+                inst.send_to(&self.vm)?;
                 if !be_silent {
                     println!("{}", inst.to_string());
                 }
             }
 
-            self.input.write_input(enter)?;
+            enter.send_to(&self.vm)?;
             if !be_silent {
                 println!("{}", enter)
             }

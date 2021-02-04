@@ -51,7 +51,7 @@ impl Display for Turn {
     }
 }
 
-impl Add<Turn> for Turn {
+impl Add for Turn {
     type Output = Turn;
 
     fn add(self, rhs: Turn) -> Self::Output {
@@ -64,10 +64,58 @@ impl Add<Turn> for Turn {
     }
 }
 
+impl Add for &Turn {
+    type Output = Turn;
+
+    fn add(self, rhs: &Turn) -> Self::Output {
+        Turn::add(*self, *rhs)
+    }
+}
+
+impl Add<&Turn> for Turn {
+    type Output = Turn;
+
+    fn add(self, rhs: &Turn) -> Self::Output {
+        Turn::add(self, *rhs)
+    }
+}
+
+impl Add<Turn> for &Turn {
+    type Output = Turn;
+
+    fn add(self, rhs: Turn) -> Self::Output {
+        Turn::add(*self, rhs)
+    }
+}
+
 impl Add<Direction> for Turn {
     type Output = Direction;
 
     fn add(self, rhs: Direction) -> Self::Output {
         rhs.turn(self)
+    }
+}
+
+impl Add<Direction> for &Turn {
+    type Output = Direction;
+
+    fn add(self, rhs: Direction) -> Self::Output {
+        rhs.turn(*self)
+    }
+}
+
+impl Add<&Direction> for Turn {
+    type Output = Direction;
+
+    fn add(self, rhs: &Direction) -> Self::Output {
+        rhs.turn(self)
+    }
+}
+
+impl Add<&Direction> for &Turn {
+    type Output = Direction;
+
+    fn add(self, rhs: &Direction) -> Self::Output {
+        rhs.turn(*self)
     }
 }

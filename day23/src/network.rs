@@ -1,19 +1,22 @@
 use crate::error::NetworkError;
 use computer::{Code, ComputerInput, Input, Output, StepResult, VirtualMachine};
-use std::{cell::RefCell, collections::VecDeque, rc::Rc};
+use std::{
+    collections::VecDeque,
+    sync::{Arc, Mutex},
+};
 
 #[derive(Debug)]
-pub struct NodeInputQueue {
+struct NodeQueue {
     _queue: VecDeque<i64>,
     _sent_empty: bool,
 }
 
-impl NodeInputQueue {
-    pub fn new(id: i64) -> NodeInputQueue {
+impl NodeQueue {
+    pub fn new(id: i64) -> NodeQueue {
         let mut queue = VecDeque::new();
         queue.push_back(id);
         queue.push_back(-1);
-        NodeInputQueue {
+        NodeQueue {
             _queue: queue,
             _sent_empty: false,
         }
@@ -40,29 +43,51 @@ impl NodeInputQueue {
 }
 
 #[derive(Debug, Clone)]
-pub struct NodeInput {
-    _node: Rc<RefCell<NodeInputQueue>>,
+pub struct Node {
+    _node: Arc<Mutex<NodeQueue>>,
 }
 
-impl NodeInput {
-    pub fn new(id: i64) -> NodeInput {
-        NodeInput {
-            _node: Rc::new(RefCell::new(NodeInputQueue::new(id))),
+impl Node {
+    pub fn new(id: i64) -> Node {
+        Node {
+            _node: Arc::new(Mutex::new(NodeQueue::new(id))),
         }
     }
 
     pub fn feed_node(&self, x: i64, y: i64) {
-        (*self._node).borrow_mut().feed(x, y)
+        let mut node = (*self._node).lock().unwrap();
+        node.feed(x, y)
     }
 
     pub fn is_active(&self) -> bool {
-        (*self._node).borrow().is_active()
+        let node = (*self._node).lock().unwrap();
+        node.is_active()
+    }
+
+    fn get_next_input(&self) -> Input {
+        let mut node = (*self._node).lock().unwrap();
+        Input::Value(node.get_data())
+    }
+}
+
+#[derive(Debug, Clone)]
+pub struct NodeInput {
+    _node: Node,
+}
+
+impl NodeInput {
+    pub fn new(node: Node) -> NodeInput {
+        NodeInput { _node: node }
     }
 }
 
 impl ComputerInput for NodeInput {
-    fn get_next_input(&self) -> Input {
-        Input::Value((*self._node).borrow_mut().get_data())
+    fn get_next_input(&mut self) -> Input {
+        self._node.get_next_input()
+    }
+
+    fn provide_input(&mut self, _value: i64) {
+        unimplemented!()
     }
 }
 
@@ -75,22 +100,31 @@ enum State {
 
 #[derive(Debug)]
 struct NodeVm<'a> {
-    _vm: VirtualMachine<'a, NodeInput>,
-    _output: Output<NodeInput>,
+    _vm: VirtualMachine<'a>,
+    _output: Output<'a>,
+    _node: Node,
 
     _next_receiver: Option<i64>,
     _next_x: Option<i64>,
 }
 
 impl<'a> NodeVm<'a> {
-    pub fn new(vm: VirtualMachine<'a, NodeInput>) -> NodeVm<'a> {
+    pub fn new(code: &'a Code, id: i64) -> NodeVm<'a> {
+        let node = Node::new(id);
+        let input = NodeInput::new(node.clone());
+        let vm = VirtualMachine::with_id(&code, input, &id.to_string());
         let output = vm.get_output();
         NodeVm {
             _vm: vm,
+            _node: node,
             _output: output,
             _next_receiver: None,
             _next_x: None,
         }
+    }
+
+    pub fn get_node(&self) -> Node {
+        self._node.clone()
     }
 
     pub fn step(&mut self) -> Result<State, NetworkError> {
@@ -124,32 +158,31 @@ impl<'a> NodeVm<'a> {
     }
 
     pub fn is_active(&self) -> bool {
-        self._next_receiver.is_some() || self._vm.get_input().is_active()
+        self._next_receiver.is_some() || self._node.is_active()
     }
 }
 
 #[derive(Debug)]
 pub struct Switch<'a> {
     _vms: Vec<NodeVm<'a>>,
-    _inputs: Vec<NodeInput>,
+    _nodes: Vec<Node>,
 }
 
 impl<'a> Switch<'a> {
     pub fn new(code: &Code, count: usize) -> Switch<'_> {
         let mut vms = Vec::with_capacity(count);
-        let mut inputs = Vec::with_capacity(count);
+        let mut nodes = Vec::with_capacity(count);
 
         for number in 0..count {
-            let input = NodeInput::new(number as i64);
-            let node_vm = NodeVm::new(VirtualMachine::with_id(&code, &input, &number.to_string()));
-
-            inputs.push(input);
+            let node_vm = NodeVm::new(code, number as i64);
+            let node = node_vm.get_node();
+            nodes.push(node);
             vms.push(node_vm);
         }
 
         Switch {
             _vms: vms,
-            _inputs: inputs,
+            _nodes: nodes,
         }
     }
 
@@ -158,7 +191,7 @@ impl<'a> Switch<'a> {
             for vm in self._vms.iter_mut() {
                 if let State::Value(receiver, x, y) = vm.step()? {
                     match receiver {
-                        0..=49 => self._inputs[receiver as usize].feed_node(x, y),
+                        0..=49 => self._nodes[receiver as usize].feed_node(x, y),
                         255 => return Ok(y),
                         _ => return Err(NetworkError::UnknownAddress(receiver)),
                     }
@@ -176,7 +209,7 @@ impl<'a> Switch<'a> {
                 match vm.step()? {
                     State::Value(receiver, x, y) => {
                         match receiver {
-                            0..=49 => self._inputs[receiver as usize].feed_node(x, y),
+                            0..=49 => self._nodes[receiver as usize].feed_node(x, y),
                             255 => nat_memory = Some((x, y)),
 
                             _ => return Err(NetworkError::UnknownAddress(receiver)),
@@ -193,7 +226,7 @@ impl<'a> Switch<'a> {
                     if last_delivered.map_or(false, |old_y| old_y == y) {
                         return Ok(y);
                     }
-                    self._inputs[0].feed_node(x, y);
+                    self._nodes[0].feed_node(x, y);
                     last_delivered = Some(y);
                 }
             }

@@ -88,7 +88,7 @@ where
 
 impl<T> Add for Pos<T>
 where
-    T: Add<Output = T>,
+    T: Add<Output = T> + Copy,
 {
     type Output = Self;
     fn add(self, rhs: Self) -> Self::Output {
@@ -100,10 +100,10 @@ impl<T> Add for &Pos<T>
 where
     T: Add<Output = T> + Copy,
 {
-    type Output = Pos<T>;
+    type Output = <Pos<T> as Add<Pos<T>>>::Output;
 
     fn add(self, rhs: Self) -> Self::Output {
-        Pos(self.0 + rhs.0, self.1 + rhs.1)
+        Pos::add(*self, *rhs)
     }
 }
 
@@ -111,9 +111,9 @@ impl<T> Add<&Pos<T>> for Pos<T>
 where
     T: Add<Output = T> + Copy,
 {
-    type Output = Pos<T>;
+    type Output = <Pos<T> as Add<Pos<T>>>::Output;
     fn add(self, rhs: &Self) -> Self::Output {
-        Pos(self.0 + rhs.0, self.1 + rhs.1)
+        Pos::add(self, *rhs)
     }
 }
 
@@ -121,9 +121,9 @@ impl<T> Add<Pos<T>> for &Pos<T>
 where
     T: Add<Output = T> + Copy,
 {
-    type Output = Pos<T>;
+    type Output = <Pos<T> as Add<Pos<T>>>::Output;
     fn add(self, rhs: Pos<T>) -> Self::Output {
-        Pos(self.0 + rhs.0, self.1 + rhs.1)
+        Pos::add(*self, rhs)
     }
 }
 
@@ -141,8 +141,7 @@ impl Add<Direction> for Pos<i32> {
     type Output = Self;
 
     fn add(self, rhs: Direction) -> Self::Output {
-        let dir = rhs.as_pos();
-        Pos(self.0 + dir.0, self.1 + dir.1)
+        Pos::add(self, rhs.as_pos())
     }
 }
 
@@ -150,8 +149,7 @@ impl Add<&Direction> for Pos<i32> {
     type Output = Self;
 
     fn add(self, rhs: &Direction) -> Self::Output {
-        let dir = rhs.as_pos();
-        Pos(self.0 + dir.0, self.1 + dir.1)
+        Pos::add(self, rhs.as_pos())
     }
 }
 
@@ -159,8 +157,7 @@ impl Add<&Direction> for &Pos<i32> {
     type Output = Pos<i32>;
 
     fn add(self, rhs: &Direction) -> Self::Output {
-        let dir = rhs.as_pos();
-        Pos(self.0 + dir.0, self.1 + dir.1)
+        Pos::add(*self, rhs.as_pos())
     }
 }
 
@@ -168,8 +165,7 @@ impl Add<Direction> for &Pos<i32> {
     type Output = Pos<i32>;
 
     fn add(self, rhs: Direction) -> Self::Output {
-        let dir = rhs.as_pos();
-        Pos(self.0 + dir.0, self.1 + dir.1)
+        Pos::add(*self, rhs.as_pos())
     }
 }
 
@@ -189,7 +185,7 @@ where
 {
     type Output = Pos<T>;
     fn sub(self, rhs: &Self) -> Self::Output {
-        Pos(self.0 - rhs.0, self.1 - rhs.1)
+        Pos::sub(self, *rhs)
     }
 }
 
@@ -199,7 +195,7 @@ where
 {
     type Output = Pos<T>;
     fn sub(self, rhs: &Pos<T>) -> Self::Output {
-        Pos(self.0 - rhs.0, self.1 - rhs.1)
+        Pos::sub(*self, *rhs)
     }
 }
 
@@ -209,7 +205,7 @@ where
 {
     type Output = Pos<T>;
     fn sub(self, rhs: Pos<T>) -> Self::Output {
-        Pos(self.0 - rhs.0, self.1 - rhs.1)
+        Pos::sub(*self, rhs)
     }
 }
 
@@ -229,6 +225,26 @@ where
 {
     type Output = Pos<T>;
     fn mul(self, rhs: T) -> Self::Output {
-        Pos(self.0 * rhs, self.1 * rhs)
+        Pos::mul(*self, rhs)
+    }
+}
+
+impl<T> Mul<&T> for Pos<T>
+where
+    T: Mul<Output = T> + Copy,
+{
+    type Output = Pos<T>;
+    fn mul(self, rhs: &T) -> Self::Output {
+        Pos::mul(self, *rhs)
+    }
+}
+
+impl<T> Mul<&T> for &Pos<T>
+where
+    T: Mul<Output = T> + Copy,
+{
+    type Output = Pos<T>;
+    fn mul(self, rhs: &T) -> Self::Output {
+        Pos::mul(*self, *rhs)
     }
 }

@@ -15,7 +15,7 @@ struct Room {
 #[derive(Debug)]
 pub struct Drone<'a> {
     _code: &'a Code,
-    _ship: SantasShip,
+    _ship: SantasShip<'a>,
     _carrying: Vec<String>,
     _avoid: Vec<String>,
 }

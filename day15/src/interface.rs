@@ -26,18 +26,17 @@ pub trait DroidComputerInterface {
     fn send_direction(&mut self, direction: Direction) -> Result<Report, DroidError>;
 }
 
-pub struct ComputerInterface {
-    output: Output<ListInput>,
-    input: ListInput,
+pub struct ComputerInterface<'a> {
+    output: Output<'a>,
+    vm: VirtualMachine<'a>,
 }
 
-impl ComputerInterface {
-    pub fn new(code: &Code) -> ComputerInterface {
-        let input = ListInput::new();
-        let vm = VirtualMachine::new(code, &input);
+impl ComputerInterface<'_> {
+    pub fn new(code: &Code) -> ComputerInterface<'_> {
+        let vm = VirtualMachine::new(code, ListInput::new());
         ComputerInterface {
-            input,
             output: vm.get_output(),
+            vm,
         }
     }
 
@@ -51,10 +50,10 @@ impl ComputerInterface {
     }
 }
 
-impl DroidComputerInterface for ComputerInterface {
+impl DroidComputerInterface for ComputerInterface<'_> {
     fn send_direction(&mut self, direction: Direction) -> Result<Report, DroidError> {
         let dir_number = ComputerInterface::dir_number(direction);
-        self.input.provide_input(dir_number);
+        self.vm.provide_input(dir_number);
 
         if let Some(report) = self.output.next()? {
             match report {

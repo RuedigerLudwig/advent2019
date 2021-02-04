@@ -1,4 +1,4 @@
-use computer::{Code, TextInput, TextOutput, VirtualMachine};
+use computer::{Code, InputConverter, ListInput, TextOutput, VirtualMachine};
 
 use crate::error::ExteriorError;
 
@@ -8,17 +8,16 @@ pub trait ExteriorInterface {
 }
 
 pub struct ExteriorComputerInterface<'a> {
-    vm: VirtualMachine<'a, TextInput>,
-    input: TextInput,
-    output: TextOutput,
+    vm: VirtualMachine<'a>,
+    output: TextOutput<'a>,
 }
 
 impl<'a> ExteriorComputerInterface<'a> {
     pub fn new(code: &'a Code) -> ExteriorComputerInterface<'_> {
-        let input = TextInput::new();
-        let vm = VirtualMachine::new(code, &input);
+        let input = ListInput::new();
+        let vm = VirtualMachine::new(code, input);
         let output = TextOutput::new(vm.get_output());
-        ExteriorComputerInterface { vm, input, output }
+        ExteriorComputerInterface { vm, output }
     }
 }
 
@@ -39,7 +38,7 @@ impl ExteriorInterface for ExteriorComputerInterface<'_> {
         self.vm.patch_memory(0, 2);
         for answer in data {
             if let Some(question) = self.output.read_line()? {
-                self.input.write_input(answer)?;
+                answer.send_to(&self.vm)?;
                 if !run_silent {
                     println!("{} {}", question, answer);
                 }

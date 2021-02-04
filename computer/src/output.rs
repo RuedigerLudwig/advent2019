@@ -1,18 +1,15 @@
 use std::cell::Cell;
 
-use crate::{cpu::StepResult, input::ComputerInput, vm::CpuWrapper, ComputerError};
+use crate::{cpu::StepResult, vm::CpuWrapper, ComputerError};
 
 #[derive(Debug)]
-pub struct Output<I> {
-    _cpu: CpuWrapper<I>,
+pub struct Output<'a> {
+    _cpu: CpuWrapper<'a>,
     _peek: Cell<Option<Option<i64>>>,
 }
 
-impl<'a, I> Output<I>
-where
-    I: ComputerInput,
-{
-    pub fn new(cpu: CpuWrapper<I>) -> Output<I> {
+impl<'a> Output<'a> {
+    pub fn new(cpu: CpuWrapper<'a>) -> Output<'a> {
         Output {
             _cpu: cpu,
             _peek: Cell::new(None),

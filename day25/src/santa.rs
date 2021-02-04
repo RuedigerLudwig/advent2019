@@ -1,9 +1,9 @@
-use computer::{Code, ComputerError, TextInput, TextOutput, VirtualMachine};
+use computer::{Code, ComputerError, InputConverter, ListInput, TextOutput, VirtualMachine};
 
 #[derive(Debug)]
-pub struct SantasShip {
-    _input: TextInput,
-    _output: TextOutput,
+pub struct SantasShip<'a> {
+    _output: TextOutput<'a>,
+    _vm: VirtualMachine<'a>,
 }
 
 #[derive(Debug)]
@@ -13,15 +13,15 @@ pub enum ShipState {
     Text,
 }
 
-impl SantasShip {
-    pub fn new(code: &Code) -> SantasShip {
-        let input = TextInput::new();
-        let vm = VirtualMachine::new(&code, &input);
+impl SantasShip<'_> {
+    pub fn new(code: &Code) -> SantasShip<'_> {
+        let input = ListInput::new();
+        let vm = VirtualMachine::new(&code, input);
         let output = TextOutput::new(vm.get_output());
 
         SantasShip {
-            _input: input,
             _output: output,
+            _vm: vm,
         }
     }
 
@@ -45,7 +45,6 @@ impl SantasShip {
     }
 
     pub fn send_command(&self, command: &str) -> Result<(), ComputerError> {
-        self._input.write_input(command.trim())?;
-        Ok(())
+        command.trim().send_to(&self._vm)
     }
 }

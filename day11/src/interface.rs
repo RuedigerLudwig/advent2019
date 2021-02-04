@@ -30,25 +30,25 @@ pub trait BotComputerInterface {
     fn accept_input(&mut self, color: Color) -> Result<Option<(Color, Turn)>, PaintError>;
 }
 
-pub struct ComputerInterface {
-    output: Output<ListInput>,
-    input: ListInput,
+pub struct ComputerInterface<'a> {
+    output: Output<'a>,
+    vm: VirtualMachine<'a>,
 }
 
-impl ComputerInterface {
-    pub fn new(code: &Code) -> ComputerInterface {
+impl ComputerInterface<'_> {
+    pub fn new(code: &Code) -> ComputerInterface<'_> {
         let input = ListInput::new();
-        let vm = VirtualMachine::new(&code, &input);
+        let vm = VirtualMachine::new(&code, input);
         ComputerInterface {
-            input,
             output: vm.get_output(),
+            vm,
         }
     }
 }
 
-impl BotComputerInterface for ComputerInterface {
+impl BotComputerInterface for ComputerInterface<'_> {
     fn accept_input(&mut self, color: Color) -> Result<Option<(Color, Turn)>, PaintError> {
-        self.input
+        self.vm
             .provide_input(if color == Color::White { 1 } else { 0 });
 
         if let Some(output) = self.output.take_exactly(2)? {

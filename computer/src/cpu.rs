@@ -5,6 +5,7 @@ use crate::{
     error::ComputerError,
     input::{ComputerInput, Input},
     modes::{AddrMode, AddrModes},
+    Code,
 };
 pub mod debug {
     pub const NONE: u8 = 0b0000u8;
@@ -15,8 +16,8 @@ pub mod debug {
     pub const ALL: u8 = 0b1111u8;
 }
 
-struct DebugInfo<'a, I> {
-    cpu: &'a Cpu<I>,
+struct DebugInfo<'a> {
+    cpu: &'a Cpu<'a>,
     id: String,
     offset: i64,
 
@@ -31,15 +32,15 @@ struct DebugInfo<'a, I> {
     write: Option<(i64, usize)>,
 }
 
-impl<'a, I> DebugInfo<'a, I> {
+impl<'a> DebugInfo<'a> {
     pub fn new(
-        cpu: &'a Cpu<I>,
+        cpu: &'a Cpu<'a>,
         name: &'a str,
         range: (usize, usize),
         modes: &'a AddrModes,
         info_text: &'a str,
         outcome: OperationResult,
-    ) -> DebugInfo<'a, I> {
+    ) -> DebugInfo<'a> {
         DebugInfo {
             cpu,
             offset: cpu._offset,
@@ -111,13 +112,22 @@ impl<'a, I> DebugInfo<'a, I> {
     }
 }
 
+#[derive(Debug, Copy, Clone)]
+pub enum StepResult {
+    Value(i64),
+    Stop,
+    Proceed,
+    Blocked,
+}
+
 #[derive(Debug)]
-pub struct Cpu<I> {
+pub struct Cpu<'a> {
+    _code: &'a Code,
     _memory: HashMap<usize, i64>,
     _offset: i64,
     _pointer: usize,
     _crashed: bool,
-    _input: I,
+    _input: Box<dyn ComputerInput + 'a>,
     _debug_level: u8,
     _id: String,
 }
@@ -174,17 +184,25 @@ impl Display for OperationResult {
 use common::join;
 use OperationResult::*;
 
-impl<I> Cpu<I> {
-    pub fn new(code: HashMap<usize, i64>, input: I) -> Cpu<I> {
+impl<'a> Cpu<'a> {
+    pub fn new(code: &'a Code, input: impl ComputerInput + 'a) -> Cpu<'a> {
         Cpu {
-            _memory: code,
+            _code: code,
+            _memory: code.get(),
             _offset: 0,
             _pointer: 0,
             _crashed: false,
-            _input: input,
+            _input: Box::new(input),
             _debug_level: debug::NONE,
             _id: "".to_owned(),
         }
+    }
+
+    pub fn restart(&mut self) {
+        self._memory = self._code.get();
+        self._offset = 0;
+        self._pointer = 0;
+        self._crashed = false;
     }
 
     pub fn set_id(&mut self, id: &str) {
@@ -209,6 +227,10 @@ impl<I> Cpu<I> {
             }
         }
         result
+    }
+
+    pub fn provide_input(&mut self, value: i64) {
+        self._input.provide_input(value)
     }
 
     fn get_next_instruction(&self) -> Result<i64, ComputerError> {
@@ -508,20 +530,7 @@ impl<I> Cpu<I> {
 
         Ok(outcome)
     }
-}
 
-#[derive(Debug, Copy, Clone)]
-pub enum StepResult {
-    Value(i64),
-    Stop,
-    Proceed,
-    Blocked,
-}
-
-impl<I> Cpu<I>
-where
-    I: ComputerInput,
-{
     pub fn step(&mut self) -> Result<StepResult, ComputerError> {
         if self._crashed {
             return Err(ComputerError::Terminated);
@@ -562,7 +571,7 @@ where
         }
     }
 
-    fn process_next_instruction(&self) -> Result<OperationResult, ComputerError> {
+    fn process_next_instruction(&mut self) -> Result<OperationResult, ComputerError> {
         let instruction = self.get_next_instruction()?;
         let (opcode, modes) = analyze_instruction(instruction)?;
 
@@ -585,7 +594,7 @@ where
         }
     }
 
-    fn input(&self, modes: &AddrModes) -> Result<OperationResult, ComputerError> {
+    fn input(&mut self, modes: &AddrModes) -> Result<OperationResult, ComputerError> {
         match self._input.get_next_input() {
             Input::Value(value) => {
                 let addr = self.get_addr(self._pointer + 1, modes.get(0))?;

@@ -2,18 +2,16 @@ use crate::ComputerError;
 use common::read_single_line;
 use std::{collections::HashMap, str::FromStr};
 
-#[derive(Debug, Clone)]
+#[derive(Debug)]
 pub struct Code(HashMap<usize, i64>);
 
 impl Code {
     pub fn from_file(module: &str, file: &str) -> Result<Code, ComputerError> {
         read_single_line(module, file)?.parse()
     }
-}
 
-impl AsRef<HashMap<usize, i64>> for Code {
-    fn as_ref(&self) -> &HashMap<usize, i64> {
-        &self.0
+    pub fn get(&self) -> HashMap<usize, i64> {
+        self.0.clone()
     }
 }
 

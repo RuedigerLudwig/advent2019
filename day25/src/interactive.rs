@@ -27,7 +27,7 @@ const DESCRIPTIONS: [&'static str; 11] = [
 #[derive(Debug)]
 pub struct Interactive<'a> {
     _code: &'a Code,
-    _ship: SantasShip,
+    _ship: SantasShip<'a>,
 }
 
 impl<'a> Interactive<'a> {

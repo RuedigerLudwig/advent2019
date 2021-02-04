@@ -8,37 +8,25 @@ use crate::{
 };
 
 #[derive(Debug)]
-pub struct VirtualMachine<'a, I>
-where
-    I: ComputerInput,
-{
-    _input: I,
-    _code: &'a Code,
-    _cpu: CpuWrapper<I>,
+pub struct VirtualMachine<'a> {
+    _cpu: CpuWrapper<'a>,
 }
 
-impl<'a, I> VirtualMachine<'a, I>
-where
-    I: ComputerInput,
-{
-    pub fn new(code: &'a Code, input: &'_ I) -> VirtualMachine<'a, I> {
-        let cpu = CpuWrapper::new(Cpu::new(code.as_ref().clone(), input.clone()));
-        VirtualMachine {
-            _code: code,
-            _input: input.clone(),
-            _cpu: cpu,
-        }
+impl<'a> VirtualMachine<'a> {
+    pub fn new(code: &'a Code, input: impl ComputerInput + 'a) -> VirtualMachine<'a> {
+        let cpu = CpuWrapper::new(Cpu::new(code, input));
+        VirtualMachine { _cpu: cpu }
     }
 
-    pub fn with_id(code: &'a Code, input: &'_ I, id: &str) -> VirtualMachine<'a, I> {
-        let mut cpu = Cpu::new(code.as_ref().clone(), input.clone());
+    pub fn with_id(code: &'a Code, input: impl ComputerInput + 'a, id: &str) -> VirtualMachine<'a> {
+        let mut cpu = Cpu::new(code, input);
         cpu.set_id(id);
         let cpu = CpuWrapper::new(cpu);
-        VirtualMachine {
-            _code: code,
-            _input: input.clone(),
-            _cpu: cpu,
-        }
+        VirtualMachine { _cpu: cpu }
+    }
+
+    pub fn restart(&self) {
+        self._cpu.restart()
     }
 
     pub fn set_debug_level(&self, debug_level: u8) {
@@ -53,32 +41,29 @@ where
         self._cpu.get_memory()
     }
 
-    pub fn get_input(&self) -> I {
-        self._input.clone()
-    }
-
-    pub fn get_output(&self) -> Output<I> {
+    pub fn get_output(&self) -> Output<'a> {
         Output::new(self._cpu.clone())
     }
 
-    pub fn restart(&mut self) {
-        self._cpu = CpuWrapper::new(Cpu::new(self._code.as_ref().clone(), self._input.clone()));
+    pub fn provide_input(&self, value: i64) {
+        self._cpu.provide_input(value)
     }
 }
 
 #[derive(Debug, Clone)]
-pub struct CpuWrapper<I> {
-    _cpu: Rc<RefCell<Cpu<I>>>,
+pub struct CpuWrapper<'a> {
+    _cpu: Rc<RefCell<Cpu<'a>>>,
 }
 
-impl<'a, I> CpuWrapper<I>
-where
-    I: ComputerInput,
-{
-    pub fn new(cpu: Cpu<I>) -> CpuWrapper<I> {
+impl<'a> CpuWrapper<'a> {
+    pub fn new(cpu: Cpu<'a>) -> CpuWrapper<'a> {
         CpuWrapper {
             _cpu: Rc::new(RefCell::new(cpu)),
         }
+    }
+
+    pub fn restart(&self) {
+        (*self._cpu.borrow_mut()).restart();
     }
 
     pub fn set_debug_level(&self, debug_level: u8) {
@@ -91,6 +76,10 @@ where
 
     pub fn get_memory(&self) -> Vec<i64> {
         (*self._cpu.borrow()).get_memory()
+    }
+
+    pub fn provide_input(&self, value: i64) {
+        (*self._cpu.borrow_mut()).provide_input(value)
     }
 
     pub fn step(&self) -> Result<StepResult, ComputerError> {
