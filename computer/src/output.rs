@@ -1,13 +1,9 @@
 use std::cell::Cell;
 
 use crate::{
-    cpu::StepResult,
-    cpu_wrapper::{CpuWrapper, MultiThreadWrapper, SingleThreadWrapper},
+    cpu::{CpuWrapper, StepResult},
     ComputerError,
 };
-
-pub type STOutput<'a> = RawOutput<SingleThreadWrapper<'a>>;
-pub type MTOutput<'a> = RawOutput<MultiThreadWrapper<'a>>;
 
 #[derive(Debug)]
 pub struct RawOutput<W>
@@ -27,6 +23,11 @@ where
             _cpu: cpu,
             _peek: Cell::new(None),
         }
+    }
+
+    pub fn step(&self) -> Result<StepResult, ComputerError> {
+        self._peek.set(None);
+        self._cpu.step()
     }
 
     pub fn get_all(&self) -> Result<Vec<i64>, ComputerError> {
@@ -51,23 +52,11 @@ where
         Ok(Some(result))
     }
 
-    pub fn step(&self) -> Result<StepResult, ComputerError> {
-        self._peek.set(None);
-        self._cpu.step()
-    }
-
     pub fn next(&self) -> Result<Option<i64>, ComputerError> {
         if let Some(peek) = self._peek.take() {
             return Ok(peek);
         }
-        loop {
-            match self.step()? {
-                StepResult::Value(value) => return Ok(Some(value)),
-                StepResult::Stop => return Ok(None),
-                StepResult::Proceed => (),
-                StepResult::Blocked => (),
-            }
-        }
+        self._cpu.next()
     }
 
     pub fn peek(&self) -> Result<Option<i64>, ComputerError> {

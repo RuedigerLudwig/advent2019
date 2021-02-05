@@ -1,5 +1,5 @@
 use crate::error::NetworkError;
-use computer::{Code, ComputerInput, Input, MTOutput, MTVirtualMachine, StepResult};
+use computer::{Code, ComputerInput, MTOutput, MTVirtualMachine, StepResult};
 use std::{
     collections::VecDeque,
     sync::{Arc, Mutex},
@@ -64,9 +64,9 @@ impl Node {
         node.is_active()
     }
 
-    fn get_next_input(&self) -> Input {
+    fn get_next_input(&self) -> Option<i64> {
         let mut node = (*self._node).lock().unwrap();
-        Input::Value(node.get_data())
+        Some(node.get_data())
     }
 }
 
@@ -82,7 +82,7 @@ impl NodeInput {
 }
 
 impl ComputerInput for NodeInput {
-    fn get_next_input(&mut self) -> Input {
+    fn get_next_input(&mut self) -> Option<i64> {
         self._node.get_next_input()
     }
 
@@ -149,7 +149,7 @@ impl<'a> NodeVm<'a> {
                     }
                 }
                 StepResult::Proceed => Ok(State::Active),
-                StepResult::Blocked => Ok(State::Active), // TODO
+                StepResult::WaitForInput => Ok(State::Active), // TODO
                 StepResult::Stop => Err(NetworkError::NodeStopped),
             }
         } else {

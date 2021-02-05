@@ -1,11 +1,11 @@
 use crate::{
-    cpu_wrapper::{CpuWrapper, MultiThreadWrapper, SingleThreadWrapper},
+    cpu::{CpuWrapper, MTCpuWrapper, STCpuWrapper},
     output::RawOutput,
     ComputerError,
 };
 
-pub type STTextOutput<'a> = RawTextOutput<SingleThreadWrapper<'a>>;
-pub type MTTextOutput<'a> = RawTextOutput<MultiThreadWrapper<'a>>;
+pub type STTextOutput<'a> = RawTextOutput<STCpuWrapper<'a>>;
+pub type MTTextOutput<'a> = RawTextOutput<MTCpuWrapper<'a>>;
 
 #[derive(Debug)]
 pub struct RawTextOutput<W>

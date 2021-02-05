@@ -1,6 +1,6 @@
 use std::collections::VecDeque;
 
-use crate::{input::Input, ComputerInput};
+use crate::ComputerInput;
 
 #[derive(Debug, Clone)]
 pub struct ListInput {
@@ -16,10 +16,8 @@ impl ListInput {
 }
 
 impl ComputerInput for ListInput {
-    fn get_next_input(&mut self) -> Input {
-        self._list
-            .pop_front()
-            .map_or(Input::NoMoreValues, Input::Value)
+    fn get_next_input(&mut self) -> Option<i64> {
+        self._list.pop_front()
     }
 
     fn provide_input(&mut self, input: i64) {

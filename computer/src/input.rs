@@ -1,14 +1,7 @@
 use std::{cell::Cell, fmt::Debug};
 
-#[derive(Debug)]
-pub enum Input {
-    Value(i64),
-    NoMoreValues,
-    WaitForValue,
-}
-
 pub trait ComputerInput: Debug {
-    fn get_next_input(&mut self) -> Input;
+    fn get_next_input(&mut self) -> Option<i64>;
     fn provide_input(&mut self, value: i64);
 }
 
@@ -16,8 +9,8 @@ pub trait ComputerInput: Debug {
 pub struct NoInput {}
 
 impl ComputerInput for NoInput {
-    fn get_next_input(&mut self) -> Input {
-        Input::NoMoreValues
+    fn get_next_input(&mut self) -> Option<i64> {
+        None
     }
 
     fn provide_input(&mut self, _value: i64) {}
@@ -37,8 +30,8 @@ impl OnceInput {
 }
 
 impl ComputerInput for OnceInput {
-    fn get_next_input(&mut self) -> Input {
-        self._cell.take().map_or(Input::NoMoreValues, Input::Value)
+    fn get_next_input(&mut self) -> Option<i64> {
+        self._cell.take()
     }
     fn provide_input(&mut self, _value: i64) {}
 }

@@ -1,6 +1,8 @@
 use std::collections::HashMap;
 
-use crate::{modes::AddrModes, ComputerError};
+use crate::ComputerError;
+
+use super::modes::AddrModes;
 
 pub fn analyze_instruction(instruction: i64) -> Result<(u8, AddrModes), ComputerError> {
     let op_code = (instruction % 100) as u8;

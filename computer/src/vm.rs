@@ -1,13 +1,12 @@
 use crate::{
-    cpu::Cpu,
-    cpu_wrapper::{CpuWrapper, MultiThreadWrapper, SingleThreadWrapper},
+    cpu::{Cpu, CpuWrapper, MTCpuWrapper, STCpuWrapper},
     input::ComputerInput,
     output::RawOutput,
     Code,
 };
 
-pub type STVirtualMachine<'a> = VirtualMachine<SingleThreadWrapper<'a>>;
-pub type MTVirtualMachine<'a> = VirtualMachine<MultiThreadWrapper<'a>>;
+pub type STVirtualMachine<'a> = VirtualMachine<STCpuWrapper<'a>>;
+pub type MTVirtualMachine<'a> = VirtualMachine<MTCpuWrapper<'a>>;
 
 #[derive(Debug)]
 pub struct VirtualMachine<W>
@@ -17,25 +16,22 @@ where
     _cpu: W,
 }
 
-impl<'a> VirtualMachine<SingleThreadWrapper<'a>> {
-    pub fn new(
-        code: &'a Code,
-        input: impl ComputerInput + 'a,
-    ) -> VirtualMachine<SingleThreadWrapper<'a>> {
-        let cpu = SingleThreadWrapper::new(Cpu::new(code, input));
+impl<'a> VirtualMachine<STCpuWrapper<'a>> {
+    pub fn new(code: &'a Code, input: impl ComputerInput + 'a) -> VirtualMachine<STCpuWrapper<'a>> {
+        let cpu = STCpuWrapper::new(Cpu::new(code, input));
         VirtualMachine { _cpu: cpu }
     }
 }
 
-impl<'a> VirtualMachine<MultiThreadWrapper<'a>> {
+impl<'a> VirtualMachine<MTCpuWrapper<'a>> {
     pub fn new_multi(
         code: &'a Code,
         input: impl ComputerInput + 'a,
         id: &str,
-    ) -> VirtualMachine<MultiThreadWrapper<'a>> {
+    ) -> VirtualMachine<MTCpuWrapper<'a>> {
         let mut cpu = Cpu::new(code, input);
         cpu.set_id(id);
-        let cpu = MultiThreadWrapper::new(cpu);
+        let cpu = MTCpuWrapper::new(cpu);
         VirtualMachine { _cpu: cpu }
     }
 }
