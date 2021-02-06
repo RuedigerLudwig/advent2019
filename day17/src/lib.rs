@@ -11,7 +11,7 @@ use interface::ExteriorComputerInterface;
 
 pub fn result() -> Result<(), ExteriorError> {
     let code = Code::from_file("day17", "input.txt")?;
-    let interface = ExteriorComputerInterface::new(&code);
+    let interface = ExteriorComputerInterface::new(code);
     let mut exterior = Exterior::new(interface)?;
 
     let result1 = exterior.get_alignment();

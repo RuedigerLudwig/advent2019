@@ -13,7 +13,7 @@ pub struct ExteriorComputerInterface<'a> {
 }
 
 impl<'a> ExteriorComputerInterface<'a> {
-    pub fn new(code: &'a Code) -> ExteriorComputerInterface<'_> {
+    pub fn new(code: Code) -> ExteriorComputerInterface<'a> {
         let input = ListInput::new();
         let vm = STVirtualMachine::new(code, input);
         let output = STTextOutput::new(vm.get_output());

@@ -10,7 +10,7 @@ use tractor::Tractor;
 
 pub fn result() -> Result<(), TractorError> {
     let code = Code::from_file("day19", "input.txt")?;
-    let interface = TractorComputerInterface::new(&code);
+    let interface = TractorComputerInterface::new(code);
     let mut droid = Tractor::new(interface);
     let result1 = droid.scan(50)?;
     println!("Day 19 - Result 1: {}", result1);

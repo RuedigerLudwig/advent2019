@@ -13,10 +13,10 @@ pub enum ShipState {
     Text,
 }
 
-impl SantasShip<'_> {
-    pub fn new(code: &Code) -> SantasShip<'_> {
+impl<'a> SantasShip<'a> {
+    pub fn new(code: Code) -> SantasShip<'a> {
         let input = ListInput::new();
-        let vm = STVirtualMachine::new(&code, input);
+        let vm = STVirtualMachine::new(code, input);
         let output = STTextOutput::new(vm.get_output());
 
         SantasShip {

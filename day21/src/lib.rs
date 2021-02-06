@@ -12,7 +12,7 @@ use WriteRegister::*;
 
 pub fn result() -> Result<(), SpringError> {
     let code = Code::from_file("day21", "input.txt")?;
-    let mut springbot = SpringBotComputer::new(&code);
+    let mut springbot = SpringBotComputer::new(code);
 
     let instructions1 = vec![NOT(C, JOut), AND(D, JOut), NOT(A, TOut), OR(T, JOut)];
     let result1 = springbot.walk(&instructions1, true)?;
@@ -40,7 +40,7 @@ mod test {
     #[test]
     fn test_part_one() -> Result<(), SpringError> {
         let code = Code::from_file("day21", "input.txt")?;
-        let mut springbot = SpringBotComputer::new(&code);
+        let mut springbot = SpringBotComputer::new(code);
 
         let instructions1 = vec![NOT(C, JOut), AND(D, JOut), NOT(A, TOut), OR(T, JOut)];
         springbot.walk(&instructions1, false)?;
@@ -51,7 +51,7 @@ mod test {
     #[test]
     fn test_part_two() -> Result<(), SpringError> {
         let code = Code::from_file("day21", "input.txt")?;
-        let mut springbot = SpringBotComputer::new(&code);
+        let mut springbot = SpringBotComputer::new(code);
 
         let instructions = vec![
             NOT(B, TOut),

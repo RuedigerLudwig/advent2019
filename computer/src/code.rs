@@ -1,9 +1,11 @@
 use crate::ComputerError;
 use common::read_single_line;
-use std::{collections::HashMap, str::FromStr};
+use std::{collections::HashMap, str::FromStr, sync::Arc};
 
-#[derive(Debug)]
-pub struct Code(HashMap<usize, i64>);
+#[derive(Debug, Clone)]
+pub struct Code {
+    code: Arc<HashMap<usize, i64>>,
+}
 
 impl Code {
     pub fn from_file(module: &str, file: &str) -> Result<Code, ComputerError> {
@@ -11,7 +13,7 @@ impl Code {
     }
 
     pub fn get(&self) -> HashMap<usize, i64> {
-        self.0.clone()
+        (*self.code).clone()
     }
 }
 
@@ -20,7 +22,9 @@ where
     T: IntoIterator<Item = i64>,
 {
     fn from(code: T) -> Self {
-        Code(code.into_iter().enumerate().collect())
+        Code {
+            code: Arc::new(code.into_iter().enumerate().collect()),
+        }
     }
 }
 

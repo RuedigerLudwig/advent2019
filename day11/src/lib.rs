@@ -10,13 +10,13 @@ use paint_bot::Bot;
 
 pub fn result() -> Result<(), PaintError> {
     let code = Code::from_file("day11", "input.txt")?;
-    let interface = ComputerInterface::new(&code);
+    let interface = ComputerInterface::new(code.clone());
     let mut bot = Bot::new(interface);
     bot.run(interface::Color::Black)?;
 
     println!("Day 11 - Result 1: {}", bot.count_painted_boards());
 
-    let interface2 = ComputerInterface::new(&code);
+    let interface2 = ComputerInterface::new(code);
     let mut bot2 = Bot::new(interface2);
     bot2.run(interface::Color::White)?;
 

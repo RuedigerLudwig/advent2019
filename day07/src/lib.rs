@@ -10,10 +10,10 @@ use error::AmplifierError;
 pub fn result() -> Result<(), AmplifierError> {
     let code = Code::from_file("day07", "input.txt")?;
 
-    let result1 = Amplifier::get_best(&code, &vec![0, 1, 2, 3, 4])?;
+    let result1 = Amplifier::get_best(code.clone(), &vec![0, 1, 2, 3, 4])?;
     println!("Day 07 - Result 1: {:?}", result1);
 
-    let result2 = Amplifier::get_best_continously(&code, &vec![5, 6, 7, 8, 9])?;
+    let result2 = Amplifier::get_best_continously(code, &vec![5, 6, 7, 8, 9])?;
     println!("Day 07 - Result 2: {:?}", result2);
 
     Ok(())
@@ -31,7 +31,7 @@ mod tests {
         let code = input.into();
         let expected = 43210;
 
-        let mut amplifier = Amplifier::new(&code, &vec![4, 3, 2, 1, 0]);
+        let mut amplifier = Amplifier::new(code, &vec![4, 3, 2, 1, 0]);
         let result = amplifier.run_once(0)?;
 
         assert_eq!(result, expected);
@@ -47,7 +47,7 @@ mod tests {
         let code = input.into();
 
         let expected = 43210;
-        let result = Amplifier::get_best(&code, &vec![0, 1, 2, 3, 4])?;
+        let result = Amplifier::get_best(code, &vec![0, 1, 2, 3, 4])?;
 
         assert_eq!(result, expected);
 
@@ -63,7 +63,7 @@ mod tests {
         let code = input.into();
 
         let expected = 65210;
-        let result = Amplifier::get_best(&code, &vec![0, 1, 2, 3, 4])?;
+        let result = Amplifier::get_best(code, &vec![0, 1, 2, 3, 4])?;
 
         assert_eq!(result, expected);
 
@@ -79,7 +79,7 @@ mod tests {
         let code = input.into();
         let expected = 139629729;
 
-        let mut amplifier = Amplifier::new(&code, &vec![9, 8, 7, 6, 5]);
+        let mut amplifier = Amplifier::new(code, &vec![9, 8, 7, 6, 5]);
         let result = amplifier.run_continously(0)?;
 
         assert_eq!(result, expected);
@@ -96,7 +96,7 @@ mod tests {
         let code = input.into();
         let expected = 139629729;
 
-        let result = Amplifier::get_best_continously(&code, &vec![5, 6, 7, 8, 9])?;
+        let result = Amplifier::get_best_continously(code, &vec![5, 6, 7, 8, 9])?;
 
         assert_eq!(result, expected);
 

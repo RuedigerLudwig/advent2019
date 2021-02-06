@@ -1,89 +1,104 @@
 use crate::error::NetworkError;
-use computer::{Code, ComputerInput, MTOutput, MTVirtualMachine, StepResult};
+use computer::{Code, ComputerInput, MTVirtualMachine};
+use mpsc::{channel, TryRecvError};
 use std::{
-    collections::VecDeque,
-    sync::{Arc, Mutex},
+    collections::{HashSet, VecDeque},
+    sync::{
+        mpsc::{self, Receiver, Sender},
+        Arc, Condvar, Mutex,
+    },
+    thread,
 };
 
 #[derive(Debug)]
-struct NodeQueue {
-    _queue: VecDeque<i64>,
-    _sent_empty: bool,
+enum NodeState {
+    Active,
+    Inactive,
+    Terminated,
 }
 
-impl NodeQueue {
-    pub fn new(id: i64) -> NodeQueue {
-        let mut queue = VecDeque::new();
-        queue.push_back(id);
-        queue.push_back(-1);
-        NodeQueue {
-            _queue: queue,
-            _sent_empty: false,
-        }
-    }
-
-    pub fn feed(&mut self, x: i64, y: i64) {
-        self._queue.push_back(x);
-        self._queue.push_back(y);
-    }
-
-    pub fn is_active(&self) -> bool {
-        !self._queue.is_empty() || !self._sent_empty
-    }
-
-    pub fn get_data(&mut self) -> i64 {
-        if let Some(value) = self._queue.pop_front() {
-            self._sent_empty = false;
-            value
-        } else {
-            self._sent_empty = true;
-            -1
-        }
-    }
+#[derive(Debug)]
+struct NodeData {
+    queue: VecDeque<i64>,
+    from_queue: bool,
+    terminated: bool,
 }
 
 #[derive(Debug, Clone)]
-pub struct Node {
-    _node: Arc<Mutex<NodeQueue>>,
+struct Node {
+    _id: usize,
+    _data: Arc<(Mutex<NodeData>, Condvar)>,
 }
 
 impl Node {
-    pub fn new(id: i64) -> Node {
+    pub fn new(id: usize) -> Node {
+        let mut queue = VecDeque::new();
+        queue.push_back(id as i64);
+        queue.push_back(-1);
         Node {
-            _node: Arc::new(Mutex::new(NodeQueue::new(id))),
+            _id: id,
+            _data: Arc::new((
+                Mutex::new(NodeData {
+                    queue,
+                    from_queue: true,
+                    terminated: false,
+                }),
+                Condvar::new(),
+            )),
         }
     }
 
-    pub fn feed_node(&self, x: i64, y: i64) {
-        let mut node = (*self._node).lock().unwrap();
-        node.feed(x, y)
+    pub fn get_id(&self) -> usize {
+        return self._id;
     }
 
-    pub fn is_active(&self) -> bool {
-        let node = (*self._node).lock().unwrap();
-        node.is_active()
+    pub fn feed(&self, x: i64, y: i64) {
+        let (guard, wake_upper) = &*self._data;
+        let mut data = guard.lock().unwrap();
+        data.queue.push_back(x);
+        data.queue.push_back(y);
+        wake_upper.notify_one();
     }
 
-    fn get_next_input(&self) -> Option<i64> {
-        let mut node = (*self._node).lock().unwrap();
-        Some(node.get_data())
+    pub fn terminate(&self) {
+        let (guard, wake_upper) = &*self._data;
+        let mut data = guard.lock().unwrap();
+        data.terminated = true;
+        wake_upper.notify_one();
+    }
+
+    pub fn get_state(&self) -> NodeState {
+        let (guard, _) = &*self._data;
+        let data = guard.lock().unwrap();
+        if data.terminated {
+            NodeState::Terminated
+        } else if !data.queue.is_empty() || data.from_queue {
+            NodeState::Active
+        } else {
+            NodeState::Inactive
+        }
+    }
+
+    pub fn wait_for_signal(&self) {
+        let (guard, wake_upper) = &*self._data;
+        let mut data = guard.lock().unwrap();
+        while data.queue.is_empty() && !data.terminated {
+            data = wake_upper.wait(data).unwrap();
+        }
     }
 }
 
-#[derive(Debug, Clone)]
-pub struct NodeInput {
-    _node: Node,
-}
-
-impl NodeInput {
-    pub fn new(node: Node) -> NodeInput {
-        NodeInput { _node: node }
-    }
-}
-
-impl ComputerInput for NodeInput {
+impl ComputerInput for Node {
     fn get_next_input(&mut self) -> Option<i64> {
-        self._node.get_next_input()
+        let (guard, _) = &*self._data;
+        let mut data = guard.lock().unwrap();
+        if let Some(value) = data.queue.pop_front() {
+            data.from_queue = true;
+            Some(value)
+        } else {
+            data.from_queue = false;
+            Some(-1)
+        }
     }
 
     fn provide_input(&mut self, _value: i64) {
@@ -92,144 +107,211 @@ impl ComputerInput for NodeInput {
 }
 
 #[derive(Debug)]
-enum State {
-    Value(i64, i64, i64),
-    Active,
-    Idle,
+pub enum ThreadResult {
+    Result {
+        from: usize,
+        to: usize,
+        x: i64,
+        y: i64,
+    },
+    Inactive {
+        from: usize,
+    },
+    Active {
+        from: usize,
+    },
 }
 
 #[derive(Debug)]
 struct NodeVm<'a> {
     _vm: MTVirtualMachine<'a>,
-    _output: MTOutput<'a>,
     _node: Node,
 
-    _next_receiver: Option<i64>,
+    _result_tx: Sender<ThreadResult>,
+
+    _next_receiver: Option<usize>,
     _next_x: Option<i64>,
 }
 
 impl<'a> NodeVm<'a> {
-    pub fn new(code: &'a Code, id: i64) -> NodeVm<'a> {
-        let node = Node::new(id);
-        let input = NodeInput::new(node.clone());
-        let vm = MTVirtualMachine::new_multi(&code, input, &id.to_string());
-        let output = vm.get_output();
+    pub fn new(code: Code, node: Node, result_tx: Sender<ThreadResult>) -> NodeVm<'a> {
+        let vm = MTVirtualMachine::new_multi(code, node.clone(), node.get_id());
+
         NodeVm {
             _vm: vm,
             _node: node,
-            _output: output,
+
+            _result_tx: result_tx,
+
             _next_receiver: None,
             _next_x: None,
         }
     }
 
-    pub fn get_node(&self) -> Node {
-        self._node.clone()
-    }
-
-    pub fn step(&mut self) -> Result<State, NetworkError> {
-        if self.is_active() {
-            match self._output.step()? {
-                StepResult::Value(value) => {
+    pub fn run(&mut self) -> Result<(), NetworkError> {
+        let output = self._vm.get_output();
+        loop {
+            let active = match output.step()? {
+                computer::StepResult::Value(value) => {
                     if self._next_receiver.is_none() {
-                        self._next_receiver = Some(value);
-                        Ok(State::Active)
+                        self._next_receiver = Some(value as usize);
                     } else if self._next_x.is_none() {
                         self._next_x = Some(value);
-                        Ok(State::Active)
                     } else {
-                        let result = State::Value(
-                            self._next_receiver.unwrap(),
-                            self._next_x.unwrap(),
-                            value,
-                        );
+                        let result = ThreadResult::Result {
+                            from: self._node._id,
+                            to: self._next_receiver.unwrap(),
+                            x: self._next_x.unwrap(),
+                            y: value,
+                        };
                         self._next_receiver = None;
                         self._next_x = None;
-                        Ok(result)
+                        self._result_tx.send(result)?;
+                    };
+                    true
+                }
+                computer::StepResult::Stop => return Err(NetworkError::NodeStopped),
+                computer::StepResult::Proceed => false,
+                computer::StepResult::WaitForInput => false,
+            };
+
+            let mut state = self._node.get_state();
+            match state {
+                NodeState::Active => (),
+                NodeState::Terminated => return Ok(()),
+
+                NodeState::Inactive => {
+                    if !active {
+                        self._result_tx.send(ThreadResult::Inactive {
+                            from: self._node.get_id(),
+                        })?;
+
+                        while let NodeState::Inactive = state {
+                            self._node.wait_for_signal();
+
+                            state = self._node.get_state();
+                            match state {
+                                NodeState::Active => {
+                                    self._result_tx.send(ThreadResult::Active {
+                                        from: self._node.get_id(),
+                                    })?
+                                }
+                                NodeState::Terminated => return Ok(()),
+                                NodeState::Inactive => {}
+                            }
+                        }
                     }
                 }
-                StepResult::Proceed => Ok(State::Active),
-                StepResult::WaitForInput => Ok(State::Active), // TODO
-                StepResult::Stop => Err(NetworkError::NodeStopped),
             }
-        } else {
-            Ok(State::Idle)
         }
-    }
-
-    pub fn is_active(&self) -> bool {
-        self._next_receiver.is_some() || self._node.is_active()
     }
 }
 
 #[derive(Debug)]
-pub struct Switch<'a> {
-    _vms: Vec<NodeVm<'a>>,
+pub struct Switch {
     _nodes: Vec<Node>,
+    _result_rx: Receiver<ThreadResult>,
 }
 
-impl<'a> Switch<'a> {
-    pub fn new(code: &Code, count: usize) -> Switch<'_> {
-        let mut vms = Vec::with_capacity(count);
+impl Switch {
+    pub fn new(code: Code, count: usize) -> Switch {
         let mut nodes = Vec::with_capacity(count);
 
+        let (result_tx, result_rx) = channel();
+
         for number in 0..count {
-            let node_vm = NodeVm::new(code, number as i64);
-            let node = node_vm.get_node();
-            nodes.push(node);
-            vms.push(node_vm);
+            let thread_result_tx = result_tx.clone();
+            let code = code.clone();
+            let node = Node::new(number);
+            nodes.push(node.clone());
+
+            thread::spawn(move || {
+                let mut vm = NodeVm::new(code.clone(), node, thread_result_tx);
+                if let Err(err) = vm.run() {
+                    println!("{:2} Error: {:?}", number, err);
+                }
+            });
         }
 
         Switch {
-            _vms: vms,
             _nodes: nodes,
+            _result_rx: result_rx,
         }
     }
 
     pub fn part1(&mut self) -> Result<i64, NetworkError> {
         loop {
-            for vm in self._vms.iter_mut() {
-                if let State::Value(receiver, x, y) = vm.step()? {
-                    match receiver {
-                        0..=49 => self._nodes[receiver as usize].feed_node(x, y),
-                        255 => return Ok(y),
-                        _ => return Err(NetworkError::UnknownAddress(receiver)),
+            let thread_result = self._result_rx.recv()?;
+            match thread_result {
+                ThreadResult::Result { to, x, y, .. } => match to {
+                    0..=49 => {
+                        self._nodes[to].feed(x, y);
                     }
-                }
+                    255 => {
+                        return Ok(y);
+                    }
+                    _ => return Err(NetworkError::UnknownAddress(to)),
+                },
+
+                ThreadResult::Inactive { .. } => {}
+                ThreadResult::Active { .. } => {}
             }
         }
     }
 
     pub fn part2(&mut self) -> Result<i64, NetworkError> {
+        use ThreadResult::*;
+
         let mut nat_memory = None;
         let mut last_delivered = None;
+        let mut inactive = HashSet::new();
+
         loop {
-            let mut all_idle = true;
-            for vm in self._vms.iter_mut() {
-                match vm.step()? {
-                    State::Value(receiver, x, y) => {
-                        match receiver {
-                            0..=49 => self._nodes[receiver as usize].feed_node(x, y),
-                            255 => nat_memory = Some((x, y)),
-
-                            _ => return Err(NetworkError::UnknownAddress(receiver)),
+            loop {
+                let thread_result = self._result_rx.try_recv();
+                match thread_result {
+                    Ok(Result { to, x, y, .. }) => match to {
+                        0..=49 => {
+                            self._nodes[to].feed(x, y);
                         }
-                        all_idle = false;
+                        255 => nat_memory = Some((x, y)),
+
+                        _ => return Err(NetworkError::UnknownAddress(to)),
+                    },
+
+                    Ok(Inactive { from }) => {
+                        inactive.insert(from);
                     }
-                    State::Active => all_idle = false,
-                    State::Idle => {}
+
+                    Ok(Active { from }) => {
+                        inactive.remove(&from);
+                    }
+
+                    Err(TryRecvError::Empty) => {
+                        if inactive.len() == 50 {
+                            break;
+                        }
+                    }
+                    Err(TryRecvError::Disconnected) => return Err(NetworkError::NodeStopped),
                 }
             }
 
-            if all_idle {
-                if let Some((x, y)) = nat_memory {
-                    if last_delivered.map_or(false, |old_y| old_y == y) {
-                        return Ok(y);
-                    }
-                    self._nodes[0].feed_node(x, y);
-                    last_delivered = Some(y);
+            if let Some((x, y)) = nat_memory {
+                if last_delivered.map_or(false, |old_y| old_y == y) {
+                    return Ok(y);
                 }
+                inactive.remove(&0);
+                self._nodes[0].feed(x, y);
+                last_delivered = Some(y);
             }
+        }
+    }
+}
+
+impl Drop for Switch {
+    fn drop(&mut self) {
+        for node in &self._nodes {
+            node.terminate();
         }
     }
 }

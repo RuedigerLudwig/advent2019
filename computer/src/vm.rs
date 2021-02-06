@@ -17,7 +17,7 @@ where
 }
 
 impl<'a> VirtualMachine<STCpuWrapper<'a>> {
-    pub fn new(code: &'a Code, input: impl ComputerInput + 'a) -> VirtualMachine<STCpuWrapper<'a>> {
+    pub fn new(code: Code, input: impl ComputerInput + 'a) -> VirtualMachine<STCpuWrapper<'a>> {
         let cpu = STCpuWrapper::new(Cpu::new(code, input));
         VirtualMachine { _cpu: cpu }
     }
@@ -25,9 +25,9 @@ impl<'a> VirtualMachine<STCpuWrapper<'a>> {
 
 impl<'a> VirtualMachine<MTCpuWrapper<'a>> {
     pub fn new_multi(
-        code: &'a Code,
+        code: Code,
         input: impl ComputerInput + 'a,
-        id: &str,
+        id: usize,
     ) -> VirtualMachine<MTCpuWrapper<'a>> {
         let mut cpu = Cpu::new(code, input);
         cpu.set_id(id);

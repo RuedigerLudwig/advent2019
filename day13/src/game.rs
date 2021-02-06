@@ -66,7 +66,7 @@ pub struct Game {
 }
 
 impl Game {
-    pub fn paint_board(code: &Code) -> Result<Game, GameError> {
+    pub fn paint_board(code: Code) -> Result<Game, GameError> {
         let vm = STVirtualMachine::new(code, NoInput {});
         let mut board = HashMap::new();
         while let Some(Command::Tile(pos, tile)) = Game::get_tile(&vm.get_output())? {
@@ -97,7 +97,7 @@ impl Game {
         self._board.values().filter(|other| **other == tile).count()
     }
 
-    pub fn free_game(code: &Code) -> Result<i64, GameError> {
+    pub fn free_game(code: Code) -> Result<i64, GameError> {
         let vm = STVirtualMachine::new(code, ListInput::new());
         vm.patch_memory(0, 2);
         let output = vm.get_output();

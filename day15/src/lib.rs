@@ -10,7 +10,7 @@ use interface::ComputerInterface;
 
 pub fn result() -> Result<(), DroidError> {
     let code = Code::from_file("day15", "input.txt")?;
-    let interface = ComputerInterface::new(&code);
+    let interface = ComputerInterface::new(code);
     let mut droid = Droid::new(interface);
 
     let result1 = droid.explore()?;

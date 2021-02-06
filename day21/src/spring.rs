@@ -87,7 +87,7 @@ pub struct SpringBotComputer<'a> {
 }
 
 impl<'a> SpringBotComputer<'a> {
-    pub fn new(code: &'a Code) -> SpringBotComputer<'_> {
+    pub fn new(code: Code) -> SpringBotComputer<'a> {
         let input = ListInput::new();
         let vm = STVirtualMachine::new(code, input);
         SpringBotComputer { vm }

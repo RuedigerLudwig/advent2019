@@ -13,32 +13,33 @@ use OperationResult::*;
 
 #[derive(Debug)]
 pub struct Cpu<'a> {
-    _code: &'a Code,
+    _code: Code,
     _memory: HashMap<usize, i64>,
     _offset: i64,
     _pointer: usize,
     _crashed: bool,
     _input: Box<dyn ComputerInput + 'a>,
     _debug_level: u8,
-    _id: String,
+    _id: Option<usize>,
 }
 
 impl<'a> Cpu<'a> {
-    pub fn new(code: &'a Code, input: impl ComputerInput + 'a) -> Cpu<'a> {
+    pub fn new(code: Code, input: impl ComputerInput + 'a) -> Cpu<'a> {
+        let memory = code.get();
         Cpu {
             _code: code,
-            _memory: code.get(),
+            _memory: memory,
             _offset: 0,
             _pointer: 0,
             _crashed: false,
             _input: Box::new(input),
             _debug_level: debug_codes::NONE,
-            _id: "".to_owned(),
+            _id: None,
         }
     }
 
-    pub fn get_id(&self) -> &String {
-        &self._id
+    pub fn get_id(&self) -> Option<usize> {
+        self._id
     }
 
     pub fn get_debug_level(&self) -> u8 {
@@ -60,8 +61,8 @@ impl<'a> Cpu<'a> {
         self._crashed = false;
     }
 
-    pub fn set_id(&mut self, id: &str) {
-        self._id = id.to_owned();
+    pub fn set_id(&mut self, id: usize) {
+        self._id = Some(id);
     }
 
     pub fn set_debug_level(&mut self, debug_level: u8) {

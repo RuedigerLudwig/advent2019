@@ -12,7 +12,7 @@ use interactive::Interactive;
 pub fn result() -> Result<(), DroneError> {
     let code = Code::from_file("day25", "input.txt")?;
 
-    let mut drone = Drone::new(&code);
+    let mut drone = Drone::new(code);
     let result = drone.run()?;
 
     println!("Day 25 - Result 1: {}", result);
@@ -22,7 +22,7 @@ pub fn result() -> Result<(), DroneError> {
 
 pub fn interactive() -> Result<(), DroneError> {
     let code = Code::from_file("day25", "input.txt")?;
-    let mut interactive = Interactive::new(&code);
+    let mut interactive = Interactive::new(code);
 
     interactive.run()
 }

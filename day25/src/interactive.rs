@@ -26,14 +26,14 @@ const DESCRIPTIONS: [&'static str; 11] = [
 
 #[derive(Debug)]
 pub struct Interactive<'a> {
-    _code: &'a Code,
+    _code: Code,
     _ship: SantasShip<'a>,
 }
 
 impl<'a> Interactive<'a> {
-    pub fn new(code: &'a Code) -> Interactive<'a> {
+    pub fn new(code: Code) -> Interactive<'a> {
         Interactive {
-            _code: code,
+            _code: code.clone(),
             _ship: SantasShip::new(code),
         }
     }
@@ -86,7 +86,7 @@ impl<'a> Interactive<'a> {
                     };
 
                     if text == "restart" {
-                        self._ship = SantasShip::new(self._code);
+                        self._ship = SantasShip::new(self._code.clone());
                     } else {
                         self._ship.send_command(&text)?;
                     }
@@ -105,7 +105,7 @@ impl<'a> Interactive<'a> {
                         match text.as_str() {
                             "quit" => return Ok(()),
                             "restart" => {
-                                self._ship = SantasShip::new(self._code);
+                                self._ship = SantasShip::new(self._code.clone());
                                 break;
                             }
                             _ => (),

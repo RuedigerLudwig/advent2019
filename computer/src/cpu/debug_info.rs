@@ -8,7 +8,7 @@ use super::{
 
 pub struct DebugInfo<'a> {
     cpu: &'a Cpu<'a>,
-    id: &'a String,
+    id: Option<usize>,
     offset: i64,
 
     name: &'a str,
@@ -57,13 +57,22 @@ impl<'a> DebugInfo<'a> {
 
     pub fn print(&self) -> Result<(), ComputerError> {
         if self.cpu.get_debug_level() & debug_codes::HEAD != 0 {
-            println!(
-                "({}-{}) | {{{}}} | \"{}\"",
-                self.range.0,
-                self.range.1 - 1,
-                self.offset,
-                self.id
-            );
+            if let Some(id) = self.id {
+                println!(
+                    "({}-{}) | {{{}}} | \"{}\"",
+                    self.range.0,
+                    self.range.1 - 1,
+                    self.offset,
+                    id
+                );
+            } else {
+                println!(
+                    "({}-{}) | {{{}}}",
+                    self.range.0,
+                    self.range.1 - 1,
+                    self.offset
+                );
+            }
         }
 
         if self.cpu.get_debug_level() & debug_codes::DISASSEMBLE != 0 {

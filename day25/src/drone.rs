@@ -14,7 +14,7 @@ struct Room {
 
 #[derive(Debug)]
 pub struct Drone<'a> {
-    _code: &'a Code,
+    _code: Code,
     _ship: SantasShip<'a>,
     _carrying: Vec<String>,
     _avoid: Vec<String>,
@@ -34,9 +34,9 @@ enum SecurityCheck {
 }
 
 impl<'a> Drone<'a> {
-    pub fn new(code: &'a Code) -> Drone<'a> {
+    pub fn new(code: Code) -> Drone<'a> {
         Drone {
-            _code: code,
+            _code: code.clone(),
             _ship: SantasShip::new(code),
             _carrying: Vec::new(),
             _avoid: Vec::new(),
@@ -104,7 +104,7 @@ impl<'a> Drone<'a> {
     }
 
     fn restart(&mut self) {
-        self._ship = SantasShip::new(self._code);
+        self._ship = SantasShip::new(self._code.clone());
         self._carrying = Vec::new();
     }
 

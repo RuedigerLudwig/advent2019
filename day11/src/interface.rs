@@ -35,10 +35,10 @@ pub struct ComputerInterface<'a> {
     vm: STVirtualMachine<'a>,
 }
 
-impl ComputerInterface<'_> {
-    pub fn new(code: &Code) -> ComputerInterface<'_> {
+impl<'a> ComputerInterface<'a> {
+    pub fn new(code: Code) -> ComputerInterface<'a> {
         let input = ListInput::new();
-        let vm = STVirtualMachine::new(&code, input);
+        let vm = STVirtualMachine::new(code, input);
         ComputerInterface {
             output: vm.get_output(),
             vm,

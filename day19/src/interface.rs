@@ -14,7 +14,7 @@ pub struct TractorComputerInterface<'a> {
 }
 
 impl<'a> TractorComputerInterface<'a> {
-    pub fn new(code: &'a Code) -> TractorComputerInterface<'_> {
+    pub fn new(code: Code) -> TractorComputerInterface<'a> {
         TractorComputerInterface {
             _vm: STVirtualMachine::new(code, ListInput::new()),
         }
