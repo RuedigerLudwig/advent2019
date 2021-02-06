@@ -1,9 +1,9 @@
-use computer::{Code, ComputerError, InputConverter, ListInput, STTextVM};
+use computer::{Code, ComputerError, InputConverter, ListInput, TextVM};
 
 #[derive(Debug)]
 pub struct SantasShip<'a> {
     _input: ListInput,
-    _vm: STTextVM<'a>,
+    _vm: TextVM<'a>,
 }
 
 #[derive(Debug)]
@@ -16,7 +16,7 @@ pub enum ShipState {
 impl<'a> SantasShip<'a> {
     pub fn new(code: Code) -> SantasShip<'a> {
         let input = ListInput::new();
-        let vm = STTextVM::new_single(code, input.clone());
+        let vm = TextVM::new(code, input.clone());
 
         SantasShip {
             _input: input,
@@ -24,7 +24,7 @@ impl<'a> SantasShip<'a> {
         }
     }
 
-    pub fn get_text(&self) -> Result<(ShipState, Vec<String>), ComputerError> {
+    pub fn get_text(&mut self) -> Result<(ShipState, Vec<String>), ComputerError> {
         let mut lines = Vec::new();
         let mut last_line = "".to_owned();
         while let Some(line) = self._vm.read_line()? {

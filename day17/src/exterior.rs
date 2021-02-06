@@ -1,11 +1,10 @@
+use crate::{error::ExteriorError, interface::ExteriorInterface, path::Path};
+use common::{Area as RawArea, Direction, Pos as RawPos, Turn};
 use std::{
     collections::{HashMap, HashSet},
     fmt::Display,
 };
 
-use common::{Area as RawArea, Direction, Pos as RawPos, Turn};
-
-use crate::{error::ExteriorError, interface::ExteriorInterface, path::Path};
 type Pos = RawPos<i32>;
 type Area = RawArea<i32>;
 
@@ -214,7 +213,7 @@ mod tests {
     }
 
     impl ExteriorInterface for TestInterface {
-        fn get_picture(&self) -> Result<Vec<String>, ExteriorError> {
+        fn get_picture(&mut self) -> Result<Vec<String>, ExteriorError> {
             Ok(self.data.clone())
         }
 

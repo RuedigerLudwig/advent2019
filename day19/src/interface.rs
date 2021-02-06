@@ -1,5 +1,5 @@
 use crate::error::TractorError;
-use computer::{Code, ListInput, STVirtualMachine};
+use computer::{Code, ListInput, VirtualMachine};
 
 use common::Pos as RawPos;
 
@@ -10,7 +10,7 @@ pub trait TractorInterface {
 }
 
 pub struct TractorComputerInterface<'a> {
-    vm: STVirtualMachine<'a>,
+    vm: VirtualMachine<'a>,
     input: ListInput,
 }
 
@@ -18,7 +18,7 @@ impl<'a> TractorComputerInterface<'a> {
     pub fn new(code: Code) -> TractorComputerInterface<'a> {
         let input = ListInput::new();
         TractorComputerInterface {
-            vm: STVirtualMachine::new_single(code, input.clone()),
+            vm: VirtualMachine::new(code, input.clone()),
             input,
         }
     }

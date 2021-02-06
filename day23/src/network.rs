@@ -1,5 +1,5 @@
 use crate::error::NetworkError;
-use computer::{Code, ComputerInput, MTVirtualMachine};
+use computer::{Code, ComputerInput, VirtualMachine};
 use mpsc::{channel, TryRecvError};
 use std::{
     collections::{HashSet, VecDeque},
@@ -9,6 +9,8 @@ use std::{
     },
     thread,
 };
+
+const EMPTY_THRESHOLD: usize = 2;
 
 #[derive(Debug)]
 enum NodeState {
@@ -20,7 +22,7 @@ enum NodeState {
 #[derive(Debug)]
 struct NodeData {
     queue: VecDeque<i64>,
-    from_queue: bool,
+    empty_for: usize,
     terminated: bool,
 }
 
@@ -34,17 +36,14 @@ impl Node {
     pub fn new(id: usize) -> Node {
         let mut queue = VecDeque::new();
         queue.push_back(id as i64);
-        queue.push_back(-1); // We need to make sure to send a -1 to each node first
+        let data = NodeData {
+            queue,
+            empty_for: 0,
+            terminated: false,
+        };
         Node {
             _id: id,
-            _data: Arc::new((
-                Mutex::new(NodeData {
-                    queue,
-                    from_queue: true,
-                    terminated: false,
-                }),
-                Condvar::new(),
-            )),
+            _data: Arc::new((Mutex::new(data), Condvar::new())),
         }
     }
 
@@ -72,7 +71,7 @@ impl Node {
         let data = guard.lock().unwrap();
         if data.terminated {
             NodeState::Terminated
-        } else if !data.queue.is_empty() || data.from_queue {
+        } else if !data.queue.is_empty() || data.empty_for < EMPTY_THRESHOLD {
             NodeState::Active
         } else {
             NodeState::Inactive
@@ -93,10 +92,10 @@ impl ComputerInput for Node {
         let (guard, _) = &*self._data;
         let mut data = guard.lock().unwrap();
         if let Some(value) = data.queue.pop_front() {
-            data.from_queue = true;
+            data.empty_for = 0;
             Some(value)
         } else {
-            data.from_queue = false;
+            data.empty_for += 1;
             Some(-1)
         }
     }
@@ -113,14 +112,12 @@ pub enum ThreadResult {
     Inactive {
         from: usize,
     },
-    Active {
-        from: usize,
-    },
 }
 
 #[derive(Debug)]
 struct NodeVm<'a> {
-    _vm: MTVirtualMachine<'a>,
+    _id: usize,
+    _vm: VirtualMachine<'a>,
     _node: Node,
 
     _result_tx: Sender<ThreadResult>,
@@ -131,9 +128,10 @@ struct NodeVm<'a> {
 
 impl<'a> NodeVm<'a> {
     pub fn new(code: Code, node: Node, result_tx: Sender<ThreadResult>) -> NodeVm<'a> {
-        let vm = MTVirtualMachine::new_multi(code, node.clone(), node.get_id());
+        let vm = VirtualMachine::new_with_id(code, node.clone(), node.get_id());
 
         NodeVm {
+            _id: node.get_id(),
             _vm: vm,
             _node: node,
 
@@ -170,8 +168,7 @@ impl<'a> NodeVm<'a> {
                 computer::StepResult::WaitForInput => false,
             };
 
-            let mut state = self._node.get_state();
-            match state {
+            match self._node.get_state() {
                 NodeState::Active => (),
                 NodeState::Terminated => return Ok(()),
 
@@ -181,16 +178,11 @@ impl<'a> NodeVm<'a> {
                             from: self._node.get_id(),
                         })?;
 
-                        while let NodeState::Inactive = state {
+                        loop {
                             self._node.wait_for_signal();
 
-                            state = self._node.get_state();
-                            match state {
-                                NodeState::Active => {
-                                    self._result_tx.send(ThreadResult::Active {
-                                        from: self._node.get_id(),
-                                    })?
-                                }
+                            match self._node.get_state() {
+                                NodeState::Active => break,
                                 NodeState::Terminated => return Ok(()),
                                 NodeState::Inactive => {}
                             }
@@ -204,104 +196,119 @@ impl<'a> NodeVm<'a> {
 
 #[derive(Debug)]
 pub struct Switch {
-    _nodes: Vec<Node>,
-    _result_rx: Receiver<ThreadResult>,
+    nodes: Vec<Node>,
+    result_rx: Receiver<ThreadResult>,
 }
 
 impl Switch {
-    pub fn new(code: Code, count: usize) -> Switch {
-        let mut nodes = Vec::with_capacity(count);
+    pub fn part1(code: Code, num_nodes: usize) -> Result<i64, NetworkError> {
+        let switch = Switch::start_nodes(code, num_nodes);
+
+        loop {
+            if let ThreadResult::Result { to, x, y, .. } = switch.result_rx.recv()? {
+                match to {
+                    to if to < num_nodes => switch.nodes[to].feed(x, y),
+                    255 => return Ok(y),
+                    _ => return Err(NetworkError::UnknownAddress(to)),
+                }
+            }
+        }
+    }
+
+    pub fn part2(code: Code, num_nodes: usize) -> Result<i64, NetworkError> {
+        use ThreadResult::*;
+
+        let switch = Switch::start_nodes(code, num_nodes);
+
+        let mut nat_memory = None;
+        let mut last_delivered = None;
+        let mut active = (0..num_nodes).collect::<HashSet<usize>>();
+
+        loop {
+            match switch.result_rx.try_recv() {
+                Ok(Result { to, x, y, .. }) => match to {
+                    to if to < num_nodes => {
+                        active.insert(to);
+                        switch.nodes[to].feed(x, y)
+                    }
+                    255 => nat_memory = Some((x, y)),
+                    _ => return Err(NetworkError::UnknownAddress(to)),
+                },
+
+                Ok(Inactive { from }) => {
+                    active.remove(&from);
+                }
+
+                Err(TryRecvError::Empty) => {
+                    if active.is_empty() {
+                        if let Some((x, y)) = nat_memory {
+                            if last_delivered.map_or(false, |old_y| old_y == y) {
+                                return Ok(y);
+                            }
+                            active.insert(0);
+                            switch.nodes[0].feed(x, y);
+                            last_delivered = Some(y);
+                        }
+                    }
+                }
+
+                Err(TryRecvError::Disconnected) => return Err(NetworkError::NodeStopped),
+            }
+        }
+    }
+
+    fn start_nodes(code: Code, num_nodes: usize) -> Switch {
+        let mut nodes = Vec::with_capacity(num_nodes);
 
         let (result_tx, result_rx) = channel();
 
-        for number in 0..count {
-            let thread_result_tx = result_tx.clone();
+        for id in 0..num_nodes {
             let code = code.clone();
-            let node = Node::new(number);
+            let node = Node::new(id);
             nodes.push(node.clone());
+            let thread_result_tx = result_tx.clone();
 
             thread::spawn(move || {
-                let mut vm = NodeVm::new(code.clone(), node, thread_result_tx);
+                let mut vm = NodeVm::new(code, node, thread_result_tx);
                 if let Err(err) = vm.run() {
-                    println!("{:2} Error: {:?}", number, err);
+                    println!("{:2} Error: {:?}", id, err);
                 }
             });
         }
 
-        Switch {
-            _nodes: nodes,
-            _result_rx: result_rx,
-        }
-    }
-
-    pub fn part1(&mut self) -> Result<i64, NetworkError> {
-        loop {
-            let thread_result = self._result_rx.recv()?;
-            match thread_result {
-                ThreadResult::Result { to, x, y, .. } => match to {
-                    0..=49 => self._nodes[to].feed(x, y),
-
-                    255 => return Ok(y),
-
-                    _ => return Err(NetworkError::UnknownAddress(to)),
-                },
-
-                ThreadResult::Inactive { .. } => {}
-                ThreadResult::Active { .. } => {}
-            }
-        }
-    }
-
-    pub fn part2(&mut self) -> Result<i64, NetworkError> {
-        use ThreadResult::*;
-
-        let mut nat_memory = None;
-        let mut last_delivered = None;
-        let mut inactive = HashSet::new();
-
-        loop {
-            loop {
-                let thread_result = self._result_rx.try_recv();
-                match thread_result {
-                    Ok(Result { to, x, y, .. }) => match to {
-                        0..=49 => self._nodes[to].feed(x, y),
-                        255 => nat_memory = Some((x, y)),
-                        _ => return Err(NetworkError::UnknownAddress(to)),
-                    },
-
-                    Ok(Inactive { from }) => {
-                        inactive.insert(from);
-                    }
-
-                    Ok(Active { from }) => {
-                        inactive.remove(&from);
-                    }
-
-                    Err(TryRecvError::Empty) => {
-                        if inactive.len() == 50 {
-                            break;
-                        }
-                    }
-                    Err(TryRecvError::Disconnected) => return Err(NetworkError::NodeStopped),
-                }
-            }
-
-            if let Some((x, y)) = nat_memory {
-                if last_delivered.map_or(false, |old_y| old_y == y) {
-                    return Ok(y);
-                }
-                self._nodes[0].feed(x, y);
-                inactive.remove(&0);
-                last_delivered = Some(y);
-            }
-        }
+        Switch { nodes, result_rx }
     }
 }
 
 impl Drop for Switch {
     fn drop(&mut self) {
-        for node in &self._nodes {
+        for node in &self.nodes {
             node.terminate();
         }
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use super::*;
+
+    #[test]
+    fn test_part1() -> Result<(), NetworkError> {
+        let code = Code::from_file("day23", "input.txt")?;
+        let result = Switch::part1(code, 50)?;
+        let expected = 22659;
+        assert_eq!(expected, result);
+
+        Ok(())
+    }
+
+    #[test]
+    fn test_part2() -> Result<(), NetworkError> {
+        let code = Code::from_file("day23", "input.txt")?;
+        let result = Switch::part2(code, 50)?;
+        let expected = 17429;
+        assert_eq!(expected, result);
+
+        Ok(())
     }
 }

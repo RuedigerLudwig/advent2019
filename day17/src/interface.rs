@@ -1,27 +1,26 @@
-use computer::{Code, InputConverter, ListInput, STTextVM};
-
 use crate::error::ExteriorError;
+use computer::{Code, InputConverter, ListInput, TextVM};
 
 pub trait ExteriorInterface {
-    fn get_picture(&self) -> Result<Vec<String>, ExteriorError>;
+    fn get_picture(&mut self) -> Result<Vec<String>, ExteriorError>;
     fn send_data(&mut self, data: &[String], run_silent: bool) -> Result<i64, ExteriorError>;
 }
 
 pub struct ExteriorComputerInterface<'a> {
     input: ListInput,
-    vm: STTextVM<'a>,
+    vm: TextVM<'a>,
 }
 
 impl<'a> ExteriorComputerInterface<'a> {
     pub fn new(code: Code) -> ExteriorComputerInterface<'a> {
         let input = ListInput::new();
-        let vm = STTextVM::new_single(code, input.clone());
+        let vm = TextVM::new(code, input.clone());
         ExteriorComputerInterface { input, vm }
     }
 }
 
 impl ExteriorInterface for ExteriorComputerInterface<'_> {
-    fn get_picture(&self) -> Result<Vec<String>, ExteriorError> {
+    fn get_picture(&mut self) -> Result<Vec<String>, ExteriorError> {
         let mut result = Vec::new();
         while let Some(line) = self.vm.read_line()? {
             result.push(line)

@@ -1,11 +1,11 @@
 use std::collections::VecDeque;
 
-use computer::{Code, ListInput, STVirtualMachine};
+use computer::{Code, ListInput, VirtualMachine};
 
 use crate::{error::AmplifierError, permutations::LexPermutations};
 
 pub struct Amplifier<'a> {
-    computers: VecDeque<(ListInput, STVirtualMachine<'a>)>,
+    computers: VecDeque<(ListInput, VirtualMachine<'a>)>,
 }
 
 impl Amplifier<'_> {
@@ -15,7 +15,7 @@ impl Amplifier<'_> {
             .map(|value| {
                 let mut input = ListInput::new();
                 input.provide_input(*value);
-                let vm = STVirtualMachine::new_single(code.clone(), input.clone());
+                let vm = VirtualMachine::new(code.clone(), input.clone());
                 (input, vm)
             })
             .collect();
@@ -56,7 +56,7 @@ impl Amplifier<'_> {
     pub fn run_continously(&mut self, initial_value: i64) -> Result<i64, AmplifierError> {
         let mut end_value = initial_value;
         loop {
-            if let Some((mut input, vm)) = self.computers.pop_front() {
+            if let Some((mut input, mut vm)) = self.computers.pop_front() {
                 input.provide_input(end_value);
                 if let Some(step_result) = vm.next()? {
                     end_value = step_result;

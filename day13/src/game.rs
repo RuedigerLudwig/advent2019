@@ -1,13 +1,11 @@
+use crate::error::GameError;
+use common::{Area as RawArea, Pos as RawPos};
+use computer::{Code, ListInput, NoInput, VirtualMachine};
 use std::{
     collections::{HashMap, HashSet},
     convert::TryFrom,
     fmt::Display,
 };
-
-use common::{Area as RawArea, Pos as RawPos};
-use computer::{Code, ListInput, NoInput, STVirtualMachine};
-
-use crate::error::GameError;
 
 type Pos = RawPos<i64>;
 type Area = RawArea<i64>;
@@ -67,16 +65,16 @@ pub struct Game {
 
 impl Game {
     pub fn paint_board(code: Code) -> Result<Game, GameError> {
-        let vm = STVirtualMachine::new_single(code, NoInput {});
+        let mut vm = VirtualMachine::new(code, NoInput {});
         let mut board = HashMap::new();
-        while let Some(Command::Tile(pos, tile)) = Game::get_tile(&vm)? {
+        while let Some(Command::Tile(pos, tile)) = Game::get_tile(&mut vm)? {
             board.insert(pos, tile);
         }
 
         Ok(Game { _board: board })
     }
 
-    fn get_tile(vm: &STVirtualMachine<'_>) -> Result<Option<Command>, GameError> {
+    fn get_tile(vm: &mut VirtualMachine<'_>) -> Result<Option<Command>, GameError> {
         let result = if let Some(result) = vm.take_exactly(3)? {
             let x = result[0];
             let y = result[1];
@@ -99,14 +97,14 @@ impl Game {
 
     pub fn free_game(code: Code) -> Result<i64, GameError> {
         let mut input = ListInput::new();
-        let vm = STVirtualMachine::new_single(code, input.clone());
+        let mut vm = VirtualMachine::new(code, input.clone());
         vm.patch_memory(0, 2);
 
         loop {
             let mut blocks = HashSet::new();
             let mut paddle = None;
             let mut score = None;
-            while let Some(command) = Game::get_tile(&vm)? {
+            while let Some(command) = Game::get_tile(&mut vm)? {
                 match command {
                     Command::Score(_score) => {
                         score = Some(_score);

@@ -1,9 +1,7 @@
-use std::fmt::Display;
-
-use common::Direction;
-use computer::{Code, ComputerError, ListInput, STVirtualMachine};
-
 use crate::error::DroidError;
+use common::Direction;
+use computer::{Code, ComputerError, ListInput, VirtualMachine};
+use std::fmt::Display;
 
 #[derive(Debug)]
 pub enum Report {
@@ -27,14 +25,14 @@ pub trait DroidComputerInterface {
 }
 
 pub struct ComputerInterface<'a> {
-    vm: STVirtualMachine<'a>,
+    vm: VirtualMachine<'a>,
     input: ListInput,
 }
 
 impl<'a> ComputerInterface<'a> {
     pub fn new(code: Code) -> ComputerInterface<'a> {
         let input = ListInput::new();
-        let vm = STVirtualMachine::new_single(code, input.clone());
+        let vm = VirtualMachine::new(code, input.clone());
         ComputerInterface { vm, input }
     }
 

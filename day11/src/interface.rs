@@ -1,7 +1,7 @@
 use std::fmt::Display;
 
 use common::Turn;
-use computer::{Code, ListInput, STVirtualMachine};
+use computer::{Code, ListInput, VirtualMachine};
 
 use crate::error::PaintError;
 
@@ -31,14 +31,14 @@ pub trait BotComputerInterface {
 }
 
 pub struct ComputerInterface<'a> {
-    vm: STVirtualMachine<'a>,
+    vm: VirtualMachine<'a>,
     input: ListInput,
 }
 
 impl<'a> ComputerInterface<'a> {
     pub fn new(code: Code) -> ComputerInterface<'a> {
         let input = ListInput::new();
-        let vm = STVirtualMachine::new_single(code, input.clone());
+        let vm = VirtualMachine::new(code, input.clone());
         ComputerInterface { input, vm }
     }
 }

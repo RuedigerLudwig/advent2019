@@ -73,18 +73,6 @@ impl<'a> Cpu<'a> {
         self.set_value(addr, value)
     }
 
-    pub fn get_linear_memory(&self) -> Vec<i64> {
-        let mut result = Vec::new();
-        for addr in 0.. {
-            if let Some(value) = self._memory.get(&addr) {
-                result.push(*value)
-            } else {
-                break;
-            }
-        }
-        result
-    }
-
     pub fn step(&mut self) -> Result<StepResult, ComputerError> {
         if self._crashed {
             return Err(ComputerError::Terminated);

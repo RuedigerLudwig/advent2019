@@ -1,5 +1,5 @@
 use crate::error::SpringError;
-use computer::{Code, InputConverter, ListInput, STTextVM};
+use computer::{Code, InputConverter, ListInput, TextVM};
 use std::fmt::Display;
 
 #[allow(dead_code)]
@@ -84,13 +84,13 @@ impl Display for Instruction {
 
 pub struct SpringBotComputer<'a> {
     input: ListInput,
-    vm: STTextVM<'a>,
+    vm: TextVM<'a>,
 }
 
 impl<'a> SpringBotComputer<'a> {
     pub fn new(code: Code) -> SpringBotComputer<'a> {
         let input = ListInput::new();
-        let vm = STTextVM::new_single(code, input.clone());
+        let vm = TextVM::new(code, input.clone());
         SpringBotComputer { input, vm }
     }
 
