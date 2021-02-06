@@ -2,12 +2,12 @@
 mod error;
 mod fft;
 
-use common::read_single_line;
+use common::file::read_data;
 use error::FftError;
 use fft::Transmission;
 
 pub fn result() -> Result<(), FftError> {
-    let input = read_single_line("day16", "input.txt")?;
+    let input = read_data("day16", "input.txt")?;
     let fft: Transmission = input.parse()?;
 
     let result1 = fft.run_small();

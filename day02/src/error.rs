@@ -1,4 +1,3 @@
-use common::error::CommonError;
 use computer::ComputerError;
 use thiserror::Error;
 
@@ -6,12 +5,6 @@ use thiserror::Error;
 pub enum SimpleError {
     #[error("No numbers found")]
     NoNumbersFound,
-
-    #[error("CommonError: {source}")]
-    CommonError {
-        #[from]
-        source: CommonError,
-    },
 
     #[error("ComputerError: {source}")]
     CompurerError {

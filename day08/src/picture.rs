@@ -41,10 +41,10 @@ impl Picture<'_> {
 
     pub fn get_magic_number(&self) -> Option<usize> {
         let info = self.count_number_per_layer();
-        if let Some(layer) = info.iter().min_by_key(|pixel_info| pixel_info[&'0']) {
+        if let Some(layer) = info.iter().min_by_key(|&pixel_info| pixel_info[&'0']) {
             let one = layer.get(&'1');
             let two = layer.get(&'2');
-            one.zip(two).map(|(a, b)| a * b)
+            one.zip(two).map(|(&a, &b)| a * b)
         } else {
             None
         }

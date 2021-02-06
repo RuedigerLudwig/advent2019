@@ -8,7 +8,7 @@ pub struct Reaction<'a> {
 }
 
 impl<'a> Reaction<'a> {
-    pub fn new(amount: i64, _ingredients: Vec<(&'a str, i64)>) -> Reaction<'a> {
+    fn new(amount: i64, _ingredients: Vec<(&'a str, i64)>) -> Reaction<'a> {
         Reaction {
             _amount: amount,
             _ingredients,
@@ -16,9 +16,9 @@ impl<'a> Reaction<'a> {
     }
 
     fn get_parts(input: &'a str) -> Result<(&'a str, i64), FactoryError> {
-        let parts: Vec<&str> = input.split(" ").collect();
+        let parts = input.split(" ").collect::<Vec<_>>();
         if parts.len() != 2 {
-            Err(FactoryError::IngredientError(String::from(input)))
+            Err(FactoryError::IngredientError(input.to_owned()))
         } else {
             let num = parts[0].parse()?;
             Ok((parts[1], num))
@@ -34,9 +34,9 @@ impl<'a> Reaction<'a> {
     }
 
     pub fn parse(line: &'a str) -> Result<(&'a str, Reaction<'_>), FactoryError> {
-        let parts: Vec<&str> = line.split("=>").collect();
+        let parts = line.split("=>").collect::<Vec<_>>();
         if parts.len() != 2 {
-            Err(FactoryError::ReactionError(String::from(line)))
+            Err(FactoryError::ReactionError(line.to_owned()))
         } else {
             let (name, amount) = Reaction::get_parts(parts[1].trim())?;
             let ingredients = Reaction::get_ingredients(parts[0].trim())?;
@@ -51,9 +51,9 @@ pub struct Factory<'a> {
 }
 
 impl<'a> Factory<'a> {
-    pub fn new(lines: &'a [String]) -> Result<Factory<'a>, FactoryError> {
-        let reactions = lines
-            .iter()
+    pub fn new(input: &'a str) -> Result<Factory<'a>, FactoryError> {
+        let reactions = input
+            .lines()
             .map(|l| Reaction::parse(l))
             .collect::<Result<HashMap<_, _>, _>>()?;
 
@@ -118,7 +118,7 @@ impl<'a> Factory<'a> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use common::read_all_lines;
+    use common::file::read_data;
 
     #[test]
     fn parse_simple() -> Result<(), FactoryError> {
@@ -136,7 +136,7 @@ mod tests {
 
     #[test]
     fn get_amount() -> Result<(), FactoryError> {
-        let input = read_all_lines("day14", "example1.txt")?;
+        let input = read_data("day14", "example1.txt")?;
         let factory = Factory::new(&input)?;
         let result = factory
             .get_amount_for(1, "B")
@@ -149,7 +149,7 @@ mod tests {
 
     #[test]
     fn get_amount2() -> Result<(), FactoryError> {
-        let input = read_all_lines("day14", "example1.txt")?;
+        let input = read_data("day14", "example1.txt")?;
         let factory = Factory::new(&input)?;
         let result = factory
             .get_amount_for(11, "A")
@@ -162,7 +162,7 @@ mod tests {
 
     #[test]
     fn test_ore_for_fuel2() -> Result<(), FactoryError> {
-        let input = read_all_lines("day14", "example2.txt")?;
+        let input = read_data("day14", "example2.txt")?;
         let factory = Factory::new(&input)?;
         let result = factory.ore_per_fuel(1)?;
         let expected = 165;
@@ -173,7 +173,7 @@ mod tests {
 
     #[test]
     fn test_ore_for_fuel3() -> Result<(), FactoryError> {
-        let input = read_all_lines("day14", "example3.txt")?;
+        let input = read_data("day14", "example3.txt")?;
         let factory = Factory::new(&input)?;
         let result = factory.ore_per_fuel(1)?;
         let expected = 13312;
@@ -184,7 +184,7 @@ mod tests {
 
     #[test]
     fn get_max_fuel() -> Result<(), FactoryError> {
-        let input = read_all_lines("day14", "example3.txt")?;
+        let input = read_data("day14", "example3.txt")?;
         let factory = Factory::new(&input)?;
         let result = factory.fuel_for_ore(1_000_000_000_000_i64)?;
         let expected = 82892753;

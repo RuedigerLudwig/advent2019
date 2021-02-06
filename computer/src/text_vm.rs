@@ -74,6 +74,7 @@ impl<'a> TextVM<'a> {
         if let Some(peek) = self._peek.take() {
             return Ok(peek);
         }
+
         loop {
             match self.step()? {
                 StepResult::Value(value) => return Ok(Some(value)),

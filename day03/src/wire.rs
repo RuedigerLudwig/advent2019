@@ -1,5 +1,6 @@
+use common::pos::Pos;
+
 use crate::{error::WireError, section::Section};
-use common::Pos;
 use std::str::FromStr;
 
 #[derive(Debug)]
@@ -8,7 +9,7 @@ pub struct Wire {
 }
 
 impl Wire {
-    pub fn new(path: &Vec<Section>) -> Wire {
+    pub fn new(path: &[Section]) -> Wire {
         let mut my_path = Vec::with_capacity(path.len());
         let mut endpoint = Pos::default();
         for section in path {
@@ -60,7 +61,7 @@ impl FromStr for Wire {
         let path = input
             .split(",")
             .map(Section::from_str)
-            .collect::<Result<_, _>>()?;
+            .collect::<Result<Vec<_>, _>>()?;
         Ok(Wire::new(&path))
     }
 }
@@ -68,7 +69,7 @@ impl FromStr for Wire {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use common::{hashset, Direction};
+    use common::{direction::Direction, hashset};
     use std::{collections::HashSet, iter::FromIterator};
 
     #[test]
@@ -89,7 +90,7 @@ mod tests {
     fn get_intersections() -> Result<(), WireError> {
         let wire1 = Wire::from_str("R8,U5,L5,D3")?;
         let wire2 = Wire::from_str("U7,R6,D4,L4")?;
-        let expected = hashset!(Pos::new(3, 3), Pos::new(6, 5));
+        let expected = hashset! {Pos::new(3, 3), Pos::new(6, 5) };
         let crossings = wire1.get_intersections(&wire2);
         let result = HashSet::from_iter(crossings.iter().map(|(p, _)| p).copied());
         assert_eq!(expected, result);

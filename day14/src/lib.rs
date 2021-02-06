@@ -1,5 +1,5 @@
 #![warn(rust_2018_idioms, missing_debug_implementations)]
-use common::read_all_lines;
+use common::file::read_data;
 use error::FactoryError;
 use factory::Factory;
 
@@ -7,7 +7,7 @@ mod error;
 mod factory;
 
 pub fn result() -> Result<(), FactoryError> {
-    let input = read_all_lines("day14", "input.txt")?;
+    let input = read_data("day14", "input.txt")?;
     let factory = Factory::new(&input)?;
 
     let result = factory.ore_per_fuel(1)?;

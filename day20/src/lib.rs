@@ -6,14 +6,14 @@ mod explorer_two;
 mod map;
 mod paths;
 
-use common::read_all_lines;
+use common::file::read_data;
 use error::MapError;
 use explorer::Explorer;
 use explorer_two::ExplorerTwo;
 use map::Map;
 
 pub fn result() -> Result<(), MapError> {
-    let input = read_all_lines("day20", "input.txt")?;
+    let input = read_data("day20", "input.txt")?;
     let map = Map::parse(&input)?;
     let result1 = Explorer::new(&map).explore()?;
     println!("Day 20 - Result 1: {}", result1);

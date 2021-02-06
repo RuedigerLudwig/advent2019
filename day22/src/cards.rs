@@ -19,10 +19,10 @@ impl Techniques {
         }
     }
 
-    pub fn parse<T: AsRef<str>>(lines: &[T]) -> Result<Vec<Techniques>, CardError> {
+    pub fn parse(lines: &str) -> Result<Vec<Techniques>, CardError> {
         Ok(lines
-            .iter()
-            .map(|s| s.as_ref().parse())
+            .lines()
+            .map(|s| s.parse())
             .collect::<Result<Vec<Techniques>, _>>()?)
     }
 }
@@ -76,6 +76,7 @@ impl CardShuffle {
             .map(|inv_mul| {
                 let fixpoint =
                     modulus_inv(inv_mul - 1, deck_size).map(|tmp| modulus_mul(tmp, add, deck_size));
+
                 CardShuffle {
                     deck_size,
                     fixpoint,
@@ -119,11 +120,11 @@ impl CardShuffle {
 #[cfg(test)]
 mod test {
     use super::*;
-    use common::read_all_lines;
+    use common::file::read_data;
 
     #[test]
     fn simple_parse() -> Result<(), CardError> {
-        let input = read_all_lines("day22", "example2.txt")?;
+        let input = read_data("day22", "example2.txt")?;
         let expected = vec![
             Techniques::Cut(6),
             Techniques::DealWithIncrement(7),
@@ -240,7 +241,7 @@ mod test {
 
     #[test]
     fn test_example1() -> Result<(), CardError> {
-        let input = Techniques::parse(&read_all_lines("day22", "example1.txt")?)?;
+        let input = Techniques::parse(&read_data("day22", "example1.txt")?)?;
         let shuffle = CardShuffle::create(&input, 10)?;
 
         let result = (0..10)
@@ -256,7 +257,7 @@ mod test {
 
     #[test]
     fn test_example2() -> Result<(), CardError> {
-        let input = Techniques::parse(&read_all_lines("day22", "example2.txt")?)?;
+        let input = Techniques::parse(&read_data("day22", "example2.txt")?)?;
         let shuffle = CardShuffle::create(&input, 10)?;
 
         let result = (0..10)
@@ -272,7 +273,7 @@ mod test {
 
     #[test]
     fn test_example4_forward() -> Result<(), CardError> {
-        let input = Techniques::parse(&read_all_lines("day22", "example4.txt")?)?;
+        let input = Techniques::parse(&read_data("day22", "example4.txt")?)?;
         let shuffle = CardShuffle::create(&input, 10)?;
 
         let result = (0..10)
@@ -288,7 +289,7 @@ mod test {
 
     #[test]
     fn test_repeat_simple() -> Result<(), CardError> {
-        let input = Techniques::parse(&read_all_lines("day22", "input.txt")?)?;
+        let input = Techniques::parse(&read_data("day22", "input.txt")?)?;
         let shuffle = CardShuffle::create(&input, 10_007)?;
         let shuffle2 = shuffle.repeat(1)?;
 
@@ -299,7 +300,7 @@ mod test {
 
     #[test]
     fn test_double_inv() -> Result<(), CardError> {
-        let input = Techniques::parse(&read_all_lines("day22", "input.txt")?)?;
+        let input = Techniques::parse(&read_data("day22", "input.txt")?)?;
         let shuffle = CardShuffle::create(&input, 10_007)?;
         let shuffle2 = shuffle.invert()?.invert()?;
 

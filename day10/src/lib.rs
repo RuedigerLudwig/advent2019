@@ -3,11 +3,11 @@ mod asteroids;
 mod error;
 
 use asteroids::Asteroids;
-use common::read_all_lines;
+use common::file::read_data;
 use error::AsteroidError;
 
 pub fn result() -> Result<(), AsteroidError> {
-    let input = read_all_lines("day10", "input.txt")?;
+    let input = read_data("day10", "input.txt")?;
     let asteroids = Asteroids::parse(&input);
 
     let (center, result1) = asteroids.get_best_position()?;

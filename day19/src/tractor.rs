@@ -88,12 +88,12 @@ where
 #[cfg(test)]
 mod tests {
     use super::*;
-    use common::read_all_lines;
+    use common::file::read_data;
     use std::collections::HashSet;
 
     #[test]
     fn test_scan() -> Result<(), TractorError> {
-        let lines = read_all_lines("day19", "example1.txt")?;
+        let lines = read_data("day19", "example1.txt")?;
         let interface = TestInterface::new(&lines);
         let mut droid = Tractor::new(interface);
         let result = droid.scan(10)?;
@@ -105,7 +105,7 @@ mod tests {
 
     #[test]
     fn test_fit() -> Result<(), TractorError> {
-        let lines = read_all_lines("day19", "example1.txt")?;
+        let lines = read_data("day19", "example1.txt")?;
         let interface = TestInterface::new(&lines);
         let mut droid = Tractor::new(interface);
         let result = droid.fit(10)?;
@@ -120,9 +120,9 @@ mod tests {
     }
 
     impl TestInterface {
-        pub fn new(lines: &[String]) -> TestInterface {
+        pub fn new(input: &str) -> TestInterface {
             let mut map = HashSet::new();
-            for (row, line) in (0..).zip(lines.iter()) {
+            for (row, line) in (0..).zip(input.lines()) {
                 for (col, ch) in (0..).zip(line.chars()) {
                     if ch != '.' {
                         map.insert(Pos::new(col, row));

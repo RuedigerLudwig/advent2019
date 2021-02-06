@@ -1,6 +1,6 @@
 use std::str::FromStr;
 
-use common::{Direction, Pos};
+use common::{direction::Direction, pos::Pos};
 
 use crate::error::WireError;
 

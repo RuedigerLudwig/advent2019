@@ -1,4 +1,3 @@
-mod common;
 mod cpu;
 pub mod debug_codes;
 mod debug_info;

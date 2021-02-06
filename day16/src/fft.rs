@@ -101,7 +101,7 @@ impl FromStr for Transmission {
 
     fn from_str(input: &str) -> Result<Self, Self::Err> {
         let mut values = Vec::new();
-        for digit in input.chars() {
+        for digit in input.trim().chars() {
             if let Some(number) = digit.to_digit(10) {
                 values.push(number as u8);
             } else {

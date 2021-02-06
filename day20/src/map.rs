@@ -1,12 +1,11 @@
 use crate::error::MapError;
+use common::area::Area as RawArea;
+use common::pos::Pos as RawPos;
 use common::zip;
 use std::{
     collections::{HashMap, HashSet},
     fmt::Display,
 };
-
-use common::Area as RawArea;
-use common::Pos as RawPos;
 
 pub type Pos = RawPos<i32>;
 pub type Area = RawArea<i32>;
@@ -119,7 +118,7 @@ pub struct Map {
 }
 
 impl Map {
-    pub fn parse<T: AsRef<str>>(lines: &[T]) -> Result<Map, MapError> {
+    pub fn parse(input: &str) -> Result<Map, MapError> {
         let mut inner_col_start = None;
         let mut inner_row_start = None;
         let mut inner_col_end = None;
@@ -129,8 +128,8 @@ impl Map {
 
         let mut map = HashMap::new();
         let mut letters = HashMap::new();
-        for (row, line) in (0..).zip(lines.iter()) {
-            for (col, ch) in (0..).zip(line.as_ref().chars()) {
+        for (row, line) in (0..).zip(input.lines()) {
+            for (col, ch) in (0..).zip(line.chars()) {
                 match ch {
                     ' ' => {
                         if row >= 2 {
@@ -178,7 +177,7 @@ impl Map {
                 }
             }
             if outer_col_end.is_none() && row >= 2 {
-                outer_col_end = Some(line.as_ref().len() as i32 - 1);
+                outer_col_end = Some(line.len() as i32 - 1);
             }
         }
 
@@ -346,7 +345,7 @@ impl Map {
 #[cfg(test)]
 mod tests {
 
-    use common::read_all_lines;
+    use common::file::read_data;
 
     use crate::{explorer::Explorer, explorer_two::ExplorerTwo};
 
@@ -354,7 +353,7 @@ mod tests {
 
     #[test]
     fn test_explore() -> Result<(), MapError> {
-        let input = read_all_lines("day20", "example1.txt")?;
+        let input = read_data("day20", "example1.txt")?;
         let map = Map::parse(&input)?;
         let len = Explorer::new(&map).explore()?;
         assert_eq!(23, len);
@@ -364,7 +363,7 @@ mod tests {
 
     #[test]
     fn test_explore2() -> Result<(), MapError> {
-        let input = read_all_lines("day20", "example2.txt")?;
+        let input = read_data("day20", "example2.txt")?;
         let map = Map::parse(&input)?;
         let len = Explorer::new(&map).explore()?;
         assert_eq!(58, len);
@@ -374,7 +373,7 @@ mod tests {
 
     #[test]
     fn test_explore_part2_1() -> Result<(), MapError> {
-        let input = read_all_lines("day20", "example1.txt")?;
+        let input = read_data("day20", "example1.txt")?;
         let map = Map::parse(&input)?;
         let len = ExplorerTwo::new(&map).explore()?;
         assert_eq!(26, len);
@@ -386,7 +385,7 @@ mod tests {
     #[ignore]
     // TODO: This does run forever for now. Still need to find a propert soloution
     fn test_explore_part2_2() -> Result<(), MapError> {
-        let input = read_all_lines("day20", "example2.txt")?;
+        let input = read_data("day20", "example2.txt")?;
         let map = Map::parse(&input)?;
         let result = ExplorerTwo::new(&map).explore();
 
@@ -400,7 +399,7 @@ mod tests {
 
     #[test]
     fn test_explore_part2_3() -> Result<(), MapError> {
-        let input = read_all_lines("day20", "example3.txt")?;
+        let input = read_data("day20", "example3.txt")?;
         let map = Map::parse(&input)?;
         let len = ExplorerTwo::new(&map).explore()?;
         assert_eq!(396, len);
@@ -411,7 +410,7 @@ mod tests {
     #[test]
     #[ignore]
     fn test_explore_part2_n() -> Result<(), MapError> {
-        let input = read_all_lines("day20", "input.txt")?;
+        let input = read_data("day20", "input.txt")?;
         let map = Map::parse(&input)?;
         let len = ExplorerTwo::new(&map).explore()?;
         assert_eq!(6812, len);

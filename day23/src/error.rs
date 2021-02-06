@@ -1,6 +1,5 @@
 use std::sync::mpsc::{RecvError, SendError};
 
-use common::error::CommonError;
 use computer::ComputerError;
 use thiserror::Error;
 
@@ -14,10 +13,10 @@ pub enum NetworkError {
     #[error("Node Stoped unexpectedly")]
     NodeStopped,
 
-    #[error("Common: {source}")]
-    CommonError {
+    #[error("IoError: {source}")]
+    IoError {
         #[from]
-        source: CommonError,
+        source: std::io::Error,
     },
 
     #[error("ComputerError: {source}")]

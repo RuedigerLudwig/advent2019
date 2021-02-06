@@ -2,7 +2,6 @@ use std::{cell::Cell, fmt::Debug};
 
 pub trait ComputerInput: Debug {
     fn get_next_input(&mut self) -> Option<i64>;
-    //fn provide_input(&mut self, value: i64);
 }
 
 #[derive(Debug, Clone)]

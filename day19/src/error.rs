@@ -1,4 +1,3 @@
-use common::error::CommonError;
 use computer::ComputerError;
 use thiserror::Error;
 
@@ -7,10 +6,10 @@ pub enum TractorError {
     #[error("Did not get any data from the droid")]
     NoData,
 
-    #[error("Common: {source}")]
-    CommonError {
+    #[error("IoError: {source}")]
+    IoError {
         #[from]
-        source: CommonError,
+        source: std::io::Error,
     },
 
     #[error("ComputerError: {source}")]

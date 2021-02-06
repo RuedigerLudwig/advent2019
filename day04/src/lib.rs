@@ -4,12 +4,12 @@ mod error;
 mod password;
 
 use better_password::check_better;
-use common::read_single_line;
+use common::file::read_data;
 use error::PasswordError;
 use password::check;
 
 pub fn result() -> Result<(), PasswordError> {
-    let input = read_single_line("day04", "input.txt")?;
+    let input = read_data("day04", "input.txt")?;
     let split: Vec<i32> = input
         .split('-')
         .map(|s| s.parse())

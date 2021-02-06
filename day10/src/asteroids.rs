@@ -1,21 +1,19 @@
+use crate::error::AsteroidError;
+use common::pos::Pos;
 use std::{
     cmp::Ordering,
     collections::{HashMap, HashSet},
 };
-
-use common::Pos;
-
-use crate::error::AsteroidError;
 
 pub struct Asteroids {
     field: HashSet<Pos<i32>>,
 }
 
 impl Asteroids {
-    pub fn parse<T: AsRef<str>>(input: &[T]) -> Asteroids {
+    pub fn parse(input: &str) -> Asteroids {
         let mut field = HashSet::new();
-        for (y, line) in (0..).zip(input.iter()) {
-            for (x, place) in (0..).zip(line.as_ref().chars()) {
+        for (y, line) in (0..).zip(input.lines()) {
+            for (x, place) in (0..).zip(line.chars()) {
                 if place == '#' {
                     field.insert(Pos::new(x, -y));
                 }
@@ -116,11 +114,11 @@ impl Asteroids {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use common::{hashset, read_all_lines};
+    use common::{file::read_data, hashset};
 
     #[test]
     fn test_parse_asteroids() -> Result<(), AsteroidError> {
-        let input = read_all_lines("day10", "example1.txt")?;
+        let input = read_data("day10", "example1.txt")?;
         let asteroids = Asteroids::parse(&input);
         let expected = 10;
         assert_eq!(asteroids.field.len(), expected);
@@ -130,7 +128,7 @@ mod tests {
 
     #[test]
     fn test_visible_asteroids() -> Result<(), AsteroidError> {
-        let input = read_all_lines("day10", "example1.txt")?;
+        let input = read_data("day10", "example1.txt")?;
         let asteroids = Asteroids::parse(&input);
         let expected = hashset!(
             Pos::new(1, 0),
@@ -147,7 +145,7 @@ mod tests {
 
     #[test]
     fn test_best_position() -> Result<(), AsteroidError> {
-        let input = read_all_lines("day10", "example1.txt")?;
+        let input = read_data("day10", "example1.txt")?;
         let asteroids = Asteroids::parse(&input);
         let expected = (Pos::new(3, -4), 8);
         let result = asteroids.get_best_position()?;
@@ -158,7 +156,7 @@ mod tests {
 
     #[test]
     fn test_best_position2() -> Result<(), AsteroidError> {
-        let input = read_all_lines("day10", "example2.txt")?;
+        let input = read_data("day10", "example2.txt")?;
         let asteroids = Asteroids::parse(&input);
         let expected = (Pos::new(5, -8), 33);
         let result = asteroids.get_best_position()?;
@@ -169,7 +167,7 @@ mod tests {
 
     #[test]
     fn test_laser_order() -> Result<(), AsteroidError> {
-        let input = read_all_lines("day10", "example3.txt")?;
+        let input = read_data("day10", "example3.txt")?;
         let asteroids = Asteroids::parse(&input);
         let expected = vec![
             Pos::new(8, -1),

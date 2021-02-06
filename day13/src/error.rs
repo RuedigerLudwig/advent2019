@@ -1,4 +1,3 @@
-use common::error::CommonError;
 use computer::ComputerError;
 use thiserror::Error;
 
@@ -9,12 +8,6 @@ pub enum GameError {
 
     #[error("Did not get any score before end of game")]
     NoScore,
-
-    #[error("CommonError: {source}")]
-    CommonError {
-        #[from]
-        source: CommonError,
-    },
 
     #[error("ComputerError: {source}")]
     CompurerError {

@@ -1,4 +1,4 @@
-use common::{error::CommonError, Direction, Pos};
+use common::{direction::Direction, pos::Pos};
 use computer::ComputerError;
 use thiserror::Error;
 
@@ -16,15 +16,15 @@ pub enum ExteriorError {
     #[error("Can't turn from {0} facing {1}")]
     NoScaffold(Pos<i32>, Direction),
 
-    #[error("CommonError: {source}")]
-    CommonError {
-        #[from]
-        source: CommonError,
-    },
-
     #[error("ComputerError: {source}")]
     ComputerError {
         #[from]
         source: ComputerError,
+    },
+
+    #[error("IoError: {source}")]
+    IoError {
+        #[from]
+        source: std::io::Error,
     },
 }

@@ -1,7 +1,6 @@
+use common::pos::Pos as RawPos;
+use common::{area::Area as RawArea, direction::Direction};
 use std::{collections::HashMap, fmt::Display};
-
-use common::Pos as RawPos;
-use common::{Area as RawArea, Direction};
 
 use crate::{
     error::DroidError,
@@ -176,15 +175,17 @@ where
     ) -> Result<Option<Direction>, DroidError> {
         while let Some(prev_dir) = path.pop() {
             let facing = prev_dir.turn_back();
-            match self._interface.send_direction(facing)? {
-                Report::Moved | Report::Oxygen => {
-                    self._position = self._position + facing;
-                    if let Some(facing) = self.next_for_oxygenizing() {
-                        return Ok(Some(facing));
-                    }
-                }
 
-                Report::Wall => return Err(DroidError::BacktracingInto(Report::Wall)),
+            if matches!(
+                self._interface.send_direction(facing)?,
+                Report::Moved | Report::Oxygen
+            ) {
+                self._position = self._position + facing;
+                if let Some(facing) = self.next_for_oxygenizing() {
+                    return Ok(Some(facing));
+                }
+            } else {
+                return Err(DroidError::BacktracingInto(Report::Wall));
             }
         }
         Ok(None)

@@ -1,4 +1,4 @@
-use crate::Direction;
+use crate::direction::Direction;
 use std::{fmt::Display, ops::Add};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]

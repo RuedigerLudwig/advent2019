@@ -1,6 +1,4 @@
-use common::error::CommonError;
 use computer::ComputerError;
-use std::io;
 use thiserror::Error;
 
 #[derive(Debug, Error)]
@@ -20,21 +18,15 @@ pub enum DroneError {
     #[error("Unknown Security Check Message")]
     UnknownSecurityMessage,
 
-    #[error("Common: {source}")]
-    CommonError {
+    #[error("IoError: {source}")]
+    IoError {
         #[from]
-        source: CommonError,
+        source: std::io::Error,
     },
 
     #[error("ComputerError: {source}")]
     ComputerError {
         #[from]
         source: ComputerError,
-    },
-
-    #[error("IO: {source}")]
-    IoError {
-        #[from]
-        source: io::Error,
     },
 }

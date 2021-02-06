@@ -1,4 +1,4 @@
-use common::{Direction, Pos as RawPos};
+use common::{direction::Direction, pos::Pos as RawPos};
 use std::collections::HashSet;
 
 type Pos = RawPos<i32>;
@@ -9,10 +9,10 @@ pub struct Eris {
 }
 
 impl Eris {
-    pub fn parse<T: AsRef<str>>(lines: &[T]) -> Eris {
+    pub fn parse(input: &str) -> Eris {
         let mut map = HashSet::new();
-        for (row, line) in (0..).zip(lines) {
-            for (col, ch) in (0..).zip(line.as_ref().chars()) {
+        for (row, line) in (0..).zip(input.lines()) {
+            for (col, ch) in (0..).zip(line.chars()) {
                 if ch != '.' {
                     map.insert(Pos::new(col, row));
                 }
@@ -82,12 +82,12 @@ impl Eris {
 #[cfg(test)]
 mod test {
     use super::*;
-    use common::{error::CommonError, read_all_lines};
+    use common::file::read_data;
 
     #[test]
-    fn test_one() -> Result<(), CommonError> {
-        let input = Eris::parse(&read_all_lines("day24", "example1.txt")?);
-        let expected = Eris::parse(&read_all_lines("day24", "expected11.txt")?);
+    fn test_one() -> Result<(), std::io::Error> {
+        let input = Eris::parse(&read_data("day24", "example1.txt")?);
+        let expected = Eris::parse(&read_data("day24", "expected11.txt")?);
 
         let result = input.step();
 
@@ -97,8 +97,8 @@ mod test {
     }
 
     #[test]
-    fn test_biodiversity() -> Result<(), CommonError> {
-        let input = Eris::parse(&read_all_lines("day24", "stable1.txt")?);
+    fn test_biodiversity() -> Result<(), std::io::Error> {
+        let input = Eris::parse(&read_data("day24", "stable1.txt")?);
         let expected = 2129920;
 
         let result = input.rate();
@@ -109,9 +109,9 @@ mod test {
     }
 
     #[test]
-    fn test_run() -> Result<(), CommonError> {
-        let input = Eris::parse(&read_all_lines("day24", "example1.txt")?);
-        let expected = Eris::parse(&read_all_lines("day24", "stable1.txt")?);
+    fn test_run() -> Result<(), std::io::Error> {
+        let input = Eris::parse(&read_data("day24", "example1.txt")?);
+        let expected = Eris::parse(&read_data("day24", "stable1.txt")?);
 
         let result = input.run_till_stable();
 

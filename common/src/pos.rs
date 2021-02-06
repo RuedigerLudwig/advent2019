@@ -1,7 +1,6 @@
+use crate::{direction::Direction, math::gcd};
 use std::ops::{Add, Mul, Sub};
 use std::{cmp::Ordering, fmt};
-
-use crate::{math::gcd, Direction};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Default)]
 pub struct Pos<T>(T, T);

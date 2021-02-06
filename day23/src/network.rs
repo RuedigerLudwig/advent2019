@@ -26,10 +26,22 @@ struct NodeData {
     terminated: bool,
 }
 
+impl NodeData {
+    fn assess(&self) -> NodeState {
+        if self.terminated {
+            NodeState::Terminated
+        } else if !self.queue.is_empty() || self.empty_for < EMPTY_THRESHOLD {
+            NodeState::Active
+        } else {
+            NodeState::Inactive
+        }
+    }
+}
+
 #[derive(Debug, Clone)]
 struct Node {
-    _id: usize,
-    _data: Arc<(Mutex<NodeData>, Condvar)>,
+    id: usize,
+    data: Arc<(Mutex<NodeData>, Condvar)>,
 }
 
 impl Node {
@@ -42,17 +54,17 @@ impl Node {
             terminated: false,
         };
         Node {
-            _id: id,
-            _data: Arc::new((Mutex::new(data), Condvar::new())),
+            id,
+            data: Arc::new((Mutex::new(data), Condvar::new())),
         }
     }
 
     pub fn get_id(&self) -> usize {
-        return self._id;
+        return self.id;
     }
 
     pub fn feed(&self, x: i64, y: i64) {
-        let (guard, wake_upper) = &*self._data;
+        let (guard, wake_upper) = &*self.data;
         let mut data = guard.lock().unwrap();
         data.queue.push_back(x);
         data.queue.push_back(y);
@@ -60,28 +72,22 @@ impl Node {
     }
 
     pub fn terminate(&self) {
-        let (guard, wake_upper) = &*self._data;
+        let (guard, wake_upper) = &*self.data;
         let mut data = guard.lock().unwrap();
         data.terminated = true;
         wake_upper.notify_one();
     }
 
     pub fn get_state(&self) -> NodeState {
-        let (guard, _) = &*self._data;
+        let (guard, _) = &*self.data;
         let data = guard.lock().unwrap();
-        if data.terminated {
-            NodeState::Terminated
-        } else if !data.queue.is_empty() || data.empty_for < EMPTY_THRESHOLD {
-            NodeState::Active
-        } else {
-            NodeState::Inactive
-        }
+        data.assess()
     }
 
     pub fn wait_for_signal(&self) {
-        let (guard, wake_upper) = &*self._data;
+        let (guard, wake_upper) = &*self.data;
         let mut data = guard.lock().unwrap();
-        while data.queue.is_empty() && !data.terminated {
+        while let NodeState::Inactive = data.assess() {
             data = wake_upper.wait(data).unwrap();
         }
     }
@@ -89,7 +95,7 @@ impl Node {
 
 impl ComputerInput for Node {
     fn get_next_input(&mut self) -> Option<i64> {
-        let (guard, _) = &*self._data;
+        let (guard, _) = &*self.data;
         let mut data = guard.lock().unwrap();
         if let Some(value) = data.queue.pop_front() {
             data.empty_for = 0;
@@ -116,14 +122,14 @@ pub enum ThreadResult {
 
 #[derive(Debug)]
 struct NodeVm<'a> {
-    _id: usize,
-    _vm: VirtualMachine<'a>,
-    _node: Node,
+    id: usize,
+    vm: VirtualMachine<'a>,
+    node: Node,
 
-    _result_tx: Sender<ThreadResult>,
+    result_tx: Sender<ThreadResult>,
 
-    _next_receiver: Option<usize>,
-    _next_x: Option<i64>,
+    next_receiver: Option<usize>,
+    next_x: Option<i64>,
 }
 
 impl<'a> NodeVm<'a> {
@@ -131,35 +137,35 @@ impl<'a> NodeVm<'a> {
         let vm = VirtualMachine::new_with_id(code, node.clone(), node.get_id());
 
         NodeVm {
-            _id: node.get_id(),
-            _vm: vm,
-            _node: node,
+            id: node.get_id(),
+            vm,
+            node,
 
-            _result_tx: result_tx,
+            result_tx,
 
-            _next_receiver: None,
-            _next_x: None,
+            next_receiver: None,
+            next_x: None,
         }
     }
 
     pub fn run(&mut self) -> Result<(), NetworkError> {
         loop {
-            let active = match self._vm.step()? {
+            let active = match self.vm.step()? {
                 computer::StepResult::Value(value) => {
-                    if self._next_receiver.is_none() {
-                        self._next_receiver = Some(value as usize);
-                    } else if self._next_x.is_none() {
-                        self._next_x = Some(value);
+                    if self.next_receiver.is_none() {
+                        self.next_receiver = Some(value as usize);
+                    } else if self.next_x.is_none() {
+                        self.next_x = Some(value);
                     } else {
                         let result = ThreadResult::Result {
-                            from: self._node._id,
-                            to: self._next_receiver.unwrap(),
-                            x: self._next_x.unwrap(),
+                            from: self.node.id,
+                            to: self.next_receiver.unwrap(),
+                            x: self.next_x.unwrap(),
                             y: value,
                         };
-                        self._next_receiver = None;
-                        self._next_x = None;
-                        self._result_tx.send(result)?;
+                        self.next_receiver = None;
+                        self.next_x = None;
+                        self.result_tx.send(result)?;
                     };
                     true
                 }
@@ -168,20 +174,20 @@ impl<'a> NodeVm<'a> {
                 computer::StepResult::WaitForInput => false,
             };
 
-            match self._node.get_state() {
+            match self.node.get_state() {
                 NodeState::Active => (),
                 NodeState::Terminated => return Ok(()),
 
                 NodeState::Inactive => {
                     if !active {
-                        self._result_tx.send(ThreadResult::Inactive {
-                            from: self._node.get_id(),
+                        self.result_tx.send(ThreadResult::Inactive {
+                            from: self.node.get_id(),
                         })?;
 
                         loop {
-                            self._node.wait_for_signal();
+                            self.node.wait_for_signal();
 
-                            match self._node.get_state() {
+                            match self.node.get_state() {
                                 NodeState::Active => break,
                                 NodeState::Terminated => return Ok(()),
                                 NodeState::Inactive => {}

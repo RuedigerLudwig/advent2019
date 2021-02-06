@@ -1,9 +1,8 @@
-use common::{hashmap, hashset, Direction};
-
 use crate::{
     error::MapError,
     map::{Map, PortalData, Pos, Tile},
 };
+use common::{direction::Direction, hashmap, hashset};
 use std::{
     cell::RefCell,
     collections::{HashMap, HashSet},

@@ -1,4 +1,3 @@
-use common::error::CommonError;
 use thiserror::Error;
 
 #[derive(Debug, Error)]
@@ -12,10 +11,10 @@ pub enum FactoryError {
     #[error("Unknonw Reaction: {0}")]
     ReactionError(String),
 
-    #[error("CommonEror: {source}")]
-    CommonError {
+    #[error("IoEror: {source}")]
+    IoError {
         #[from]
-        source: CommonError,
+        source: std::io::Error,
     },
     #[error("ParserIntError {source:?}")]
     ParseIntError {

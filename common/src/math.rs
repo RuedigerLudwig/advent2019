@@ -1,4 +1,4 @@
-use std::ops::{Add, BitAnd, Div, Mul, Rem, Shl, Shr, Sub};
+use std::ops::{Add, AddAssign, BitAnd, Div, Mul, Rem, Shl, Shr, Sub, SubAssign};
 
 pub trait Number:
     Copy
@@ -9,6 +9,8 @@ pub trait Number:
     + Rem<Output = Self>
     + Shr<Output = Self>
     + Shl<Output = Self>
+    + AddAssign
+    + SubAssign
     + BitAnd<Output = Self>
     + PartialEq
     + PartialOrd

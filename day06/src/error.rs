@@ -1,4 +1,3 @@
-use common::error::CommonError;
 use thiserror::Error;
 
 #[derive(Error, Debug)]
@@ -12,9 +11,9 @@ pub enum OrbitError {
     #[error("Could not find a path from {0} to {1}")]
     NoPathError(String, String),
 
-    #[error("Common Error: {source}")]
-    CommonError {
+    #[error("IoError: {source}")]
+    IoError {
         #[from]
-        source: CommonError,
+        source: std::io::Error,
     },
 }

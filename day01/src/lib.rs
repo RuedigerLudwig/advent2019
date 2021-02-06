@@ -1,5 +1,7 @@
 #![warn(rust_2018_idioms, missing_debug_implementations)]
-use common::{error::CommonError, read_all_lines};
+
+use common::file::read_data;
+use std::error::Error;
 
 fn calculate(mass: i32) -> i32 {
     mass / 3 - 2
@@ -22,9 +24,9 @@ where
     numbers.iter().copied().map(function).sum()
 }
 
-pub fn result() -> Result<(), CommonError> {
-    let numbers = read_all_lines("day01", "input.txt")?
-        .iter()
+pub fn result() -> Result<(), Box<dyn Error>> {
+    let numbers = read_data("day01", "input.txt")?
+        .lines()
         .map(|s| s.parse())
         .collect::<Result<Vec<_>, _>>()?;
 

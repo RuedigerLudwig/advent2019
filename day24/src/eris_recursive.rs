@@ -1,4 +1,4 @@
-use common::{hashset, Direction, Pos as RawPos};
+use common::{direction::Direction, hashset, pos::Pos as RawPos};
 use std::collections::HashSet;
 
 type Pos = RawPos<i32>;
@@ -11,10 +11,10 @@ pub struct ErisRecursive {
 }
 
 impl ErisRecursive {
-    pub fn parse<T: AsRef<str>>(lines: &[T]) -> ErisRecursive {
+    pub fn parse(input: &str) -> ErisRecursive {
         let mut map = HashSet::new();
-        for (row, line) in (0..).zip(lines) {
-            for (col, ch) in (0..).zip(line.as_ref().chars()) {
+        for (row, line) in (0..).zip(input.lines()) {
+            for (col, ch) in (0..).zip(line.chars()) {
                 if ch != '.' {
                     map.insert((Pos::new(col, row), 0));
                 }
@@ -131,11 +131,11 @@ impl ErisRecursive {
 #[cfg(test)]
 mod test {
     use super::*;
-    use common::{error::CommonError, read_all_lines};
+    use common::file::read_data;
 
     #[test]
-    fn test_one() -> Result<(), CommonError> {
-        let input = ErisRecursive::parse(&read_all_lines("day24", "example1.txt")?);
+    fn test_one() -> Result<(), std::io::Error> {
+        let input = ErisRecursive::parse(&read_data("day24", "example1.txt")?);
         let expected = 99;
 
         let result = input.repeat(10).count_bugs();

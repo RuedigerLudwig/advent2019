@@ -2,7 +2,7 @@ use crate::{
     error::DroneError,
     santa::{SantasShip, ShipState},
 };
-use common::Direction;
+use common::direction::Direction;
 use computer::Code;
 
 #[derive(Debug)]
@@ -73,9 +73,9 @@ impl<'a> Drone<'a> {
             }
 
             if room.name != "Security Checkpoint" {
-                for exit in &room.exits {
-                    if from.map(|from| from != *exit).unwrap_or(true) {
-                        self.say_direction(*exit)?;
+                for &exit in &room.exits {
+                    if from.map(|from| from != exit).unwrap_or(true) {
+                        self.say_direction(exit)?;
                         let dir_result = self.explore(Some(exit.turn_back()))?;
                         match dir_result {
                             ExploreResult::Restart => return Ok(ExploreResult::Restart),
@@ -170,8 +170,8 @@ impl<'a> Drone<'a> {
     fn go_to_security_check(&mut self, path: &[Direction]) -> Result<Direction, DroneError> {
         let mut last_lines = None;
 
-        for dir in path.iter().rev() {
-            self.say_direction(*dir)?;
+        for &dir in path.iter().rev() {
+            self.say_direction(dir)?;
             let (_, lines) = self._ship.get_text()?;
             last_lines = Some(lines);
         }
@@ -220,7 +220,7 @@ impl<'a> Drone<'a> {
             } else if line.starts_with("\"Oh, hello!") {
                 let password = line
                     .chars()
-                    .filter(|ch| ch.is_digit(10))
+                    .filter(|&ch| ch.is_digit(10))
                     .collect::<String>();
 
                 return Ok(SecurityCheck::Pass(password));

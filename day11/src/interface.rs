@@ -1,9 +1,7 @@
-use std::fmt::Display;
-
-use common::Turn;
-use computer::{Code, ListInput, VirtualMachine};
-
 use crate::error::PaintError;
+use common::turn::Turn;
+use computer::{Code, ListInput, VirtualMachine};
+use std::fmt::Display;
 
 #[derive(Debug, PartialEq, Eq, Clone, Copy)]
 pub enum Color {

@@ -2,7 +2,7 @@ use crate::{
     error::DroneError,
     santa::{SantasShip, ShipState},
 };
-use common::join;
+use common::convert::join;
 use computer::Code;
 use std::io::{self, prelude::*};
 

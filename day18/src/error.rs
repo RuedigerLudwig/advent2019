@@ -1,4 +1,3 @@
-use common::error::CommonError;
 use thiserror::Error;
 
 #[derive(Debug, Error)]
@@ -15,9 +14,9 @@ pub enum VaultError {
     #[error("can only do this on special mazes")]
     NotSpecial,
 
-    #[error("CommonError: {source}")]
-    CommonError {
+    #[error("IoError: {source}")]
+    IoError {
         #[from]
-        source: CommonError,
+        source: std::io::Error,
     },
 }

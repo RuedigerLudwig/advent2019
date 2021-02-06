@@ -1,24 +1,5 @@
-use std::{
-    fmt::Display,
-    iter::FromIterator,
-    ops::{Add, AddAssign, Mul, Sub, SubAssign},
-};
-
-use crate::Pos;
-
-pub trait HasOne:
-    Copy + Ord + AddAssign + SubAssign + Add<Output = Self> + Sub<Output = Self>
-{
-    const ONE: Self;
-}
-
-impl HasOne for i32 {
-    const ONE: i32 = 1;
-}
-
-impl HasOne for i64 {
-    const ONE: i64 = 1;
-}
+use crate::{math::Number, pos::Pos};
+use std::{fmt::Display, iter::FromIterator};
 
 #[derive(Debug, Clone, Copy, Default)]
 pub struct Area<T> {
@@ -75,7 +56,7 @@ where
 
 impl<T> Area<T>
 where
-    T: HasOne,
+    T: Number,
 {
     pub fn width(&self) -> T {
         self.upper_right.x() - self.lower_left.x() + T::ONE
@@ -88,7 +69,7 @@ where
 
 impl<T> Area<T>
 where
-    T: HasOne + Mul<Output = T>,
+    T: Number,
 {
     pub fn area(&self) -> T {
         self.width() * self.height()
@@ -172,7 +153,7 @@ pub struct RowIterator<'a, T> {
 
 impl<'a, T> Iterator for RowIterator<'a, T>
 where
-    T: HasOne,
+    T: Number,
 {
     type Item = Row<'a, T>;
 
@@ -206,7 +187,7 @@ impl<'a, T> Row<'a, T>
 where
     T: Copy,
 {
-    pub fn cols(&self, ascending: bool) -> ColIterator<'a, T> {
+    pub fn cols(&self, ascending: bool) -> ColIterator<'_, T> {
         ColIterator {
             area: self.area,
             row: self.row,
@@ -230,7 +211,7 @@ pub struct ColIterator<'a, T> {
 
 impl<'a, T> Iterator for ColIterator<'a, T>
 where
-    T: HasOne,
+    T: Number,
 {
     type Item = Pos<T>;
     fn next(&mut self) -> Option<Self::Item> {

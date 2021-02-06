@@ -1,5 +1,5 @@
 use crate::error::GameError;
-use common::{Area as RawArea, Pos as RawPos};
+use common::{area::Area as RawArea, pos::Pos as RawPos};
 use computer::{Code, ListInput, NoInput, VirtualMachine};
 use std::{
     collections::{HashMap, HashSet},
@@ -92,7 +92,7 @@ impl Game {
     }
 
     pub fn count_type(&self, tile: Tile) -> usize {
-        self._board.values().filter(|other| **other == tile).count()
+        self._board.values().filter(|&other| *other == tile).count()
     }
 
     pub fn free_game(code: Code) -> Result<i64, GameError> {
@@ -106,8 +106,8 @@ impl Game {
             let mut score = None;
             while let Some(command) = Game::get_tile(&mut vm)? {
                 match command {
-                    Command::Score(_score) => {
-                        score = Some(_score);
+                    Command::Score(next_score) => {
+                        score = Some(next_score);
                     }
                     Command::Tile(pos, Tile::Block) => {
                         blocks.insert(pos);

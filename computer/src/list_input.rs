@@ -1,6 +1,5 @@
-use std::{cell::RefCell, collections::VecDeque, rc::Rc};
-
 use crate::ComputerInput;
+use std::{cell::RefCell, collections::VecDeque, rc::Rc};
 
 #[derive(Debug, Clone)]
 pub struct ListInput {

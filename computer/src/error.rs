@@ -1,4 +1,4 @@
-use common::error::CommonError;
+use std::io;
 use thiserror::Error;
 
 #[derive(Error, Debug)]
@@ -30,10 +30,10 @@ pub enum ComputerError {
     #[error("Already terminated")]
     Terminated,
 
-    #[error("CommonError {source:?}")]
-    CommonError {
+    #[error("IoError  {source:?}")]
+    IoError {
         #[from]
-        source: CommonError,
+        source: io::Error,
     },
 
     #[error("ParserIntError {source:?}")]

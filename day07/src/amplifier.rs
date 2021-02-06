@@ -12,9 +12,9 @@ impl Amplifier<'_> {
     pub fn new<'a>(code: Code, setting: &Vec<i64>) -> Amplifier<'a> {
         let computers = setting
             .iter()
-            .map(|value| {
+            .map(|&value| {
                 let mut input = ListInput::new();
-                input.provide_input(*value);
+                input.provide_input(value);
                 let vm = VirtualMachine::new(code.clone(), input.clone());
                 (input, vm)
             })

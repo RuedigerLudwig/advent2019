@@ -3,9 +3,8 @@ use crate::{
     map::{Map, Tile},
     path::Path,
 };
+use common::{direction::Direction, pos::Pos as RawPos};
 use std::collections::HashSet;
-
-use common::{Direction, Pos as RawPos};
 
 type Pos = RawPos<i32>;
 
@@ -39,7 +38,8 @@ impl<'a> Explorer<'a> {
     fn check_and_prepare_special(&mut self, start: Pos) -> bool {
         for x in 0..3 {
             for y in 0..3 {
-                if (x != 1 || y != 1) && self._map.get_tile(start + Pos::new(x - 1, y - 1)) != Floor
+                if (x != 1 || y != 1)
+                    && !matches!(self._map.get_tile(start + Pos::new(x - 1, y - 1)), Floor)
                 {
                     return false;
                 }
@@ -76,7 +76,8 @@ impl<'a> Explorer<'a> {
         let mut facing = Direction::East;
         for _ in 0..4 {
             let next_pos = pos + facing;
-            if !self._explored.contains(&next_pos) && self._map.get_tile(next_pos) != Wall {
+            if !self._explored.contains(&next_pos) && !matches!(self._map.get_tile(next_pos), Wall)
+            {
                 result += 1;
             }
             facing = facing.turn_left();
@@ -193,12 +194,12 @@ impl<'a> Explorer<'a> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use common::read_all_lines;
+    use common::file::read_data;
 
     #[test]
     #[ignore]
     fn test_print_explored() -> Result<(), VaultError> {
-        let input = read_all_lines("day18", "example5.txt")?;
+        let input = read_data("day18", "example5.txt")?;
         let map = Map::new(&input)?;
         let path = Explorer::new(&map).explore_part1()?;
         println!("{}", path);
@@ -209,7 +210,7 @@ mod tests {
     #[test]
     #[ignore]
     fn test_print_explored2() -> Result<(), VaultError> {
-        let input = read_all_lines("day18", "input.txt")?;
+        let input = read_data("day18", "input.txt")?;
         let map = Map::new(&input)?;
         let paths = Explorer::new(&map).explore_part2()?;
         for path in paths {

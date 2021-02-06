@@ -36,11 +36,11 @@ pub fn find_all_keys_part2(map: &Map) -> Result<usize, VaultError> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use common::read_all_lines;
+    use common::file::read_data;
 
     #[test]
     fn test_find_all_keys() -> Result<(), VaultError> {
-        let input = read_all_lines("day18", "example1.txt")?;
+        let input = read_data("day18", "example1.txt")?;
         let map = Map::new(&input)?;
         let expected = 8;
         let result = find_all_keys_part1(&map)?;
@@ -50,7 +50,7 @@ mod tests {
 
     #[test]
     fn test_find_all_keys_2() -> Result<(), VaultError> {
-        let input = read_all_lines("day18", "example2.txt")?;
+        let input = read_data("day18", "example2.txt")?;
         let map = Map::new(&input)?;
         let expected = 86;
         let result = find_all_keys_part1(&map)?;
@@ -60,7 +60,7 @@ mod tests {
 
     #[test]
     fn test_find_all_keys_3() -> Result<(), VaultError> {
-        let input = read_all_lines("day18", "example3.txt")?;
+        let input = read_data("day18", "example3.txt")?;
         let map = Map::new(&input)?;
         let expected = 132;
         let result = find_all_keys_part1(&map)?;
@@ -71,7 +71,7 @@ mod tests {
     #[test]
     #[ignore]
     fn test_find_all_keys_4() -> Result<(), VaultError> {
-        let input = read_all_lines("day18", "example4.txt")?;
+        let input = read_data("day18", "example4.txt")?;
         let map = Map::new(&input)?;
         let expected = 136;
         let result = find_all_keys_part1(&map)?;
@@ -81,7 +81,7 @@ mod tests {
 
     #[test]
     fn test_find_all_keys_5() -> Result<(), VaultError> {
-        let input = read_all_lines("day18", "example5.txt")?;
+        let input = read_data("day18", "example5.txt")?;
         let map = Map::new(&input)?;
         let expected = 81;
         let result = find_all_keys_part1(&map)?;
@@ -91,7 +91,7 @@ mod tests {
 
     #[test]
     fn test_find_all_keys_7() -> Result<(), VaultError> {
-        let input = read_all_lines("day18", "example7.txt")?;
+        let input = read_data("day18", "example7.txt")?;
         let map = Map::new(&input)?;
         let expected = 8;
         let result = find_all_keys_part2(&map)?;
@@ -101,7 +101,7 @@ mod tests {
 
     #[test]
     fn test_find_all_keys_8() -> Result<(), VaultError> {
-        let input = read_all_lines("day18", "example8.txt")?;
+        let input = read_data("day18", "example8.txt")?;
         let map = Map::new(&input)?;
         let expected = 24;
         let result = find_all_keys_part2(&map)?;
@@ -111,7 +111,7 @@ mod tests {
 
     #[test]
     fn test_find_all_keys_9() -> Result<(), VaultError> {
-        let input = read_all_lines("day18", "example9.txt")?;
+        let input = read_data("day18", "example9.txt")?;
         let map = Map::new(&input)?;
         let expected = 72;
         let result = find_all_keys_part2(&map)?;

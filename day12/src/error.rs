@@ -1,4 +1,3 @@
-use common::error::CommonError;
 use thiserror::Error;
 
 #[derive(Error, Debug)]
@@ -15,10 +14,10 @@ pub enum JupiterError {
         source: regex::Error,
     },
 
-    #[error("CommonError: {source}")]
-    CommonError {
+    #[error("IoError: {source}")]
+    IoError {
         #[from]
-        source: CommonError,
+        source: std::io::Error,
     },
 
     #[error("ParserIntError {source:?}")]

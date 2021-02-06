@@ -13,10 +13,10 @@ pub fn run_patched(code: Code) -> Result<i64, SimpleError> {
 }
 
 pub fn find_numbers(code: Code) -> Result<(i64, i64), SimpleError> {
+    let mut vm = VirtualMachine::new(code.clone(), NoInput {});
     for noun in 0..100 {
         for verb in 0..100 {
-            let mut vm = VirtualMachine::new(code.clone(), NoInput {});
-
+            vm.restart();
             vm.patch_memory(1, noun);
             vm.patch_memory(2, verb);
             vm.get_all()?;

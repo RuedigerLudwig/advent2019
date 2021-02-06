@@ -1,9 +1,8 @@
+use common::{area::Area as RawArea, direction::Direction, pos::Pos as RawPos};
 use std::{
     collections::HashMap,
     fmt::{Display, Formatter},
 };
-
-use common::{Area as RawArea, Direction, Pos as RawPos};
 
 use crate::{
     error::PaintError,
@@ -67,7 +66,7 @@ impl<T> Display for Bot<T> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use common::Turn;
+    use common::turn::Turn;
 
     #[test]
     fn test_dummy_paint() -> Result<(), PaintError> {

@@ -1,5 +1,4 @@
 use super::{
-    common::analyze_instruction,
     debug_codes,
     debug_info::DebugInfo,
     modes::{AddrMode, AddrModes},
@@ -115,7 +114,7 @@ impl<'a> Cpu<'a> {
 
     fn process_next_instruction(&mut self) -> Result<OperationResult, ComputerError> {
         let instruction = self.get_next_instruction()?;
-        let (opcode, modes) = analyze_instruction(instruction)?;
+        let (opcode, modes) = AddrModes::analyze_instruction(instruction)?;
 
         match opcode {
             1 => self.add(&modes),
@@ -192,9 +191,9 @@ impl<'a> Cpu<'a> {
     }
 
     fn add(&self, modes: &AddrModes) -> Result<OperationResult, ComputerError> {
-        let op1 = self.get_value(self._pointer + 1, modes.get(0))?;
-        let op2 = self.get_value(self._pointer + 2, modes.get(1))?;
-        let addr = self.get_addr(self._pointer + 3, modes.get(2))?;
+        let op1 = self.get_value(self._pointer + 1, modes[0])?;
+        let op2 = self.get_value(self._pointer + 2, modes[1])?;
+        let addr = self.get_addr(self._pointer + 3, modes[2])?;
         let outcome = Write {
             addr,
             value: op1 + op2,
@@ -219,9 +218,9 @@ impl<'a> Cpu<'a> {
     }
 
     fn mul(&self, modes: &AddrModes) -> Result<OperationResult, ComputerError> {
-        let op1 = self.get_value(self._pointer + 1, modes.get(0))?;
-        let op2 = self.get_value(self._pointer + 2, modes.get(1))?;
-        let addr = self.get_addr(self._pointer + 3, modes.get(2))?;
+        let op1 = self.get_value(self._pointer + 1, modes[0])?;
+        let op2 = self.get_value(self._pointer + 2, modes[1])?;
+        let addr = self.get_addr(self._pointer + 3, modes[2])?;
         let outcome = Write {
             addr,
             value: op1 * op2,
@@ -247,7 +246,7 @@ impl<'a> Cpu<'a> {
 
     fn input(&mut self, modes: &AddrModes) -> Result<OperationResult, ComputerError> {
         if let Some(value) = self._input.get_next_input() {
-            let addr = self.get_addr(self._pointer + 1, modes.get(0))?;
+            let addr = self.get_addr(self._pointer + 1, modes[0])?;
             let outcome = Write {
                 addr,
                 value,
@@ -274,7 +273,7 @@ impl<'a> Cpu<'a> {
     }
 
     fn output(&self, modes: &AddrModes) -> Result<OperationResult, ComputerError> {
-        let addr = self.get_addr(self._pointer + 1, modes.get(0))?;
+        let addr = self.get_addr(self._pointer + 1, modes[0])?;
         let value = self.get_value(addr, AddrMode::Direct)?;
         let outcome = Output {
             value,
@@ -297,8 +296,8 @@ impl<'a> Cpu<'a> {
     }
 
     fn jump_non_zero(&self, modes: &AddrModes) -> Result<OperationResult, ComputerError> {
-        let cmp = self.get_value(self._pointer + 1, modes.get(0))?;
-        let to = self.get_value_as_address(self._pointer + 2, modes.get(1))?;
+        let cmp = self.get_value(self._pointer + 1, modes[0])?;
+        let to = self.get_value_as_address(self._pointer + 2, modes[1])?;
         let outcome = Proceed {
             pointer: if cmp != 0 { to } else { self._pointer + 3 },
         };
@@ -326,8 +325,8 @@ impl<'a> Cpu<'a> {
     }
 
     fn jump_zero(&self, modes: &AddrModes) -> Result<OperationResult, ComputerError> {
-        let cmp = self.get_value(self._pointer + 1, modes.get(0))?;
-        let to = self.get_value_as_address(self._pointer + 2, modes.get(1))?;
+        let cmp = self.get_value(self._pointer + 1, modes[0])?;
+        let to = self.get_value_as_address(self._pointer + 2, modes[1])?;
         let outcome = Proceed {
             pointer: if cmp == 0 { to } else { self._pointer + 3 },
         };
@@ -355,9 +354,9 @@ impl<'a> Cpu<'a> {
     }
 
     fn less_than(&self, modes: &AddrModes) -> Result<OperationResult, ComputerError> {
-        let cmp1 = self.get_value(self._pointer + 1, modes.get(0))?;
-        let cmp2 = self.get_value(self._pointer + 2, modes.get(1))?;
-        let addr = self.get_addr(self._pointer + 3, modes.get(2))?;
+        let cmp1 = self.get_value(self._pointer + 1, modes[0])?;
+        let cmp2 = self.get_value(self._pointer + 2, modes[1])?;
+        let addr = self.get_addr(self._pointer + 3, modes[2])?;
         let value = if cmp1 < cmp2 { 1 } else { 0 };
         let outcome = Write {
             addr,
@@ -388,9 +387,9 @@ impl<'a> Cpu<'a> {
     }
 
     fn equals(&self, modes: &AddrModes) -> Result<OperationResult, ComputerError> {
-        let cmp1 = self.get_value(self._pointer + 1, modes.get(0))?;
-        let cmp2 = self.get_value(self._pointer + 2, modes.get(1))?;
-        let addr = self.get_addr(self._pointer + 3, modes.get(2))?;
+        let cmp1 = self.get_value(self._pointer + 1, modes[0])?;
+        let cmp2 = self.get_value(self._pointer + 2, modes[1])?;
+        let addr = self.get_addr(self._pointer + 3, modes[2])?;
         let value = if cmp1 == cmp2 { 1 } else { 0 };
         let outcome = Write {
             addr,
@@ -421,7 +420,7 @@ impl<'a> Cpu<'a> {
     }
 
     fn change_offset(&self, modes: &AddrModes) -> Result<OperationResult, ComputerError> {
-        let offset = self.get_value(self._pointer + 1, modes.get(0))?;
+        let offset = self.get_value(self._pointer + 1, modes[0])?;
         let outcome = Offset {
             offset: self._offset + offset,
             pointer: self._pointer + 2,

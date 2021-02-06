@@ -117,11 +117,11 @@ pub struct Jupiter {
 }
 
 impl Jupiter {
-    pub fn parse<T: AsRef<str>>(input: &[T]) -> Result<Jupiter, JupiterError> {
+    pub fn parse(input: &str) -> Result<Jupiter, JupiterError> {
         Ok(Jupiter {
             moons: input
-                .iter()
-                .map(|line| line.as_ref().parse())
+                .lines()
+                .map(|line| line.parse())
                 .collect::<Result<_, _>>()?,
         })
     }
@@ -160,7 +160,7 @@ impl Jupiter {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use common::read_all_lines;
+    use common::file::read_data;
 
     pub fn full((xp, xv): (i32, i32), (yp, yv): (i32, i32), (zp, zv): (i32, i32)) -> Moon {
         Moon {
@@ -183,7 +183,7 @@ mod tests {
 
     #[test]
     fn test_parse_moon0() -> Result<(), JupiterError> {
-        let input = read_all_lines("day12", "example1.txt")?;
+        let input = read_data("day12", "example1.txt")?;
         let result = Jupiter::parse(&input)?;
         let expected = Jupiter {
             moons: vec![
@@ -200,7 +200,7 @@ mod tests {
 
     #[test]
     fn test_parse_moon1() -> Result<(), JupiterError> {
-        let input = read_all_lines("day12", "example1.txt")?;
+        let input = read_data("day12", "example1.txt")?;
         let system = Jupiter::parse(&input)?;
         let result = system.step(1);
         let expected = Jupiter {
@@ -218,7 +218,7 @@ mod tests {
 
     #[test]
     fn test_parse_moon2() -> Result<(), JupiterError> {
-        let input = read_all_lines("day12", "example1.txt")?;
+        let input = read_data("day12", "example1.txt")?;
         let system = Jupiter::parse(&input)?;
         let result = system.step(10);
         let expected = 179;
@@ -229,7 +229,7 @@ mod tests {
 
     #[test]
     fn test_get_moon10_2() -> Result<(), JupiterError> {
-        let input = read_all_lines("day12", "example2.txt")?;
+        let input = read_data("day12", "example2.txt")?;
         let system = Jupiter::parse(&input)?;
         let result = system.step(10);
         let expected = Jupiter {
@@ -247,7 +247,7 @@ mod tests {
 
     #[test]
     fn test_get_moon100_2() -> Result<(), JupiterError> {
-        let input = read_all_lines("day12", "example2.txt")?;
+        let input = read_data("day12", "example2.txt")?;
         let system = Jupiter::parse(&input)?;
         let result = system.step(100);
         let expected = 1940;
@@ -258,7 +258,7 @@ mod tests {
 
     #[test]
     fn test_repeat_time() -> Result<(), JupiterError> {
-        let input = read_all_lines("day12", "example1.txt")?;
+        let input = read_data("day12", "example1.txt")?;
         let system = Jupiter::parse(&input)?;
         let result = system.get_repeat_steps();
         let expected = 2772;

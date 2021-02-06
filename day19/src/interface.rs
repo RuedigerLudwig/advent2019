@@ -1,7 +1,6 @@
 use crate::error::TractorError;
+use common::pos::Pos as RawPos;
 use computer::{Code, ListInput, VirtualMachine};
-
-use common::Pos as RawPos;
 
 pub type Pos = RawPos<i32>;
 

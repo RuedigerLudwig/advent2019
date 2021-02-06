@@ -1,5 +1,5 @@
 use crate::error::DroidError;
-use common::Direction;
+use common::direction::Direction;
 use computer::{Code, ComputerError, ListInput, VirtualMachine};
 use std::fmt::Display;
 

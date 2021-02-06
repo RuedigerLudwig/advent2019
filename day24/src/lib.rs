@@ -2,12 +2,12 @@
 mod eris_plain;
 mod eris_recursive;
 
-use common::{error::CommonError, read_all_lines};
+use common::file::read_data;
 use eris_plain::Eris;
 use eris_recursive::ErisRecursive;
 
-pub fn result() -> Result<(), CommonError> {
-    let input = read_all_lines("day24", "input.txt")?;
+pub fn result() -> Result<(), std::io::Error> {
+    let input = read_data("day24", "input.txt")?;
 
     let eris = Eris::parse(&input);
     let result1 = eris.run_till_stable().rate();

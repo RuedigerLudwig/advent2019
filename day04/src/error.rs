@@ -1,4 +1,3 @@
-use common::error::CommonError;
 use thiserror::Error;
 
 #[derive(Debug, Error)]
@@ -6,10 +5,10 @@ pub enum PasswordError {
     #[error("Passwords need a range of two")]
     RangeError,
 
-    #[error("CommonError: {source}")]
-    CommonError {
+    #[error("IoError: {source}")]
+    IoError {
         #[from]
-        source: CommonError,
+        source: std::io::Error,
     },
 
     #[error("ParserIntError {source:?}")]

@@ -1,5 +1,5 @@
 use crate::ComputerError;
-use common::read_single_line;
+use common::file::read_data;
 use std::{collections::HashMap, str::FromStr, sync::Arc};
 
 #[derive(Debug, Clone)]
@@ -9,7 +9,7 @@ pub struct Code {
 
 impl Code {
     pub fn from_file(module: &str, file: &str) -> Result<Code, ComputerError> {
-        read_single_line(module, file)?.parse()
+        read_data(module, file)?.parse()
     }
 
     pub fn get(&self) -> HashMap<usize, i64> {

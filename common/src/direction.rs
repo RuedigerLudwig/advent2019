@@ -1,8 +1,7 @@
-use crate::{Pos, Turn};
-use std::{
-    fmt::Display,
-    ops::{Add, Sub},
-};
+use crate::{pos::Pos, turn::Turn};
+use std::{fmt::Display, ops::Add};
+
+use Direction::*;
 use Turn::*;
 
 #[derive(Debug, Copy, Clone, PartialEq, Eq, Hash)]
@@ -12,8 +11,6 @@ pub enum Direction {
     West,
     South,
 }
-
-use Direction::*;
 
 impl Direction {
     pub fn as_pos(&self) -> Pos<i32> {
@@ -98,7 +95,7 @@ impl Add<Pos<i32>> for Direction {
     type Output = Pos<i32>;
 
     fn add(self, rhs: Pos<i32>) -> Self::Output {
-        rhs + self.as_pos()
+        Pos::add(rhs, self)
     }
 }
 
@@ -106,7 +103,7 @@ impl Add<Pos<i32>> for &Direction {
     type Output = Pos<i32>;
 
     fn add(self, rhs: Pos<i32>) -> Self::Output {
-        rhs + self.as_pos()
+        Pos::add(rhs, *self)
     }
 }
 
@@ -114,7 +111,15 @@ impl Add<&Pos<i32>> for Direction {
     type Output = Pos<i32>;
 
     fn add(self, rhs: &Pos<i32>) -> Self::Output {
-        *rhs + self.as_pos()
+        Pos::add(*rhs, self)
+    }
+}
+
+impl Add<&Pos<i32>> for &Direction {
+    type Output = Pos<i32>;
+
+    fn add(self, rhs: &Pos<i32>) -> Self::Output {
+        Pos::add(*rhs, *self)
     }
 }
 
@@ -126,10 +131,26 @@ impl Add<Turn> for Direction {
     }
 }
 
-impl Sub<Direction> for Direction {
-    type Output = Turn;
+impl Add<&Turn> for Direction {
+    type Output = Self;
 
-    fn sub(self, rhs: Direction) -> Self::Output {
-        self.get_turn(rhs)
+    fn add(self, rhs: &Turn) -> Direction {
+        Direction::add(self, *rhs)
+    }
+}
+
+impl Add<Turn> for &Direction {
+    type Output = Direction;
+
+    fn add(self, rhs: Turn) -> Direction {
+        Direction::add(*self, rhs)
+    }
+}
+
+impl Add<&Turn> for &Direction {
+    type Output = Direction;
+
+    fn add(self, rhs: &Turn) -> Direction {
+        Direction::add(*self, *rhs)
     }
 }

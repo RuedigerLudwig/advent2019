@@ -1,5 +1,5 @@
 use crate::{error::ExteriorError, interface::ExteriorInterface, path::Path};
-use common::{Area as RawArea, Direction, Pos as RawPos, Turn};
+use common::{area::Area as RawArea, direction::Direction, pos::Pos as RawPos, turn::Turn};
 use std::{
     collections::{HashMap, HashSet},
     fmt::Display,
@@ -199,22 +199,23 @@ impl<I> Display for Exterior<I> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use common::{hashset, read_all_lines};
+    use common::{file::read_data, hashset};
 
     struct TestInterface {
-        data: Vec<String>,
+        picture: Vec<String>,
     }
 
     impl TestInterface {
         pub fn new(module: &str, file: &str) -> Result<TestInterface, ExteriorError> {
-            let data = read_all_lines(module, file)?;
-            Ok(TestInterface { data })
+            let data = read_data(module, file)?;
+            let picture = data.lines().map(String::from).collect::<Vec<_>>();
+            Ok(TestInterface { picture })
         }
     }
 
     impl ExteriorInterface for TestInterface {
         fn get_picture(&mut self) -> Result<Vec<String>, ExteriorError> {
-            Ok(self.data.clone())
+            Ok(self.picture.clone())
         }
 
         fn send_data(&mut self, _data: &[String], _run_silent: bool) -> Result<i64, ExteriorError> {

@@ -8,7 +8,7 @@ pub struct System<'a> {
 }
 
 impl<'a> System<'a> {
-    pub fn parse<T: AsRef<str>>(input: &[T]) -> Result<System<'_>, OrbitError> {
+    pub fn parse(input: &str) -> Result<System<'_>, OrbitError> {
         let map = System::to_map(input)?;
         let center = System::find_center(&map)?;
 
@@ -27,11 +27,9 @@ impl<'a> System<'a> {
     }
 
     pub fn count_transfers(&self, from: &str, to: &str) -> Result<i32, OrbitError> {
-        if let Some(result) = self.get_distance(from, to, 1).2 {
-            Ok(result)
-        } else {
-            Err(OrbitError::NoPathError(from.to_owned(), to.to_owned()))
-        }
+        self.get_distance(from, to, 1)
+            .2
+            .ok_or_else(|| OrbitError::NoPathError(from.to_owned(), to.to_owned()))
     }
 
     fn get_distance(
@@ -51,8 +49,10 @@ impl<'a> System<'a> {
             if maybe_sum.is_some() {
                 return (None, None, maybe_sum);
             }
+
             found_from = found_from.or(maybe_from);
             found_to = found_to.or(maybe_to);
+
             if let Some(sum) = found_from
                 .zip(found_to)
                 .map(|(a, b)| a + b - distance * 2 - 2)
@@ -64,16 +64,15 @@ impl<'a> System<'a> {
         (found_from, found_to, None)
     }
 
-    fn to_map<T: AsRef<str>>(input: &'a [T]) -> Result<HashMap<&'a str, Vec<&'a str>>, OrbitError> {
+    fn to_map(input: &'a str) -> Result<HashMap<&'a str, Vec<&'a str>>, OrbitError> {
         let mut map: HashMap<_, Vec<&'a str>> = HashMap::new();
-        for line in input {
-            let mut parts = line.as_ref().split(")");
+        for line in input.lines() {
+            let mut parts = line.split(")");
 
-            let (center, orbiter) = if let Some((c, o)) = parts.next().zip(parts.next()) {
-                (c, o)
-            } else {
-                return Err(OrbitError::OnlyTwoPerLine);
-            };
+            let (center, orbiter) = parts
+                .next()
+                .zip(parts.next())
+                .ok_or(OrbitError::OnlyTwoPerLine)?;
 
             let orbits = map.entry(center).or_default();
             orbits.push(orbiter);
@@ -84,14 +83,14 @@ impl<'a> System<'a> {
     fn find_center(map: &HashMap<&'a str, Vec<&'a str>>) -> Result<&'a str, OrbitError> {
         let mut center = None;
         for maybe_center in map.keys() {
-            let mut is_orbiting = false;
+            let mut orbiting_something = false;
             for orbits in map.values() {
                 if orbits.contains(maybe_center) {
-                    is_orbiting = true;
+                    orbiting_something = true;
                     break;
                 }
             }
-            if !is_orbiting {
+            if !orbiting_something {
                 if center.is_none() {
                     center = Some(*maybe_center);
                 } else {
@@ -100,44 +99,34 @@ impl<'a> System<'a> {
             }
         }
 
-        if let Some(center) = center {
-            Ok(center)
-        } else {
-            Err(OrbitError::NoCenterFound)
-        }
+        center.ok_or(OrbitError::NoCenterFound)
     }
 
     fn build_system(
-        current: &'a str,
+        name: &'a str,
         map: &HashMap<&'a str, Vec<&'a str>>,
     ) -> Result<System<'a>, OrbitError> {
-        if let Some(orbits) = map.get(current) {
-            let subsystems = orbits
+        let subsystems = if let Some(orbits) = map.get(name) {
+            orbits
                 .iter()
-                .map(|orbiter| System::build_system(orbiter, map))
-                .collect::<Result<_, _>>()?;
-            Ok(System {
-                name: current,
-                subsystems,
-            })
+                .map(|&orbiter| System::build_system(orbiter, map))
+                .collect::<Result<_, _>>()?
         } else {
-            Ok(System {
-                name: current,
-                subsystems: vec![],
-            })
-        }
+            vec![]
+        };
+
+        Ok(System { name, subsystems })
     }
 }
 
 #[cfg(test)]
 mod tests {
-    use common::read_all_lines;
-
     use super::*;
+    use common::file::read_data;
 
     #[test]
     fn parse() -> Result<(), OrbitError> {
-        let input = read_all_lines("day06", "example1.txt")?;
+        let input = read_data("day06", "example1.txt")?;
         let system = System::parse(&input)?;
         let expected = "COM";
         assert_eq!(system.name, expected);
@@ -147,7 +136,7 @@ mod tests {
 
     #[test]
     fn path_length() -> Result<(), OrbitError> {
-        let input = read_all_lines("day06", "example1.txt")?;
+        let input = read_data("day06", "example1.txt")?;
         let system = System::parse(&input)?;
         let expected = 42;
         assert_eq!(system.count_orbits(), expected);
@@ -157,7 +146,7 @@ mod tests {
 
     #[test]
     fn transfers_required() -> Result<(), OrbitError> {
-        let input = read_all_lines("day06", "example2.txt")?;
+        let input = read_data("day06", "example2.txt")?;
         let system = System::parse(&input)?;
         let expected = 4;
         let result = system.count_transfers("YOU", "SAN")?;

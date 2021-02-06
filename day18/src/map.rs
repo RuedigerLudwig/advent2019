@@ -1,5 +1,5 @@
 use crate::error::VaultError;
-use common::{Area as RawArea, Pos as RawPos};
+use common::{area::Area as RawArea, pos::Pos as RawPos};
 use std::{collections::HashMap, convert::TryFrom, convert::TryInto, fmt::Display};
 
 pub const ENTRANCE: char = '@';
@@ -7,7 +7,7 @@ pub const ENTRANCE: char = '@';
 type Pos = RawPos<i32>;
 type Area = RawArea<i32>;
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, Copy)]
 pub enum Tile {
     Wall,
     Floor,
@@ -54,12 +54,12 @@ pub struct Map {
 }
 
 impl Map {
-    pub fn new<T: AsRef<str>>(lines: &[T]) -> Result<Map, VaultError> {
+    pub fn new(input: &str) -> Result<Map, VaultError> {
         let mut _data = HashMap::new();
-        for (row, line) in (0..).zip(lines.iter().rev()) {
-            for (col, ch) in (0..).zip(line.as_ref().chars()) {
+        for (row, line) in (0..).zip(input.lines().rev()) {
+            for (col, ch) in (0..).zip(line.chars()) {
                 let tile: Tile = ch.try_into()?;
-                if tile != Tile::Wall {
+                if !matches!(tile, Tile::Wall) {
                     _data.insert(Pos::new(col, row), tile);
                 }
             }
@@ -75,7 +75,7 @@ impl Map {
         let maybe = self
             ._data
             .iter()
-            .filter(|(_, tile)| matches!(tile, Tile::Entrance))
+            .filter(|(_, &tile)| matches!(tile, Tile::Entrance))
             .collect::<Vec<_>>();
 
         if maybe.len() != 1 {
@@ -107,11 +107,11 @@ impl Display for Map {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use common::read_all_lines;
+    use common::file::read_data;
 
     #[test]
     fn test_get_entrance() -> Result<(), VaultError> {
-        let input = read_all_lines("day18", "example1.txt")?;
+        let input = read_data("day18", "example1.txt")?;
         let map = Map::new(&input)?;
         let expected = Pos::new(5, 1);
         let result = map.get_entrance()?;
@@ -122,7 +122,7 @@ mod tests {
     #[test]
     #[ignore]
     fn test_print_path() -> Result<(), VaultError> {
-        let input = read_all_lines("day18", "input.txt")?;
+        let input = read_data("day18", "input.txt")?;
         let map = Map::new(&input)?;
 
         println!("{}", map);

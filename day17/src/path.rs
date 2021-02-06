@@ -1,6 +1,5 @@
+use common::turn::Turn;
 use std::fmt::Display;
-
-use common::Turn;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Path {
@@ -15,22 +14,6 @@ impl Path {
             Turn::Right => Path::Right(steps),
             Turn::Left => Path::Left(steps),
             _ => panic!("Illegal turn for path {:?}", turn),
-        }
-    }
-
-    pub fn is_function(&self) -> bool {
-        if let Path::Function(_) = self {
-            true
-        } else {
-            false
-        }
-    }
-
-    pub fn is_non_function(&self) -> bool {
-        if let Path::Function(_) = self {
-            false
-        } else {
-            true
         }
     }
 
@@ -55,7 +38,7 @@ impl Path {
         let max = path.len().min(6);
         for len in (1..max).rev() {
             let to_check = &path[..len];
-            if to_check.iter().any(|p| p.is_function()) {
+            if to_check.iter().any(|p| matches!(p, Path::Function(_))) {
                 continue;
             }
             if Path::as_string(to_check).len() > 25 {
@@ -64,7 +47,7 @@ impl Path {
 
             let pm = PathMatcher::new(path, to_check, level);
             for attempt in pm {
-                if let Some(pos) = attempt.iter().position(Path::is_non_function) {
+                if let Some(pos) = attempt.iter().position(|p| !matches!(p, Path::Function(_))) {
                     if let Some((functions, result)) =
                         Path::extract_equal_parts(&attempt[pos..], level - 1)
                     {
@@ -156,8 +139,8 @@ impl<'a> PathMatcher<'a> {
             let used = use_cuts
                 .iter()
                 .zip(&self.possible_cuts)
-                .filter(|(curr, _)| **curr)
-                .map(|(_, pos)| *pos)
+                .filter(|(&curr, _)| curr)
+                .map(|(_, &pos)| pos)
                 .collect::<Vec<_>>();
             for i in 1..used.len() {
                 for j in 0..i {
@@ -188,7 +171,7 @@ impl<'a> Iterator for PathMatcher<'a> {
     type Item = Vec<Path>;
 
     fn next(&mut self) -> Option<Self::Item> {
-        if let Some(actual_cuts) = self.get_actual_cuts() {
+        self.get_actual_cuts().map(|actual_cuts| {
             let mut result = Vec::new();
             let mut actual_cuts = actual_cuts.iter();
             let mut last_cut = *actual_cuts
@@ -205,10 +188,9 @@ impl<'a> Iterator for PathMatcher<'a> {
                 result.extend(&self.original[last_cut..]);
             }
             self.inc_use_cuts();
-            Some(result)
-        } else {
-            None
-        }
+
+            result
+        })
     }
 }
 

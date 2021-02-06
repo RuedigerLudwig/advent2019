@@ -1,4 +1,3 @@
-use common::error::CommonError;
 use computer::ComputerError;
 use thiserror::Error;
 
@@ -24,13 +23,7 @@ pub enum DroidError {
     #[error("Tile is not oxygenized")]
     NotOxygenized,
 
-    #[error("CommonError: {source}")]
-    CommonError {
-        #[from]
-        source: CommonError,
-    },
-
-    #[error("CommonError: {source}")]
+    #[error("ComputerError: {source}")]
     ComputerError {
         #[from]
         source: ComputerError,
