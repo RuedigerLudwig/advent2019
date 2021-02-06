@@ -34,7 +34,7 @@ impl Node {
     pub fn new(id: usize) -> Node {
         let mut queue = VecDeque::new();
         queue.push_back(id as i64);
-        queue.push_back(-1);
+        queue.push_back(-1); // We need to make sure to send a -1 to each node first
         Node {
             _id: id,
             _data: Arc::new((
@@ -100,10 +100,6 @@ impl ComputerInput for Node {
             Some(-1)
         }
     }
-
-    fn provide_input(&mut self, _value: i64) {
-        unimplemented!()
-    }
 }
 
 #[derive(Debug)]
@@ -149,9 +145,8 @@ impl<'a> NodeVm<'a> {
     }
 
     pub fn run(&mut self) -> Result<(), NetworkError> {
-        let output = self._vm.get_output();
         loop {
-            let active = match output.step()? {
+            let active = match self._vm.step()? {
                 computer::StepResult::Value(value) => {
                     if self._next_receiver.is_none() {
                         self._next_receiver = Some(value as usize);
@@ -244,12 +239,10 @@ impl Switch {
             let thread_result = self._result_rx.recv()?;
             match thread_result {
                 ThreadResult::Result { to, x, y, .. } => match to {
-                    0..=49 => {
-                        self._nodes[to].feed(x, y);
-                    }
-                    255 => {
-                        return Ok(y);
-                    }
+                    0..=49 => self._nodes[to].feed(x, y),
+
+                    255 => return Ok(y),
+
                     _ => return Err(NetworkError::UnknownAddress(to)),
                 },
 
@@ -271,11 +264,8 @@ impl Switch {
                 let thread_result = self._result_rx.try_recv();
                 match thread_result {
                     Ok(Result { to, x, y, .. }) => match to {
-                        0..=49 => {
-                            self._nodes[to].feed(x, y);
-                        }
+                        0..=49 => self._nodes[to].feed(x, y),
                         255 => nat_memory = Some((x, y)),
-
                         _ => return Err(NetworkError::UnknownAddress(to)),
                     },
 
@@ -300,8 +290,8 @@ impl Switch {
                 if last_delivered.map_or(false, |old_y| old_y == y) {
                     return Ok(y);
                 }
-                inactive.remove(&0);
                 self._nodes[0].feed(x, y);
+                inactive.remove(&0);
                 last_delivered = Some(y);
             }
         }

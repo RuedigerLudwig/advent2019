@@ -5,7 +5,7 @@ use std::{
 };
 
 use common::{Area as RawArea, Pos as RawPos};
-use computer::{Code, ListInput, NoInput, STOutput, STVirtualMachine};
+use computer::{Code, ListInput, NoInput, STVirtualMachine};
 
 use crate::error::GameError;
 
@@ -67,17 +67,17 @@ pub struct Game {
 
 impl Game {
     pub fn paint_board(code: Code) -> Result<Game, GameError> {
-        let vm = STVirtualMachine::new(code, NoInput {});
+        let vm = STVirtualMachine::new_single(code, NoInput {});
         let mut board = HashMap::new();
-        while let Some(Command::Tile(pos, tile)) = Game::get_tile(&vm.get_output())? {
+        while let Some(Command::Tile(pos, tile)) = Game::get_tile(&vm)? {
             board.insert(pos, tile);
         }
 
         Ok(Game { _board: board })
     }
 
-    fn get_tile(output: &STOutput<'_>) -> Result<Option<Command>, GameError> {
-        let result = if let Some(result) = output.take_exactly(3)? {
+    fn get_tile(vm: &STVirtualMachine<'_>) -> Result<Option<Command>, GameError> {
+        let result = if let Some(result) = vm.take_exactly(3)? {
             let x = result[0];
             let y = result[1];
 
@@ -98,15 +98,15 @@ impl Game {
     }
 
     pub fn free_game(code: Code) -> Result<i64, GameError> {
-        let vm = STVirtualMachine::new(code, ListInput::new());
+        let mut input = ListInput::new();
+        let vm = STVirtualMachine::new_single(code, input.clone());
         vm.patch_memory(0, 2);
-        let output = vm.get_output();
 
         loop {
             let mut blocks = HashSet::new();
             let mut paddle = None;
             let mut score = None;
-            while let Some(command) = Game::get_tile(&output)? {
+            while let Some(command) = Game::get_tile(&vm)? {
                 match command {
                     Command::Score(_score) => {
                         score = Some(_score);
@@ -124,7 +124,7 @@ impl Game {
                         let direction = paddle
                             .map(|paddle| (pos.x() - paddle).signum())
                             .unwrap_or(0);
-                        vm.provide_input(direction);
+                        input.provide_input(direction);
                     }
                     Command::Tile(_, Tile::Wall) => (),
                 }

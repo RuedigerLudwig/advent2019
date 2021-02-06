@@ -85,10 +85,6 @@ impl<'a> Cpu<'a> {
         result
     }
 
-    pub fn provide_input(&mut self, value: i64) {
-        self._input.provide_input(value)
-    }
-
     pub fn step(&mut self) -> Result<StepResult, ComputerError> {
         if self._crashed {
             return Err(ComputerError::Terminated);

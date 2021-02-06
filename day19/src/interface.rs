@@ -10,25 +10,28 @@ pub trait TractorInterface {
 }
 
 pub struct TractorComputerInterface<'a> {
-    _vm: STVirtualMachine<'a>,
+    vm: STVirtualMachine<'a>,
+    input: ListInput,
 }
 
 impl<'a> TractorComputerInterface<'a> {
     pub fn new(code: Code) -> TractorComputerInterface<'a> {
+        let input = ListInput::new();
         TractorComputerInterface {
-            _vm: STVirtualMachine::new(code, ListInput::new()),
+            vm: STVirtualMachine::new_single(code, input.clone()),
+            input,
         }
     }
 }
 
 impl TractorInterface for TractorComputerInterface<'_> {
     fn check_pull(&mut self, position: Pos) -> Result<bool, TractorError> {
-        self._vm.restart();
-        self._vm.provide_input(position.x() as i64);
-        self._vm.provide_input(position.y() as i64);
+        self.vm.restart();
+        self.input.clear();
+        self.input.provide_input(position.x() as i64);
+        self.input.provide_input(position.y() as i64);
 
-        self._vm
-            .get_output()
+        self.vm
             .next()?
             .map(|result| result != 0)
             .ok_or(TractorError::NoData)

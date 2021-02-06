@@ -271,7 +271,7 @@ impl<'a> Drone<'a> {
         Err(DroneError::NoWeightFits)
     }
 
-    fn say_direction(&self, dir: Direction) -> Result<(), DroneError> {
+    fn say_direction(&mut self, dir: Direction) -> Result<(), DroneError> {
         let direction = match dir {
             Direction::East => "east",
             Direction::North => "north",

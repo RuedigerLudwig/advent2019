@@ -11,7 +11,6 @@ pub trait CpuWrapper: Clone {
     fn set_debug_level(&self, debug_level: u8);
     fn patch_memory(&self, addr: usize, value: i64);
     fn get_memory(&self) -> Vec<i64>;
-    fn provide_input(&self, value: i64);
     fn step(&self) -> Result<StepResult, ComputerError>;
     fn next(&self) -> Result<Option<i64>, ComputerError>;
 }
@@ -52,10 +51,6 @@ impl<'a> CpuWrapper for STCpuWrapper<'a> {
 
     fn get_memory(&self) -> Vec<i64> {
         (*self._cpu.borrow()).get_linear_memory()
-    }
-
-    fn provide_input(&self, value: i64) {
-        (*self._cpu.borrow_mut()).provide_input(value)
     }
 
     fn step(&self) -> Result<StepResult, ComputerError> {
@@ -115,11 +110,6 @@ impl<'a> CpuWrapper for MTCpuWrapper<'a> {
     fn get_memory(&self) -> Vec<i64> {
         let cpu = self._cpu.lock().unwrap();
         cpu.get_linear_memory()
-    }
-
-    fn provide_input(&self, value: i64) {
-        let mut cpu = self._cpu.lock().unwrap();
-        cpu.provide_input(value)
     }
 
     fn step(&self) -> Result<StepResult, ComputerError> {

@@ -5,7 +5,7 @@ use computer::{Code, ListInput, STVirtualMachine};
 use crate::{error::AmplifierError, permutations::LexPermutations};
 
 pub struct Amplifier<'a> {
-    computers: VecDeque<STVirtualMachine<'a>>,
+    computers: VecDeque<(ListInput, STVirtualMachine<'a>)>,
 }
 
 impl Amplifier<'_> {
@@ -13,9 +13,10 @@ impl Amplifier<'_> {
         let computers = setting
             .iter()
             .map(|value| {
-                let vm = STVirtualMachine::new(code.clone(), ListInput::new());
-                vm.provide_input(*value);
-                vm
+                let mut input = ListInput::new();
+                input.provide_input(*value);
+                let vm = STVirtualMachine::new_single(code.clone(), input.clone());
+                (input, vm)
             })
             .collect();
         Amplifier { computers }
@@ -41,9 +42,9 @@ impl Amplifier<'_> {
 
     pub fn run_once(&mut self, initial_value: i64) -> Result<i64, AmplifierError> {
         let mut value = initial_value;
-        for vm in self.computers.iter_mut() {
-            vm.provide_input(value);
-            let result = vm.get_output().get_all()?;
+        for (input, vm) in self.computers.iter_mut() {
+            input.provide_input(value);
+            let result = vm.get_all()?;
             if result.len() != 1 {
                 return Err(AmplifierError::NotExactlyOne);
             }
@@ -55,11 +56,11 @@ impl Amplifier<'_> {
     pub fn run_continously(&mut self, initial_value: i64) -> Result<i64, AmplifierError> {
         let mut end_value = initial_value;
         loop {
-            if let Some(computer) = self.computers.pop_front() {
-                computer.provide_input(end_value);
-                if let Some(step_result) = computer.get_output().next()? {
+            if let Some((mut input, vm)) = self.computers.pop_front() {
+                input.provide_input(end_value);
+                if let Some(step_result) = vm.next()? {
                     end_value = step_result;
-                    self.computers.push_back(computer);
+                    self.computers.push_back((input, vm));
                 } else {
                     break;
                 }

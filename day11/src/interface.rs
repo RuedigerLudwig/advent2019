@@ -1,7 +1,7 @@
 use std::fmt::Display;
 
 use common::Turn;
-use computer::{Code, ListInput, STOutput, STVirtualMachine};
+use computer::{Code, ListInput, STVirtualMachine};
 
 use crate::error::PaintError;
 
@@ -31,27 +31,24 @@ pub trait BotComputerInterface {
 }
 
 pub struct ComputerInterface<'a> {
-    output: STOutput<'a>,
     vm: STVirtualMachine<'a>,
+    input: ListInput,
 }
 
 impl<'a> ComputerInterface<'a> {
     pub fn new(code: Code) -> ComputerInterface<'a> {
         let input = ListInput::new();
-        let vm = STVirtualMachine::new(code, input);
-        ComputerInterface {
-            output: vm.get_output(),
-            vm,
-        }
+        let vm = STVirtualMachine::new_single(code, input.clone());
+        ComputerInterface { input, vm }
     }
 }
 
 impl BotComputerInterface for ComputerInterface<'_> {
     fn accept_input(&mut self, color: Color) -> Result<Option<(Color, Turn)>, PaintError> {
-        self.vm
+        self.input
             .provide_input(if color == Color::White { 1 } else { 0 });
 
-        if let Some(output) = self.output.take_exactly(2)? {
+        if let Some(output) = self.vm.take_exactly(2)? {
             let paint = match output[0] {
                 0 => Color::Black,
                 1 => Color::White,

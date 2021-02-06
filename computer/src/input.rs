@@ -2,7 +2,7 @@ use std::{cell::Cell, fmt::Debug};
 
 pub trait ComputerInput: Debug {
     fn get_next_input(&mut self) -> Option<i64>;
-    fn provide_input(&mut self, value: i64);
+    //fn provide_input(&mut self, value: i64);
 }
 
 #[derive(Debug, Clone)]
@@ -12,8 +12,6 @@ impl ComputerInput for NoInput {
     fn get_next_input(&mut self) -> Option<i64> {
         None
     }
-
-    fn provide_input(&mut self, _value: i64) {}
 }
 
 #[derive(Debug, Clone)]
@@ -33,5 +31,4 @@ impl ComputerInput for OnceInput {
     fn get_next_input(&mut self) -> Option<i64> {
         self._cell.take()
     }
-    fn provide_input(&mut self, _value: i64) {}
 }

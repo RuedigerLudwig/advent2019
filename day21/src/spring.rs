@@ -1,5 +1,5 @@
 use crate::error::SpringError;
-use computer::{Code, InputConverter, ListInput, STTextOutput, STVirtualMachine};
+use computer::{Code, InputConverter, ListInput, STTextVM};
 use std::fmt::Display;
 
 #[allow(dead_code)]
@@ -59,16 +59,16 @@ pub enum Instruction {
 }
 
 impl InputConverter for Instruction {
-    fn send_to(self, vm: &STVirtualMachine<'_>) -> Result<(), computer::ComputerError> {
+    fn send_to(self, input: &mut ListInput) -> Result<(), computer::ComputerError> {
         let as_str = self.to_string();
-        as_str.send_to(vm)
+        as_str.send_to(input)
     }
 }
 
 impl InputConverter for &Instruction {
-    fn send_to(self, vm: &STVirtualMachine<'_>) -> Result<(), computer::ComputerError> {
+    fn send_to(self, input: &mut ListInput) -> Result<(), computer::ComputerError> {
         let as_str = self.to_string();
-        as_str.send_to(vm)
+        as_str.send_to(input)
     }
 }
 
@@ -83,14 +83,15 @@ impl Display for Instruction {
 }
 
 pub struct SpringBotComputer<'a> {
-    vm: STVirtualMachine<'a>,
+    input: ListInput,
+    vm: STTextVM<'a>,
 }
 
 impl<'a> SpringBotComputer<'a> {
     pub fn new(code: Code) -> SpringBotComputer<'a> {
         let input = ListInput::new();
-        let vm = STVirtualMachine::new(code, input);
-        SpringBotComputer { vm }
+        let vm = STTextVM::new_single(code, input.clone());
+        SpringBotComputer { input, vm }
     }
 
     fn go(
@@ -100,32 +101,32 @@ impl<'a> SpringBotComputer<'a> {
         be_silent: bool,
     ) -> Result<i64, SpringError> {
         self.vm.restart();
-        let output = STTextOutput::new(self.vm.get_output());
+        self.input.clear();
 
-        if let Some(question) = output.read_line()? {
+        if let Some(question) = self.vm.read_line()? {
             if !be_silent {
                 println!("{}", question);
             }
             for inst in instructions {
-                inst.send_to(&self.vm)?;
+                inst.send_to(&mut self.input)?;
                 if !be_silent {
                     println!("{}", inst.to_string());
                 }
             }
 
-            enter.send_to(&self.vm)?;
+            enter.send_to(&mut self.input)?;
             if !be_silent {
                 println!("{}", enter)
             }
         }
 
-        while let Some(line) = output.read_line()? {
+        while let Some(line) = self.vm.read_line()? {
             if !be_silent {
                 println!("{}", line);
             }
         }
 
-        if let Some(result) = output.int_value()? {
+        if let Some(result) = self.vm.next()? {
             if result == 10 {
                 Err(SpringError::DoesNotFinish)?
             } else {

@@ -1,7 +1,7 @@
 use std::fmt::Display;
 
 use common::Direction;
-use computer::{Code, ComputerError, ListInput, STOutput, STVirtualMachine};
+use computer::{Code, ComputerError, ListInput, STVirtualMachine};
 
 use crate::error::DroidError;
 
@@ -27,17 +27,15 @@ pub trait DroidComputerInterface {
 }
 
 pub struct ComputerInterface<'a> {
-    output: STOutput<'a>,
     vm: STVirtualMachine<'a>,
+    input: ListInput,
 }
 
 impl<'a> ComputerInterface<'a> {
     pub fn new(code: Code) -> ComputerInterface<'a> {
-        let vm = STVirtualMachine::new(code, ListInput::new());
-        ComputerInterface {
-            output: vm.get_output(),
-            vm,
-        }
+        let input = ListInput::new();
+        let vm = STVirtualMachine::new_single(code, input.clone());
+        ComputerInterface { vm, input }
     }
 
     fn dir_number(direction: Direction) -> i64 {
@@ -53,9 +51,9 @@ impl<'a> ComputerInterface<'a> {
 impl DroidComputerInterface for ComputerInterface<'_> {
     fn send_direction(&mut self, direction: Direction) -> Result<Report, DroidError> {
         let dir_number = ComputerInterface::dir_number(direction);
-        self.vm.provide_input(dir_number);
+        self.input.provide_input(dir_number);
 
-        if let Some(report) = self.output.next()? {
+        if let Some(report) = self.vm.next()? {
             match report {
                 0 => Ok(Report::Wall),
                 1 => Ok(Report::Moved),

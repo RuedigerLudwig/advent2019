@@ -218,7 +218,7 @@ mod tests {
             Ok(self.data.clone())
         }
 
-        fn send_data(&self, _data: &[String], _run_silent: bool) -> Result<i64, ExteriorError> {
+        fn send_data(&mut self, _data: &[String], _run_silent: bool) -> Result<i64, ExteriorError> {
             unimplemented!()
         }
     }
