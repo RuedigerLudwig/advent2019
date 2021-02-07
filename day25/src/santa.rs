@@ -1,4 +1,4 @@
-use computer::{Code, ComputerError, InputConverter, ListInput, TextVM};
+use computer::{Code, ComputerError, ListInput, TextVM};
 
 #[derive(Debug)]
 pub struct SantasShip<'a> {
@@ -41,6 +41,6 @@ impl<'a> SantasShip<'a> {
     }
 
     pub fn send_command(&mut self, command: &str) -> Result<(), ComputerError> {
-        command.trim().send_to(&mut self.input)
+        self.input.provide(command.trim())
     }
 }

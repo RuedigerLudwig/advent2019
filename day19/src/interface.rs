@@ -2,7 +2,7 @@ use crate::error::TractorError;
 use common::pos::Pos as RawPos;
 use computer::{Code, ListInput, VirtualMachine};
 
-pub type Pos = RawPos<i32>;
+pub type Pos = RawPos<i64>;
 
 pub trait TractorInterface {
     fn check_pull(&mut self, position: Pos) -> Result<bool, TractorError>;
@@ -27,8 +27,7 @@ impl TractorInterface for TractorComputerInterface<'_> {
     fn check_pull(&mut self, position: Pos) -> Result<bool, TractorError> {
         self.vm.restart();
         self.input.clear();
-        self.input.provide_input(position.x() as i64);
-        self.input.provide_input(position.y() as i64);
+        self.input.provide(position)?;
 
         self.vm
             .next()?

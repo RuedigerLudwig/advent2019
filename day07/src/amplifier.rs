@@ -32,7 +32,7 @@ impl Amplifier<'_> {
             .iter()
             .map(|&value| {
                 let mut input = ListInput::new();
-                input.provide_input(*value);
+                input.provide_single(*value);
                 let vm = VirtualMachine::new(code.clone(), input.clone());
                 (input, vm)
             })
@@ -43,7 +43,7 @@ impl Amplifier<'_> {
     fn run_once(&mut self, initial_value: i64) -> Result<i64, AmplifierError> {
         let mut value = initial_value;
         for (input, vm) in self.computers.iter_mut() {
-            input.provide_input(value);
+            input.provide_single(value);
             let result = vm.get_all()?;
             if result.len() != 1 {
                 return Err(AmplifierError::NotExactlyOne);
@@ -57,7 +57,7 @@ impl Amplifier<'_> {
         let mut end_value = initial_value;
         loop {
             if let Some((mut input, mut vm)) = self.computers.pop_front() {
-                input.provide_input(end_value);
+                input.provide_single(end_value);
                 if let Some(step_result) = vm.next()? {
                     end_value = step_result;
                     self.computers.push_back((input, vm));

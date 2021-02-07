@@ -69,7 +69,7 @@ impl<'a> Cpu<'a> {
     }
 
     pub fn patch_memory(&mut self, addr: usize, value: i64) {
-        self.set_value(addr, value)
+        self.memory.insert(addr, value);
     }
 
     pub fn step(&mut self) -> Result<StepResult, ComputerError> {
@@ -82,29 +82,35 @@ impl<'a> Cpu<'a> {
                 self.pointer = pointer;
                 Ok(StepResult::Proceed)
             }
+
             Ok(Offset { offset, pointer }) => {
                 self.offset = offset;
                 self.pointer = pointer;
                 Ok(StepResult::Proceed)
             }
+
             Ok(Write {
                 addr,
                 value,
                 pointer,
             }) => {
-                self.set_value(addr, value);
+                self.memory.insert(addr, value);
                 self.pointer = pointer;
                 Ok(StepResult::Proceed)
             }
+
             Ok(Stop { pointer }) => {
                 self.pointer = pointer;
                 Ok(StepResult::Stop)
             }
+
             Ok(Output { value, pointer }) => {
                 self.pointer = pointer;
                 Ok(StepResult::Value(value))
             }
+
             Ok(WaitForInput) => Ok(StepResult::WaitForInput),
+
             Err(err) => {
                 self.crashed = true;
                 Err(err)
@@ -163,11 +169,10 @@ impl<'a> Cpu<'a> {
     }
 
     pub fn get_direct_value(&self, addr: usize) -> Result<i64, ComputerError> {
-        if let Some(value) = self.memory.get(&addr) {
-            Ok(*value)
-        } else {
-            Err(ComputerError::IllegalAddress(addr as i64))
-        }
+        self.memory
+            .get(&addr)
+            .copied()
+            .ok_or(ComputerError::IllegalAddress(addr as i64))
     }
 
     fn get_value_as_address(&self, addr: usize, mode: AddrMode) -> Result<usize, ComputerError> {
@@ -176,14 +181,6 @@ impl<'a> Cpu<'a> {
             Err(ComputerError::IllegalAddress(addr))
         } else {
             Ok(addr as usize)
-        }
-    }
-
-    fn set_value(&mut self, addr: usize, value: i64) {
-        if let Some(cell) = self.memory.get_mut(&addr) {
-            *cell = value;
-        } else {
-            self.memory.insert(addr, value);
         }
     }
 

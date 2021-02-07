@@ -16,7 +16,7 @@ where
         Tractor { interface }
     }
 
-    pub fn scan(&mut self, scan_range: i32) -> Result<i32, TractorError> {
+    pub fn scan(&mut self, scan_range: i64) -> Result<i64, TractorError> {
         let mut count = 0;
         let mut tractor_start = 0;
         let mut tractor_end = 0;
@@ -44,7 +44,7 @@ where
         Ok(count)
     }
 
-    pub fn fit(&mut self, to_fit: i32) -> Result<i32, TractorError> {
+    pub fn fit(&mut self, to_fit: i64) -> Result<i64, TractorError> {
         let mut map = HashMap::new();
 
         let mut tractor_start = 0;

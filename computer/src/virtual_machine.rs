@@ -1,4 +1,4 @@
-use crate::{cpu::Cpu, input::ComputerInput, Code, ComputerError, StepResult};
+use crate::{computer_input::ComputerInput, cpu::Cpu, Code, ComputerError, StepResult};
 
 #[derive(Debug)]
 pub struct VirtualMachine<'a> {

@@ -1,4 +1,4 @@
-use crate::ComputerInput;
+use crate::{input::Input, ComputerError, ComputerInput};
 use std::{cell::RefCell, collections::VecDeque, rc::Rc};
 
 #[derive(Debug, Clone)]
@@ -13,8 +13,12 @@ impl ListInput {
         }
     }
 
-    pub fn provide_input(&mut self, input: i64) {
+    pub fn provide_single(&mut self, input: i64) {
         (*self.list.borrow_mut()).push_back(input)
+    }
+
+    pub fn provide<I: Input>(&mut self, input: I) -> Result<(), ComputerError> {
+        Ok((*self.list.borrow_mut()).extend(input.get_data()?))
     }
 
     pub fn clear(&mut self) {

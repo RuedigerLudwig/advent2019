@@ -65,6 +65,8 @@ impl<T> Display for Bot<T> {
 
 #[cfg(test)]
 mod tests {
+    use std::convert::TryInto;
+
     use super::*;
     use common::turn::Turn;
 
@@ -81,12 +83,12 @@ mod tests {
     }
 
     pub struct TestInterface {
-        list: Vec<(i32, i32)>,
+        list: Vec<(i64, i64)>,
         index: usize,
     }
 
     impl TestInterface {
-        pub fn new(list: Vec<(i32, i32)>) -> TestInterface {
+        pub fn new(list: Vec<(i64, i64)>) -> TestInterface {
             TestInterface { list, index: 0 }
         }
     }
@@ -97,11 +99,7 @@ mod tests {
                 let (paint, turn) = self.list[self.index];
                 self.index += 1;
                 Ok(Some((
-                    if paint == 1 {
-                        Color::White
-                    } else {
-                        Color::Black
-                    },
+                    paint.try_into()?,
                     if turn == 1 { Turn::Right } else { Turn::Left },
                 )))
             } else {

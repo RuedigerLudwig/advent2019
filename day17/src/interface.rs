@@ -1,5 +1,5 @@
 use crate::error::ExteriorError;
-use computer::{Code, InputConverter, ListInput, TextVM};
+use computer::{Code, ListInput, TextVM};
 
 pub trait ExteriorInterface {
     fn get_picture(&mut self) -> Result<Vec<String>, ExteriorError>;
@@ -36,7 +36,7 @@ impl ExteriorInterface for ExteriorComputerInterface<'_> {
         self.vm.patch_memory(0, 2);
         for answer in data {
             if let Some(question) = self.vm.read_line()? {
-                answer.send_to(&mut self.input)?;
+                self.input.provide(answer)?;
                 if !run_silent {
                     println!("{} {}", question, answer);
                 }

@@ -49,7 +49,7 @@ impl<'a> ComputerInterface<'a> {
 impl DroidComputerInterface for ComputerInterface<'_> {
     fn send_direction(&mut self, direction: Direction) -> Result<Report, DroidError> {
         let dir_number = ComputerInterface::dir_number(direction);
-        self.input.provide_input(dir_number);
+        self.input.provide_single(dir_number);
 
         if let Some(report) = self.vm.next()? {
             match report {

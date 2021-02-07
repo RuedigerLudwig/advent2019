@@ -30,8 +30,8 @@ impl<'a> TextVM<'a> {
         while let Some(item) = self.next()? {
             match item {
                 10 => return Ok(Some(result)),
-                n @ 0..=127 => result.push((n as u8) as char),
-                n => return Err(ComputerError::NotValidAsciiInt(n)),
+                0..=127 => result.push((item as u8) as char),
+                _ => return Err(ComputerError::NotValidAsciiInt(item)),
             }
         }
         Ok(None)

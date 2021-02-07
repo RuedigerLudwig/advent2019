@@ -122,7 +122,7 @@ impl Game {
                         let direction = paddle
                             .map(|paddle| (pos.x() - paddle).signum())
                             .unwrap_or(0);
-                        input.provide_input(direction);
+                        input.provide_single(direction);
                     }
                     Command::Tile(_, Tile::Wall) => (),
                 }

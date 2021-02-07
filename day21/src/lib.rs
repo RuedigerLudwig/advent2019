@@ -4,28 +4,31 @@ mod spring;
 
 use computer::Code;
 use error::SpringError;
-use spring::{Instruction, ReadRegister, SpringBotComputer, WriteRegister};
+use spring::{Instruction, Read, SpringBotComputer, Write};
 
 use Instruction::*;
-use ReadRegister::*;
-use WriteRegister::*;
 
 pub fn result() -> Result<(), SpringError> {
     let code = Code::from_file("day21", "input.txt")?;
     let mut springbot = SpringBotComputer::new(code);
 
-    let instructions1 = vec![NOT(C, JOut), AND(D, JOut), NOT(A, TOut), OR(T, JOut)];
+    let instructions1 = vec![
+        NOT(Read::C, Write::J),
+        AND(Read::D, Write::J),
+        NOT(Read::A, Write::T),
+        OR(Read::T, Write::J),
+    ];
     let result1 = springbot.walk(&instructions1, true)?;
     println!("Day 21 - Result 1: {}", result1);
 
     let instructions2 = vec![
-        NOT(B, TOut),
-        NOT(C, JOut),
-        OR(T, JOut),
-        AND(H, JOut),
-        AND(D, JOut),
-        NOT(A, TOut),
-        OR(T, JOut),
+        NOT(Read::B, Write::T),
+        NOT(Read::C, Write::J),
+        OR(Read::T, Write::J),
+        AND(Read::H, Write::J),
+        AND(Read::D, Write::J),
+        NOT(Read::A, Write::T),
+        OR(Read::T, Write::J),
     ];
     let result2 = springbot.run(&instructions2, true)?;
     println!("Day 21 - Result 2: {}", result2);
@@ -42,7 +45,12 @@ mod test {
         let code = Code::from_file("day21", "input.txt")?;
         let mut springbot = SpringBotComputer::new(code);
 
-        let instructions1 = vec![NOT(C, JOut), AND(D, JOut), NOT(A, TOut), OR(T, JOut)];
+        let instructions1 = vec![
+            NOT(Read::C, Write::J),
+            AND(Read::D, Write::J),
+            NOT(Read::A, Write::T),
+            OR(Read::T, Write::J),
+        ];
         springbot.walk(&instructions1, false)?;
 
         Ok(())
@@ -54,13 +62,13 @@ mod test {
         let mut springbot = SpringBotComputer::new(code);
 
         let instructions = vec![
-            NOT(B, TOut),
-            NOT(C, JOut),
-            OR(T, JOut),
-            AND(D, JOut),
-            AND(H, JOut),
-            NOT(A, TOut),
-            OR(T, JOut),
+            NOT(Read::B, Write::T),
+            NOT(Read::C, Write::J),
+            OR(Read::T, Write::J),
+            AND(Read::D, Write::J),
+            AND(Read::H, Write::J),
+            NOT(Read::A, Write::T),
+            OR(Read::T, Write::J),
         ];
         springbot.run(&instructions, false)?;
 

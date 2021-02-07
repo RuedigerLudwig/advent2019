@@ -1,7 +1,8 @@
-use common::{direction::Direction, pos::Pos as RawPos};
+use common::{area::Area as RawArea, direction::Direction, pos::Pos as RawPos};
 use std::collections::HashSet;
 
 type Pos = RawPos<i32>;
+type Area = RawArea<i32>;
 
 #[derive(Debug, PartialEq)]
 pub struct Eris {
@@ -21,12 +22,12 @@ impl Eris {
         Eris { map }
     }
 
-    fn count_neighbors(&self, pos: &Pos) -> usize {
+    fn count_neighbors(map: &HashSet<Pos>, pos: &Pos) -> usize {
         let mut count = 0;
         let mut direction = Direction::East;
         for _ in 0..4 {
             let next_pos = pos + direction;
-            if self.map.contains(&next_pos) {
+            if map.contains(&next_pos) {
                 count += 1;
             }
             direction = direction.turn_left()
@@ -34,48 +35,48 @@ impl Eris {
         count
     }
 
-    pub fn step(&self) -> Eris {
-        let mut map = HashSet::new();
-        for col in 0..5 {
-            for row in 0..5 {
-                let pos = Pos::new(col, row);
-                let bug_is_here = match self.count_neighbors(&pos) {
+    pub fn run_till_stable(&self) -> Eris {
+        let mut ratings = vec![self.rate()];
+        let area = Area::new(Pos::new(0, 0), Pos::new(4, 4));
+        let mut map = self.map.clone();
+
+        loop {
+            map = area
+                .cells(true)
+                .filter(|pos| match Eris::count_neighbors(&map, &pos) {
                     1 => true,
-                    2 => !self.map.contains(&pos),
+                    2 => !map.contains(&pos),
                     _ => false,
-                };
-                if bug_is_here {
-                    map.insert(pos);
-                }
+                })
+                .collect();
+
+            let rating = Eris::rate_map(&map);
+            if ratings.contains(&rating) {
+                break;
             }
+
+            ratings.push(rating);
         }
+
         Eris { map }
     }
 
-    pub fn rate(&self) -> i64 {
+    fn rate_map(map: &HashSet<Pos>) -> i64 {
         let mut result = 0i64;
         let mut power = 1i64;
-        for row in 0..5 {
-            for col in 0..5 {
-                if self.map.contains(&Pos::new(col, row)) {
-                    result += power;
-                }
-                power *= 2;
+
+        let area = Area::new(Pos::new(0, 0), Pos::new(4, 4));
+        for pos in area.cells(true) {
+            if map.contains(&pos) {
+                result += power;
             }
+            power *= 2;
         }
         result
     }
 
-    pub fn run_till_stable(&self) -> Eris {
-        let mut ratings = vec![self.rate()];
-        let mut next_eris = self.step();
-        let mut rating = next_eris.rate();
-        while !ratings.contains(&rating) {
-            ratings.push(rating);
-            next_eris = next_eris.step();
-            rating = next_eris.rate();
-        }
-        next_eris
+    pub fn rate(&self) -> i64 {
+        Eris::rate_map(&self.map)
     }
 }
 
@@ -83,18 +84,6 @@ impl Eris {
 mod test {
     use super::*;
     use common::file::read_data;
-
-    #[test]
-    fn test_one() -> Result<(), std::io::Error> {
-        let input = Eris::parse(&read_data("day24", "example1.txt")?);
-        let expected = Eris::parse(&read_data("day24", "expected11.txt")?);
-
-        let result = input.step();
-
-        assert_eq!(expected, result);
-
-        Ok(())
-    }
 
     #[test]
     fn test_biodiversity() -> Result<(), std::io::Error> {

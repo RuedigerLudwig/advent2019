@@ -1,33 +1,43 @@
-use std::{cell::Cell, fmt::Debug};
+use common::pos::Pos;
 
-pub trait ComputerInput: Debug {
-    fn get_next_input(&mut self) -> Option<i64>;
+use crate::ComputerError;
+
+pub trait Input {
+    fn get_data(&self) -> Result<Vec<i64>, ComputerError>;
 }
 
-#[derive(Debug, Clone)]
-pub struct NoInput {}
-
-impl ComputerInput for NoInput {
-    fn get_next_input(&mut self) -> Option<i64> {
-        None
+impl Input for String {
+    fn get_data(&self) -> Result<Vec<i64>, ComputerError> {
+        self.as_str().get_data()
     }
 }
 
-#[derive(Debug, Clone)]
-pub struct OnceInput {
-    cell: Cell<Option<i64>>,
+impl Input for &String {
+    fn get_data(&self) -> Result<Vec<i64>, ComputerError> {
+        self.as_str().get_data()
+    }
 }
 
-impl OnceInput {
-    pub fn new(value: i64) -> OnceInput {
-        OnceInput {
-            cell: Cell::new(Some(value)),
+impl Input for &str {
+    fn get_data(&self) -> Result<Vec<i64>, ComputerError> {
+        let mut data = Vec::with_capacity(self.len() + 1);
+
+        for ch in self.chars() {
+            let val = ch as i64;
+            if 0 <= val && val <= 127 {
+                data.push(val);
+            } else {
+                return Err(ComputerError::NotValidAsciiChar(ch));
+            }
         }
+        data.push(10);
+
+        Ok(data)
     }
 }
 
-impl ComputerInput for OnceInput {
-    fn get_next_input(&mut self) -> Option<i64> {
-        self.cell.take()
+impl Input for Pos<i64> {
+    fn get_data(&self) -> Result<Vec<i64>, ComputerError> {
+        Ok(vec![self.x(), self.y()])
     }
 }

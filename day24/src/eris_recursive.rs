@@ -77,6 +77,7 @@ impl ErisRecursive {
         let mut map = HashSet::new();
         let mut max_level = self.max_level + 1;
         let mut min_level = self.min_level - 1;
+
         for col in 0..5 {
             for row in 0..5 {
                 if col == 2 && row == 2 {
@@ -94,13 +95,10 @@ impl ErisRecursive {
                     if bug_is_here {
                         map.insert((pos, level));
 
-                        if level == self.max_level + 1
-                            && (row == 0 || row == 4 || col == 0 || col == 4)
-                        {
+                        if level == self.max_level + 1 && (row % 4 == 0 || col % 4 == 0) {
                             max_level += 1;
                         } else if level == self.min_level - 1
-                            && ((col == 2 && (row == 1 || (row == 3)))
-                                || (row == 2 && (col == 1 || (col == 3))))
+                            && ((col == 2 && row % 2 == 1) || (row == 2 && col % 2 == 1))
                         {
                             min_level -= 1;
                         }

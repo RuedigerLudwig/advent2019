@@ -9,7 +9,7 @@ pub struct Area<T> {
 
 impl<T> Area<T>
 where
-    T: Ord + Copy,
+    T: Number + Ord,
 {
     pub fn single(pos: Pos<T>) -> Area<T> {
         Area {
@@ -87,7 +87,7 @@ where
 
 impl<_T> FromIterator<Pos<_T>> for Area<_T>
 where
-    _T: Ord + Copy,
+    _T: Number + Ord,
 {
     fn from_iter<T>(iter: T) -> Self
     where
@@ -108,7 +108,7 @@ where
 
 impl<'a, _T> FromIterator<&'a Pos<_T>> for Area<_T>
 where
-    _T: 'a + Ord + Copy,
+    _T: 'a + Number + Ord,
 {
     fn from_iter<T>(iter: T) -> Self
     where
@@ -129,18 +129,14 @@ where
 
 impl<T> Area<T>
 where
-    T: Copy,
+    T: Number,
 {
+    pub fn cells(&self, ascending: bool) -> CellIterator<'_, T> {
+        CellIterator::new(self, ascending)
+    }
+
     pub fn rows(&self, ascending: bool) -> RowIterator<'_, T> {
-        RowIterator {
-            area: self,
-            row: if ascending {
-                self.lower_left.y()
-            } else {
-                self.upper_right.y()
-            },
-            ascending,
-        }
+        RowIterator::new(self, ascending)
     }
 }
 
@@ -149,6 +145,23 @@ pub struct RowIterator<'a, T> {
     area: &'a Area<T>,
     row: T,
     ascending: bool,
+}
+
+impl<'a, T> RowIterator<'a, T>
+where
+    T: Copy,
+{
+    fn new(area: &'a Area<T>, ascending: bool) -> RowIterator<'a, T> {
+        RowIterator {
+            area,
+            row: if ascending {
+                area.lower_left.y()
+            } else {
+                area.upper_right.y()
+            },
+            ascending,
+        }
+    }
 }
 
 impl<'a, T> Iterator for RowIterator<'a, T>
@@ -228,5 +241,87 @@ where
         } else {
             None
         }
+    }
+}
+
+#[derive(Debug)]
+pub struct CellIterator<'a, T> {
+    area: &'a Area<T>,
+    row: T,
+    col: T,
+    ascending: bool,
+}
+
+impl<'a, T> CellIterator<'a, T>
+where
+    T: Number,
+{
+    pub fn new(area: &'a Area<T>, ascending: bool) -> CellIterator<'a, T> {
+        let (col, row) = if ascending {
+            (area.lower_left.x(), area.lower_left.y())
+        } else {
+            (area.upper_right.x(), area.upper_right.y())
+        };
+        CellIterator {
+            area,
+            row,
+            col,
+            ascending,
+        }
+    }
+}
+
+impl<'a, T> Iterator for CellIterator<'a, T>
+where
+    T: Number,
+{
+    type Item = Pos<T>;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        if (self.ascending && self.row <= self.area.upper_right.y())
+            || (!self.ascending && self.row >= self.area.lower_left.y())
+        {
+            let pos = Pos::new(self.col, self.row);
+            if self.ascending {
+                self.col += T::ONE;
+                if self.col > self.area.upper_right.x() {
+                    self.row += T::ONE;
+                    self.col = self.area.lower_left.x();
+                }
+            } else {
+                self.col -= T::ONE;
+                if self.col < self.area.lower_left.x() {
+                    self.row -= T::ONE;
+                    self.col = self.area.upper_right.x();
+                }
+            }
+
+            Some(pos)
+        } else {
+            None
+        }
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use super::*;
+
+    #[test]
+    fn test_cell_iterator() {
+        let area = Area::new(Pos::new(-1, -1), Pos::new(1, 1));
+        let result = area.cells(true).collect::<Vec<_>>();
+        let expected = vec![
+            Pos::new(-1, -1),
+            Pos::new(0, -1),
+            Pos::new(1, -1),
+            Pos::new(-1, 0),
+            Pos::new(0, 0),
+            Pos::new(1, 0),
+            Pos::new(-1, 1),
+            Pos::new(0, 1),
+            Pos::new(1, 1),
+        ];
+        assert_eq!(result, expected);
     }
 }

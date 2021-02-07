@@ -1,10 +1,10 @@
 use crate::error::SpringError;
-use computer::{Code, InputConverter, ListInput, TextVM};
+use computer::{Code, Input, ListInput, TextVM};
 use std::fmt::Display;
 
 #[allow(dead_code)]
-#[derive(Debug, Clone, Copy)]
-pub enum ReadRegister {
+#[derive(Debug)]
+pub enum Read {
     A,
     B,
     C,
@@ -18,63 +18,55 @@ pub enum ReadRegister {
     J,
 }
 
-impl Display for ReadRegister {
+impl Display for Read {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match *self {
-            ReadRegister::A => write!(f, "A"),
-            ReadRegister::B => write!(f, "B"),
-            ReadRegister::C => write!(f, "C"),
-            ReadRegister::D => write!(f, "D"),
-            ReadRegister::E => write!(f, "E"),
-            ReadRegister::F => write!(f, "F"),
-            ReadRegister::G => write!(f, "G"),
-            ReadRegister::H => write!(f, "H"),
-            ReadRegister::I => write!(f, "I"),
-            ReadRegister::T => write!(f, "T"),
-            ReadRegister::J => write!(f, "J"),
+        match self {
+            Read::A => write!(f, "A"),
+            Read::B => write!(f, "B"),
+            Read::C => write!(f, "C"),
+            Read::D => write!(f, "D"),
+            Read::E => write!(f, "E"),
+            Read::F => write!(f, "F"),
+            Read::G => write!(f, "G"),
+            Read::H => write!(f, "H"),
+            Read::I => write!(f, "I"),
+            Read::T => write!(f, "T"),
+            Read::J => write!(f, "J"),
         }
     }
 }
 
-#[derive(Debug, Clone, Copy)]
-pub enum WriteRegister {
-    TOut,
-    JOut,
+#[derive(Debug)]
+pub enum Write {
+    T,
+    J,
 }
 
-impl Display for WriteRegister {
+impl Display for Write {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match *self {
-            WriteRegister::TOut => write!(f, "T"),
-            WriteRegister::JOut => write!(f, "J"),
+        match self {
+            Write::T => write!(f, "T"),
+            Write::J => write!(f, "J"),
         }
     }
 }
 
 #[derive(Debug)]
 pub enum Instruction {
-    AND(ReadRegister, WriteRegister),
-    OR(ReadRegister, WriteRegister),
-    NOT(ReadRegister, WriteRegister),
+    AND(Read, Write),
+    OR(Read, Write),
+    NOT(Read, Write),
 }
 
-impl InputConverter for Instruction {
-    fn send_to(self, input: &mut ListInput) -> Result<(), computer::ComputerError> {
-        let as_str = self.to_string();
-        as_str.send_to(input)
-    }
-}
-
-impl InputConverter for &Instruction {
-    fn send_to(self, input: &mut ListInput) -> Result<(), computer::ComputerError> {
-        let as_str = self.to_string();
-        as_str.send_to(input)
+impl Input for &Instruction {
+    fn get_data(&self) -> Result<Vec<i64>, computer::ComputerError> {
+        self.to_string().get_data()
     }
 }
 
 impl Display for Instruction {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match *self {
+        match self {
             Instruction::AND(r, w) => write!(f, "AND {} {}", r, w),
             Instruction::OR(r, w) => write!(f, "OR {} {}", r, w),
             Instruction::NOT(r, w) => write!(f, "NOT {} {}", r, w),
@@ -108,16 +100,16 @@ impl<'a> SpringBotComputer<'a> {
                 println!("{}", question);
             }
             for inst in instructions {
-                inst.send_to(&mut self.input)?;
                 if !be_silent {
                     println!("{}", inst.to_string());
                 }
+                self.input.provide(inst)?;
             }
 
-            enter.send_to(&mut self.input)?;
             if !be_silent {
                 println!("{}", enter)
             }
+            self.input.provide(enter)?;
         }
 
         while let Some(line) = self.vm.read_line()? {
