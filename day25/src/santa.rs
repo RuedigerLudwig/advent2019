@@ -2,8 +2,8 @@ use computer::{Code, ComputerError, InputConverter, ListInput, TextVM};
 
 #[derive(Debug)]
 pub struct SantasShip<'a> {
-    _input: ListInput,
-    _vm: TextVM<'a>,
+    input: ListInput,
+    vm: TextVM<'a>,
 }
 
 #[derive(Debug)]
@@ -18,16 +18,13 @@ impl<'a> SantasShip<'a> {
         let input = ListInput::new();
         let vm = TextVM::new(code, input.clone());
 
-        SantasShip {
-            _input: input,
-            _vm: vm,
-        }
+        SantasShip { input, vm }
     }
 
     pub fn get_text(&mut self) -> Result<(ShipState, Vec<String>), ComputerError> {
         let mut lines = Vec::new();
         let mut last_line = "".to_owned();
-        while let Some(line) = self._vm.read_line()? {
+        while let Some(line) = self.vm.read_line()? {
             lines.push(line.to_owned());
             if !line.is_empty() {
                 if line == last_line {
@@ -44,6 +41,6 @@ impl<'a> SantasShip<'a> {
     }
 
     pub fn send_command(&mut self, command: &str) -> Result<(), ComputerError> {
-        command.trim().send_to(&mut self._input)
+        command.trim().send_to(&mut self.input)
     }
 }

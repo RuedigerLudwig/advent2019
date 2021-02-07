@@ -26,22 +26,22 @@ const DESCRIPTIONS: [&'static str; 11] = [
 
 #[derive(Debug)]
 pub struct Interactive<'a> {
-    _code: Code,
-    _ship: SantasShip<'a>,
+    code: Code,
+    ship: SantasShip<'a>,
 }
 
 impl<'a> Interactive<'a> {
     pub fn new(code: Code) -> Interactive<'a> {
         Interactive {
-            _code: code.clone(),
-            _ship: SantasShip::new(code),
+            code: code.clone(),
+            ship: SantasShip::new(code),
         }
     }
 
     pub fn run(&mut self) -> Result<(), DroneError> {
         let mut room_desc = None;
         loop {
-            let (state, lines) = self._ship.get_text()?;
+            let (state, lines) = self.ship.get_text()?;
             let mut is_room_desc = false;
             for line in &lines {
                 println!("{}", line);
@@ -86,9 +86,9 @@ impl<'a> Interactive<'a> {
                     };
 
                     if text == "restart" {
-                        self._ship = SantasShip::new(self._code.clone());
+                        self.ship = SantasShip::new(self.code.clone());
                     } else {
-                        self._ship.send_command(&text)?;
+                        self.ship.send_command(&text)?;
                     }
                 }
 
@@ -105,7 +105,7 @@ impl<'a> Interactive<'a> {
                         match text.as_str() {
                             "quit" => return Ok(()),
                             "restart" => {
-                                self._ship = SantasShip::new(self._code.clone());
+                                self.ship = SantasShip::new(self.code.clone());
                                 break;
                             }
                             _ => (),

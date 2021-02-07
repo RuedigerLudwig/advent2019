@@ -60,7 +60,7 @@ pub enum Command {
 
 #[derive(Debug)]
 pub struct Game {
-    _board: HashMap<Pos, Tile>,
+    board: HashMap<Pos, Tile>,
 }
 
 impl Game {
@@ -71,7 +71,7 @@ impl Game {
             board.insert(pos, tile);
         }
 
-        Ok(Game { _board: board })
+        Ok(Game { board })
     }
 
     fn get_tile(vm: &mut VirtualMachine<'_>) -> Result<Option<Command>, GameError> {
@@ -92,7 +92,7 @@ impl Game {
     }
 
     pub fn count_type(&self, tile: Tile) -> usize {
-        self._board.values().filter(|&other| *other == tile).count()
+        self.board.values().filter(|&other| *other == tile).count()
     }
 
     pub fn free_game(code: Code) -> Result<i64, GameError> {
@@ -136,10 +136,10 @@ impl Game {
 
 impl Display for Game {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        let area = self._board.keys().copied().collect::<Area>();
+        let area = self.board.keys().copied().collect::<Area>();
         for row in area.rows(true) {
             for col in row.cols(true) {
-                let tile = self._board.get(&col).copied().unwrap_or_default();
+                let tile = self.board.get(&col).copied().unwrap_or_default();
                 write!(f, "{}", tile)?;
             }
             writeln!(f, "")?;

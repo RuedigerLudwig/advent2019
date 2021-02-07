@@ -7,26 +7,26 @@ use crate::map::ENTRANCE;
 
 #[derive(Debug, Clone)]
 struct Content {
-    _steps: usize,
-    _required: HashSet<char>,
+    steps: usize,
+    required: HashSet<char>,
 }
 type RefKeyContent<'a> = (&'a char, &'a Content);
 
 impl Content {
     fn clone_with_steps(&self, steps: usize) -> Content {
         let mut clone = self.clone();
-        clone._steps += steps;
+        clone.steps += steps;
         clone
     }
 
     fn clone_with_required(&self, blocking: char) -> Content {
         let mut clone = self.clone();
-        clone._required.insert(blocking);
+        clone.required.insert(blocking);
         clone
     }
 
     fn inc_steps(&mut self, steps: usize) {
-        self._steps += steps;
+        self.steps += steps;
     }
 }
 
@@ -35,13 +35,13 @@ impl Display for Content {
         write!(
             f,
             "{}; {:?}",
-            self._steps,
-            self._required //, self.blocking
+            self.steps,
+            self.required //, self.blocking
         )
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug)]
 pub struct Path {
     content: HashMap<char, HashMap<char, Content>>,
     needed: HashMap<char, usize>,
@@ -83,7 +83,7 @@ impl Path {
                         for (&snd_char, snd_content) in second {
                             next_map.insert(
                                 snd_char,
-                                snd_content.clone_with_steps(fst_content._steps - correct),
+                                snd_content.clone_with_steps(fst_content.steps - correct),
                             );
                         }
                     }
@@ -103,8 +103,8 @@ impl Path {
         entry.insert(
             *key,
             Content {
-                _steps: steps,
-                _required: required.clone(),
+                steps,
+                required: required.clone(),
             },
         );
     }
@@ -163,7 +163,7 @@ pub struct Connection {
 }
 
 pub struct ConnectionIterator<'a> {
-    _iter: Option<Box<dyn Iterator<Item = RefKeyContent<'a>> + 'a>>,
+    iter: Option<Box<dyn Iterator<Item = RefKeyContent<'a>> + 'a>>,
 }
 
 impl<'a> ConnectionIterator<'a> {
@@ -173,11 +173,11 @@ impl<'a> ConnectionIterator<'a> {
                 Box::new(
                     map.iter()
                         .filter(move |(key, _)| !keyring.contains(*key))
-                        .filter(move |(_, content)| keyring.is_superset(&content._required)),
+                        .filter(move |(_, content)| keyring.is_superset(&content.required)),
                 ) as Box<dyn Iterator<Item = RefKeyContent<'_>>>
             });
 
-        ConnectionIterator { _iter: iter }
+        ConnectionIterator { iter }
     }
 }
 
@@ -185,10 +185,10 @@ impl<'a> Iterator for ConnectionIterator<'a> {
     type Item = Connection;
 
     fn next(&mut self) -> Option<Self::Item> {
-        if let Some(ref mut to_map) = self._iter {
+        if let Some(ref mut to_map) = self.iter {
             to_map.next().map(|(&to, content)| Connection {
                 to,
-                steps: content._steps,
+                steps: content.steps,
             })
         } else {
             None

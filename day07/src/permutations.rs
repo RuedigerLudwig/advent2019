@@ -1,67 +1,73 @@
 use std::{cell::RefCell, rc::Rc};
 
-pub struct LexPermutations<T> {
-    _start: usize,
-    _current: usize,
-    _len: usize,
-    _list: Rc<RefCell<Vec<T>>>,
-    _tail: Option<Box<LexPermutations<T>>>,
+pub trait Permutate<T>: IntoIterator<Item = T> {
+    fn permutate(&self) -> Permutations<'_, T>;
 }
 
-impl<T: Clone + Sized> LexPermutations<T> {
-    pub fn new(lst: &[T]) -> LexPermutations<T> {
-        let list = lst.to_owned();
-        LexPermutations {
-            _start: 0,
-            _current: 0,
-            _len: list.len(),
+impl<T> Permutate<T> for Vec<T> {
+    fn permutate(&self) -> Permutations<'_, T> {
+        let list = self.into_iter().collect::<Vec<_>>();
+        Permutations {
+            list: Rc::new(RefCell::new(list)),
 
-            _list: Rc::new(RefCell::new(list)),
-            _tail: None,
+            start: 0,
+            current: 0,
+            len: self.len(),
+            tail: None,
         }
     }
 }
 
-impl<T: Clone + Copy> Iterator for LexPermutations<T> {
-    type Item = Vec<T>;
+pub struct Permutations<'a, T> {
+    list: Rc<RefCell<Vec<&'a T>>>,
+    start: usize,
+    current: usize,
+    len: usize,
+    tail: Option<Box<Permutations<'a, T>>>,
+}
 
-    fn next(&mut self) -> Option<Self::Item> {
-        if self._current >= self._len {
+impl<'a, T> Iterator for Permutations<'a, T> {
+    type Item = Vec<&'a T>;
+
+    fn next(&mut self) -> Option<Vec<&'a T>> {
+        if self.current >= self.len {
             None
-        } else if self._start + 1 == self._len {
-            self._current += 1;
-            Some(self._list.borrow().clone())
+        } else if self.start + 1 == self.len {
+            self.current += 1;
+            Some(self.list.borrow().clone())
         } else {
-            if let Some(mut rest) = self._tail.take() {
+            if let Some(mut rest) = self.tail.take() {
                 if let Some(result) = rest.next() {
-                    self._tail = Some(rest);
+                    self.tail = Some(rest);
                     return Some(result);
                 } else {
-                    let mut borrow = (*self._list).borrow_mut();
-                    for p in self._start..self._current {
+                    let mut borrow = (*self.list).borrow_mut();
+                    // Swapping back for next iteration
+                    for p in self.start..self.current {
                         borrow.swap(p, p + 1);
                     }
 
-                    self._current += 1;
-                    if self._current >= self._len {
+                    self.current += 1;
+                    if self.current >= self.len {
                         return None;
                     }
 
-                    for p in (self._start..self._current).rev() {
+                    // Swapping forward for this iteration
+                    for p in (self.start..self.current).rev() {
                         borrow.swap(p, p + 1);
                     }
                 }
             }
 
-            let mut rest = Box::new(LexPermutations {
-                _len: self._len,
-                _list: self._list.clone(),
-                _current: self._start + 1,
-                _start: self._start + 1,
-                _tail: None,
+            let mut rest = Box::new(Permutations {
+                len: self.len,
+                list: self.list.clone(),
+                current: self.start + 1,
+                start: self.start + 1,
+                tail: None,
             });
             let result = rest.next();
-            self._tail = Some(rest);
+            self.tail = Some(rest);
 
             result
         }
@@ -70,44 +76,43 @@ impl<T: Clone + Copy> Iterator for LexPermutations<T> {
 
 #[cfg(test)]
 mod tests {
-
     use super::*;
 
     #[test]
     fn test_zero() {
         let input: Vec<i32> = vec![];
-        let result: Vec<Vec<i32>> = LexPermutations::new(&input).collect();
-        let expected: Vec<Vec<i32>> = vec![];
+        let result = input.permutate().collect::<Vec<_>>();
+        let expected: Vec<Vec<&i32>> = vec![];
         assert_eq!(result, expected);
     }
 
     #[test]
     fn test_one() {
         let input = vec![1];
-        let result: Vec<Vec<i32>> = LexPermutations::new(&input).collect();
-        let expected = vec![[1]];
+        let result = input.permutate().collect::<Vec<_>>();
+        let expected = vec![[&1]];
         assert_eq!(result, expected);
     }
 
     #[test]
     fn test_two() {
         let input = vec![1, 2];
-        let result: Vec<Vec<i32>> = LexPermutations::new(&input).collect();
-        let expected = vec![[1, 2], [2, 1]];
+        let result = input.permutate().collect::<Vec<_>>();
+        let expected = vec![[&1, &2], [&2, &1]];
         assert_eq!(result, expected);
     }
 
     #[test]
     fn test_three() {
         let input = vec![1, 2, 3];
-        let result: Vec<Vec<i32>> = LexPermutations::new(&input).collect();
+        let result = input.permutate().collect::<Vec<_>>();
         let expected = vec![
-            [1, 2, 3],
-            [1, 3, 2],
-            [2, 1, 3],
-            [2, 3, 1],
-            [3, 1, 2],
-            [3, 2, 1],
+            [&1, &2, &3],
+            [&1, &3, &2],
+            [&2, &1, &3],
+            [&2, &3, &1],
+            [&3, &1, &2],
+            [&3, &2, &1],
         ];
         assert_eq!(result, expected);
     }
@@ -115,32 +120,32 @@ mod tests {
     #[test]
     fn test_four() {
         let input = vec![1, 2, 3, 4];
-        let result: Vec<Vec<i32>> = LexPermutations::new(&input).collect();
+        let result = input.permutate().collect::<Vec<_>>();
         let expected = vec![
-            [1, 2, 3, 4],
-            [1, 2, 4, 3],
-            [1, 3, 2, 4],
-            [1, 3, 4, 2],
-            [1, 4, 2, 3],
-            [1, 4, 3, 2],
-            [2, 1, 3, 4],
-            [2, 1, 4, 3],
-            [2, 3, 1, 4],
-            [2, 3, 4, 1],
-            [2, 4, 1, 3],
-            [2, 4, 3, 1],
-            [3, 1, 2, 4],
-            [3, 1, 4, 2],
-            [3, 2, 1, 4],
-            [3, 2, 4, 1],
-            [3, 4, 1, 2],
-            [3, 4, 2, 1],
-            [4, 1, 2, 3],
-            [4, 1, 3, 2],
-            [4, 2, 1, 3],
-            [4, 2, 3, 1],
-            [4, 3, 1, 2],
-            [4, 3, 2, 1],
+            [&1, &2, &3, &4],
+            [&1, &2, &4, &3],
+            [&1, &3, &2, &4],
+            [&1, &3, &4, &2],
+            [&1, &4, &2, &3],
+            [&1, &4, &3, &2],
+            [&2, &1, &3, &4],
+            [&2, &1, &4, &3],
+            [&2, &3, &1, &4],
+            [&2, &3, &4, &1],
+            [&2, &4, &1, &3],
+            [&2, &4, &3, &1],
+            [&3, &1, &2, &4],
+            [&3, &1, &4, &2],
+            [&3, &2, &1, &4],
+            [&3, &2, &4, &1],
+            [&3, &4, &1, &2],
+            [&3, &4, &2, &1],
+            [&4, &1, &2, &3],
+            [&4, &1, &3, &2],
+            [&4, &2, &1, &3],
+            [&4, &2, &3, &1],
+            [&4, &3, &1, &2],
+            [&4, &3, &2, &1],
         ];
         assert_eq!(result, expected);
     }

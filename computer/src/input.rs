@@ -15,19 +15,19 @@ impl ComputerInput for NoInput {
 
 #[derive(Debug, Clone)]
 pub struct OnceInput {
-    _cell: Cell<Option<i64>>,
+    cell: Cell<Option<i64>>,
 }
 
 impl OnceInput {
     pub fn new(value: i64) -> OnceInput {
         OnceInput {
-            _cell: Cell::new(Some(value)),
+            cell: Cell::new(Some(value)),
         }
     }
 }
 
 impl ComputerInput for OnceInput {
     fn get_next_input(&mut self) -> Option<i64> {
-        self._cell.take()
+        self.cell.take()
     }
 }

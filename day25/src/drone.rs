@@ -14,10 +14,10 @@ struct Room {
 
 #[derive(Debug)]
 pub struct Drone<'a> {
-    _code: Code,
-    _ship: SantasShip<'a>,
-    _carrying: Vec<String>,
-    _avoid: Vec<String>,
+    code: Code,
+    ship: SantasShip<'a>,
+    carrying: Vec<String>,
+    avoid: Vec<String>,
 }
 
 #[derive(Debug)]
@@ -36,10 +36,10 @@ enum SecurityCheck {
 impl<'a> Drone<'a> {
     pub fn new(code: Code) -> Drone<'a> {
         Drone {
-            _code: code.clone(),
-            _ship: SantasShip::new(code),
-            _carrying: Vec::new(),
-            _avoid: Vec::new(),
+            code: code.clone(),
+            ship: SantasShip::new(code),
+            carrying: Vec::new(),
+            avoid: Vec::new(),
         }
     }
 
@@ -59,13 +59,13 @@ impl<'a> Drone<'a> {
     }
 
     fn explore(&mut self, from: Option<Direction>) -> Result<ExploreResult, DroneError> {
-        let (_, lines) = self._ship.get_text()?;
+        let (_, lines) = self.ship.get_text()?;
 
         if let Some(room) = self.analyse_room(&lines) {
             let mut result = ExploreResult::DeadEnd;
 
             for item in &room.items {
-                if !self._avoid.contains(item) {
+                if !self.avoid.contains(item) {
                     if !self.take_item_and_check(item)? {
                         return Ok(ExploreResult::Restart);
                     }
@@ -95,7 +95,7 @@ impl<'a> Drone<'a> {
                 }
 
                 self.say_direction(from)?;
-                self._ship.get_text()?;
+                self.ship.get_text()?;
             }
             Ok(result)
         } else {
@@ -104,8 +104,8 @@ impl<'a> Drone<'a> {
     }
 
     fn restart(&mut self) {
-        self._ship = SantasShip::new(self._code.clone());
-        self._carrying = Vec::new();
+        self.ship = SantasShip::new(self.code.clone());
+        self.carrying = Vec::new();
     }
 
     fn analyse_room(&self, lines: &[String]) -> Option<Room> {
@@ -148,22 +148,22 @@ impl<'a> Drone<'a> {
     }
 
     fn take_item_and_check(&mut self, item: &String) -> Result<bool, DroneError> {
-        self._ship.send_command(&format!("take {}", item))?;
-        let (state, _) = self._ship.get_text()?;
+        self.ship.send_command(&format!("take {}", item))?;
+        let (state, _) = self.ship.get_text()?;
 
         if let ShipState::Text = state {
-            self._ship.send_command("inv")?;
-            let (_, lines) = self._ship.get_text()?;
+            self.ship.send_command("inv")?;
+            let (_, lines) = self.ship.get_text()?;
 
             for line in lines {
                 if line.starts_with("- ") && &line[2..] == item {
-                    self._carrying.push(item.to_owned());
+                    self.carrying.push(item.to_owned());
                     return Ok(true);
                 }
             }
         }
 
-        self._avoid.push(item.to_owned());
+        self.avoid.push(item.to_owned());
         Ok(false)
     }
 
@@ -172,7 +172,7 @@ impl<'a> Drone<'a> {
 
         for &dir in path.iter().rev() {
             self.say_direction(dir)?;
-            let (_, lines) = self._ship.get_text()?;
+            let (_, lines) = self.ship.get_text()?;
             last_lines = Some(lines);
         }
 
@@ -188,26 +188,26 @@ impl<'a> Drone<'a> {
     }
 
     fn drop_single_item(&mut self, item: &str) -> Result<(), DroneError> {
-        self._ship.send_command(&format!("drop {}", item))?;
-        self._ship.get_text()?;
-        self._carrying.retain(|carry| carry != item);
+        self.ship.send_command(&format!("drop {}", item))?;
+        self.ship.get_text()?;
+        self.carrying.retain(|carry| carry != item);
 
         Ok(())
     }
 
     fn drop_all(&mut self) -> Result<(), DroneError> {
-        for item in &self._carrying {
-            self._ship.send_command(&format!("drop {}", item))?;
-            self._ship.get_text()?;
+        for item in &self.carrying {
+            self.ship.send_command(&format!("drop {}", item))?;
+            self.ship.get_text()?;
         }
-        self._carrying.clear();
+        self.carrying.clear();
         Ok(())
     }
 
     fn take_item(&mut self, item: &str) -> Result<(), DroneError> {
-        self._ship.send_command(&format!("take {}", item))?;
-        self._ship.get_text()?;
-        self._carrying.push(item.to_owned());
+        self.ship.send_command(&format!("take {}", item))?;
+        self.ship.get_text()?;
+        self.carrying.push(item.to_owned());
         Ok(())
     }
 
@@ -242,7 +242,7 @@ impl<'a> Drone<'a> {
         self.take_item(item)?;
 
         self.say_direction(direction)?;
-        let (_, lines) = self._ship.get_text()?;
+        let (_, lines) = self.ship.get_text()?;
 
         match self.analyze_security_output(&lines)? {
             SecurityCheck::TooHeavy => (),
@@ -261,7 +261,7 @@ impl<'a> Drone<'a> {
     }
 
     fn try_to_pass(&mut self, direction: Direction) -> Result<String, DroneError> {
-        let choices = self._carrying.clone();
+        let choices = self.carrying.clone();
         self.drop_all()?;
 
         if let Some(result) = self.test_with_weights(&choices, direction)? {
@@ -278,7 +278,7 @@ impl<'a> Drone<'a> {
             Direction::West => "west",
             Direction::South => "south",
         };
-        self._ship.send_command(direction)?;
+        self.ship.send_command(direction)?;
         Ok(())
     }
 }

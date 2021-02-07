@@ -5,7 +5,7 @@ use crate::{
 use std::collections::HashMap;
 
 pub struct Tractor<I> {
-    _interface: I,
+    interface: I,
 }
 
 impl<I> Tractor<I>
@@ -13,9 +13,7 @@ where
     I: TractorInterface,
 {
     pub fn new(interface: I) -> Tractor<I> {
-        Tractor {
-            _interface: interface,
-        }
+        Tractor { interface }
     }
 
     pub fn scan(&mut self, scan_range: i32) -> Result<i32, TractorError> {
@@ -25,7 +23,7 @@ where
         for row in 0..scan_range {
             let mut in_tractor_cone = false;
             for col in tractor_start..scan_range {
-                if self._interface.check_pull(Pos::new(col, row))? {
+                if self.interface.check_pull(Pos::new(col, row))? {
                     in_tractor_cone = true;
                     tractor_start = col;
                     break;
@@ -34,7 +32,7 @@ where
             if in_tractor_cone {
                 tractor_end = tractor_end.max(tractor_start + 1);
                 for col in tractor_end.. {
-                    if !self._interface.check_pull(Pos::new(col, row))? {
+                    if !self.interface.check_pull(Pos::new(col, row))? {
                         tractor_end = col;
                         break;
                     }
@@ -54,7 +52,7 @@ where
         for row in 0.. {
             let mut in_tractor_cone = false;
             for col in tractor_start..tractor_start + to_fit {
-                if self._interface.check_pull(Pos::new(col, row))? {
+                if self.interface.check_pull(Pos::new(col, row))? {
                     in_tractor_cone = true;
                     tractor_start = col;
                     break;
@@ -63,7 +61,7 @@ where
             if in_tractor_cone {
                 tractor_end = tractor_end.max(tractor_start + 1);
                 for col in tractor_end.. {
-                    if !self._interface.check_pull(Pos::new(col, row))? {
+                    if !self.interface.check_pull(Pos::new(col, row))? {
                         tractor_end = col;
                         break;
                     }
@@ -116,7 +114,7 @@ mod tests {
     }
 
     pub struct TestInterface {
-        _map: HashSet<Pos>,
+        map: HashSet<Pos>,
     }
 
     impl TestInterface {
@@ -129,13 +127,13 @@ mod tests {
                     }
                 }
             }
-            TestInterface { _map: map }
+            TestInterface { map }
         }
     }
 
     impl TractorInterface for TestInterface {
         fn check_pull(&mut self, position: Pos) -> Result<bool, TractorError> {
-            Ok(self._map.contains(&position))
+            Ok(self.map.contains(&position))
         }
     }
 }

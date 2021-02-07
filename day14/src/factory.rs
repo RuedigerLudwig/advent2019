@@ -3,15 +3,15 @@ use std::collections::{HashMap, VecDeque};
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Reaction<'a> {
-    _amount: i64,
-    _ingredients: Vec<(&'a str, i64)>,
+    amount: i64,
+    ingredients: Vec<(&'a str, i64)>,
 }
 
 impl<'a> Reaction<'a> {
-    fn new(amount: i64, _ingredients: Vec<(&'a str, i64)>) -> Reaction<'a> {
+    fn new(amount: i64, ingredients: Vec<(&'a str, i64)>) -> Reaction<'a> {
         Reaction {
-            _amount: amount,
-            _ingredients,
+            amount,
+            ingredients,
         }
     }
 
@@ -62,15 +62,15 @@ impl<'a> Factory<'a> {
 
     pub fn get_amount_for(&self, amount: i64, ingredient: &str) -> Option<Vec<(&'a str, i64)>> {
         self.reactions.get(ingredient).map(|reaction| {
-            let packets = 1 + (amount - 1) / reaction._amount;
+            let packets = 1 + (amount - 1) / reaction.amount;
             if packets != 1 {
                 reaction
-                    ._ingredients
+                    .ingredients
                     .iter()
                     .map(|(key, value)| (*key, value * packets))
                     .collect::<Vec<_>>()
             } else {
-                reaction._ingredients.clone()
+                reaction.ingredients.clone()
             }
         })
     }
@@ -124,8 +124,8 @@ mod tests {
     fn parse_simple() -> Result<(), FactoryError> {
         let input = String::from("10 ORE => 10 A");
         let expected = Reaction {
-            _amount: 10,
-            _ingredients: vec![("ORE", 10)],
+            amount: 10,
+            ingredients: vec![("ORE", 10)],
         };
         let (_, result) = Reaction::parse(&input)?;
 

@@ -3,7 +3,7 @@ use std::collections::HashMap;
 use crate::error::OrbitError;
 
 pub struct System<'a> {
-    pub name: &'a str,
+    name: &'a str,
     subsystems: Vec<System<'a>>,
 }
 

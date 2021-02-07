@@ -113,8 +113,8 @@ impl Default for Tile {
 
 #[derive(Debug)]
 pub struct Map {
-    _map: HashMap<Pos, Tile>,
-    _portals: Vec<PortalData>,
+    map: HashMap<Pos, Tile>,
+    portals: Vec<PortalData>,
 }
 
 impl Map {
@@ -244,8 +244,8 @@ impl Map {
         }
 
         Ok(Map {
-            _map: map,
-            _portals: portals,
+            map,
+            portals,
         })
     }
 
@@ -305,32 +305,32 @@ impl Map {
     }
 
     pub fn get_tile(&self, pos: &Pos) -> &Tile {
-        self._map.get(pos).unwrap_or(&Tile::Wall)
+        self.map.get(pos).unwrap_or(&Tile::Wall)
     }
 
     pub fn get_portal(&self, pos: &Pos) -> Result<&PortalData, MapError> {
-        self._portals
+        self.portals
             .iter()
             .find(|pd| pd.position == *pos)
             .ok_or(MapError::UnknownPortal)
     }
 
     pub fn get_entrance(&self) -> &PortalData {
-        self._portals
+        self.portals
             .iter()
             .find(|portal_data| portal_data.is_entrance())
             .unwrap()
     }
 
     pub fn get_exit(&self) -> &PortalData {
-        self._portals
+        self.portals
             .iter()
             .find(|portal_data| portal_data.is_exit())
             .unwrap()
     }
 
     pub fn get_portal_complement(&self, portal_data: &PortalData) -> &PortalData {
-        self._portals
+        self.portals
             .iter()
             .find(|other_portal| {
                 other_portal.id == *portal_data.id

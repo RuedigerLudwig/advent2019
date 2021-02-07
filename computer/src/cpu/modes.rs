@@ -40,7 +40,7 @@ impl TryFrom<i64> for AddrMode {
 
 #[derive(Debug)]
 pub struct AddrModes {
-    _modes: Vec<AddrMode>,
+    modes: Vec<AddrMode>,
 }
 
 impl AddrModes {
@@ -50,13 +50,13 @@ impl AddrModes {
     }
 
     fn new(instruction: i64) -> Result<AddrModes, ComputerError> {
-        let mut _modes = Vec::new();
+        let mut modes = Vec::new();
         let mut instruction = instruction;
         while instruction > 0 {
-            _modes.push(AddrMode::try_from(instruction % 10)?);
+            modes.push(AddrMode::try_from(instruction % 10)?);
             instruction /= 10;
         }
-        Ok(AddrModes { _modes })
+        Ok(AddrModes { modes })
     }
 }
 
@@ -64,6 +64,6 @@ impl Index<usize> for AddrModes {
     type Output = AddrMode;
 
     fn index(&self, index: usize) -> &Self::Output {
-        self._modes.get(index).unwrap_or(&AddrMode::Absolut)
+        self.modes.get(index).unwrap_or(&AddrMode::Absolut)
     }
 }

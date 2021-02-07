@@ -5,9 +5,9 @@ type Pos = RawPos<i32>;
 
 #[derive(Debug, PartialEq)]
 pub struct ErisRecursive {
-    _map: HashSet<(Pos, i32)>,
-    _min_level: i32,
-    _max_level: i32,
+    map: HashSet<(Pos, i32)>,
+    min_level: i32,
+    max_level: i32,
 }
 
 impl ErisRecursive {
@@ -21,9 +21,9 @@ impl ErisRecursive {
             }
         }
         ErisRecursive {
-            _map: map,
-            _min_level: 0,
-            _max_level: 0,
+            map,
+            min_level: 0,
+            max_level: 0,
         }
     }
 
@@ -65,7 +65,7 @@ impl ErisRecursive {
         let mut direction = Direction::East;
         for _ in 0..4 {
             count += self
-                ._map
+                .map
                 .intersection(&self.get_neighbors(pos, level, direction))
                 .count();
             direction = direction.turn_left()
@@ -75,8 +75,8 @@ impl ErisRecursive {
 
     fn step_recursive(&self) -> ErisRecursive {
         let mut map = HashSet::new();
-        let mut max_level = self._max_level + 1;
-        let mut min_level = self._min_level - 1;
+        let mut max_level = self.max_level + 1;
+        let mut min_level = self.min_level - 1;
         for col in 0..5 {
             for row in 0..5 {
                 if col == 2 && row == 2 {
@@ -84,21 +84,21 @@ impl ErisRecursive {
                 }
 
                 let pos = Pos::new(col, row);
-                for level in self._min_level - 1..=self._max_level + 1 {
+                for level in self.min_level - 1..=self.max_level + 1 {
                     let bug_is_here = match self.count_neighbors(&pos, level) {
                         1 => true,
-                        2 => !self._map.contains(&(pos, level)),
+                        2 => !self.map.contains(&(pos, level)),
                         _ => false,
                     };
 
                     if bug_is_here {
                         map.insert((pos, level));
 
-                        if level == self._max_level + 1
+                        if level == self.max_level + 1
                             && (row == 0 || row == 4 || col == 0 || col == 4)
                         {
                             max_level += 1;
-                        } else if level == self._min_level - 1
+                        } else if level == self.min_level - 1
                             && ((col == 2 && (row == 1 || (row == 3)))
                                 || (row == 2 && (col == 1 || (col == 3))))
                         {
@@ -109,9 +109,9 @@ impl ErisRecursive {
             }
         }
         ErisRecursive {
-            _map: map,
-            _max_level: max_level,
-            _min_level: min_level,
+            map,
+            max_level,
+            min_level,
         }
     }
 
@@ -124,7 +124,7 @@ impl ErisRecursive {
     }
 
     pub fn count_bugs(&self) -> usize {
-        self._map.len()
+        self.map.len()
     }
 }
 

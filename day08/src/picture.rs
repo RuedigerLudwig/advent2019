@@ -2,19 +2,19 @@ use std::{collections::HashMap, fmt::Display};
 
 #[derive(Debug)]
 pub struct Picture<'a> {
-    _pixels: &'a str,
-    _width: usize,
-    _height: usize,
-    _layers: usize,
+    pixels: &'a str,
+    width: usize,
+    height: usize,
+    layers: usize,
 }
 
 impl<'a> Picture<'a> {
-    pub fn new(input: &'a str, width: usize, height: usize) -> Picture<'a> {
+    pub fn new(pixels: &'a str, width: usize, height: usize) -> Picture<'a> {
         Picture {
-            _pixels: input,
-            _width: width,
-            _height: height,
-            _layers: input.chars().count() / (width * height),
+            pixels,
+            width,
+            height,
+            layers: pixels.chars().count() / (width * height),
         }
     }
 }
@@ -22,11 +22,11 @@ impl<'a> Picture<'a> {
 impl Picture<'_> {
     pub fn count_number_per_layer(&self) -> Vec<HashMap<char, usize>> {
         let mut result = Vec::new();
-        let mut chars = self._pixels.chars();
+        let mut chars = self.pixels.chars();
 
-        for _ in 0..self._layers {
+        for _ in 0..self.layers {
             let mut map = HashMap::new();
-            for _ in 0..(self._height * self._width) {
+            for _ in 0..(self.height * self.width) {
                 let pixel = chars
                     .next()
                     .expect("We made sure that we have the right amount of chars");
@@ -51,14 +51,14 @@ impl Picture<'_> {
     }
 
     fn display(&self) -> String {
-        let mut result = (0..self._height)
-            .map(|_| ["?"].repeat(self._width))
+        let mut result = (0..self.height)
+            .map(|_| ["?"].repeat(self.width))
             .collect::<Vec<_>>();
 
-        let mut chars = self._pixels.chars();
-        for _ in 0..self._layers {
-            for row in 0..self._height {
-                for col in 0..self._width {
+        let mut chars = self.pixels.chars();
+        for _ in 0..self.layers {
+            for row in 0..self.height {
+                for col in 0..self.width {
                     let pixel = chars
                         .next()
                         .expect("We made sure we have enough chars stored");

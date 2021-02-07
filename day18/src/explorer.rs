@@ -11,15 +11,15 @@ type Pos = RawPos<i32>;
 use Tile::*;
 
 pub struct Explorer<'a> {
-    _map: &'a Map,
-    _explored: HashSet<Pos>,
+    map: &'a Map,
+    explored: HashSet<Pos>,
 }
 
 impl<'a> Explorer<'a> {
     pub fn new(map: &'a Map) -> Explorer<'a> {
         Explorer {
-            _map: map,
-            _explored: HashSet::new(),
+            map,
+            explored: HashSet::new(),
         }
     }
 
@@ -27,7 +27,7 @@ impl<'a> Explorer<'a> {
         let mut face_next = Direction::East;
         for _ in 0..4 {
             let next_pos = position + face_next;
-            if !self._explored.contains(&next_pos) {
+            if !self.explored.contains(&next_pos) {
                 return Some(next_pos);
             }
             face_next = face_next.turn_left();
@@ -39,7 +39,7 @@ impl<'a> Explorer<'a> {
         for x in 0..3 {
             for y in 0..3 {
                 if (x != 1 || y != 1)
-                    && !matches!(self._map.get_tile(start + Pos::new(x - 1, y - 1)), Floor)
+                    && !matches!(self.map.get_tile(start + Pos::new(x - 1, y - 1)), Floor)
                 {
                     return false;
                 }
@@ -47,8 +47,8 @@ impl<'a> Explorer<'a> {
         }
 
         for i in 0..2 {
-            self._explored.insert(start + Pos::new(1 - 2 * i, 0));
-            self._explored.insert(start + Pos::new(0, 1 - 2 * i));
+            self.explored.insert(start + Pos::new(1 - 2 * i, 0));
+            self.explored.insert(start + Pos::new(0, 1 - 2 * i));
         }
         true
     }
@@ -63,8 +63,8 @@ impl<'a> Explorer<'a> {
 
         for corner in corners {
             let actual_start = start + corner;
-            if !self._explored.contains(&actual_start) {
-                self._explored.insert(actual_start);
+            if !self.explored.contains(&actual_start) {
+                self.explored.insert(actual_start);
                 return Some((Tile::Floor, actual_start, 2));
             }
         }
@@ -76,7 +76,7 @@ impl<'a> Explorer<'a> {
         let mut facing = Direction::East;
         for _ in 0..4 {
             let next_pos = pos + facing;
-            if !self._explored.contains(&next_pos) && !matches!(self._map.get_tile(next_pos), Wall)
+            if !self.explored.contains(&next_pos) && !matches!(self.map.get_tile(next_pos), Wall)
             {
                 result += 1;
             }
@@ -94,8 +94,8 @@ impl<'a> Explorer<'a> {
             let mut steps: usize = 1;
             let mut position = start;
             while let Some(next_position) = self.next_step(position) {
-                self._explored.insert(next_position);
-                match self._map.get_tile(next_position) {
+                self.explored.insert(next_position);
+                match self.map.get_tile(next_position) {
                     tile @ Floor => {
                         if self.count_possible_exits(next_position) > 1 {
                             return Some((tile, next_position, steps));
@@ -159,8 +159,8 @@ impl<'a> Explorer<'a> {
     }
 
     pub fn explore_part1(&mut self) -> Result<Path, VaultError> {
-        let start = self._map.get_entrance()?;
-        self._explored.insert(start);
+        let start = self.map.get_entrance()?;
+        self.explored.insert(start);
         let is_special = self.check_and_prepare_special(start);
 
         self.dig_deeper(start, &HashSet::new(), is_special)
@@ -168,8 +168,8 @@ impl<'a> Explorer<'a> {
     }
 
     pub fn explore_part2(&mut self) -> Result<Vec<Path>, VaultError> {
-        let start = self._map.get_entrance()?;
-        self._explored.insert(start);
+        let start = self.map.get_entrance()?;
+        self.explored.insert(start);
         if !(self.check_and_prepare_special(start)) {
             return Err(VaultError::NotSpecial);
         }
@@ -183,7 +183,7 @@ impl<'a> Explorer<'a> {
         .iter()
         .map(|corner| {
             let actual_start = start + *corner;
-            self._explored.insert(actual_start);
+            self.explored.insert(actual_start);
             self.dig_deeper(actual_start, &HashSet::new(), false)
         })
         .collect::<Option<Vec<_>>>()

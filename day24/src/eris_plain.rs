@@ -5,7 +5,7 @@ type Pos = RawPos<i32>;
 
 #[derive(Debug, PartialEq)]
 pub struct Eris {
-    _map: HashSet<Pos>,
+    map: HashSet<Pos>,
 }
 
 impl Eris {
@@ -18,7 +18,7 @@ impl Eris {
                 }
             }
         }
-        Eris { _map: map }
+        Eris { map }
     }
 
     fn count_neighbors(&self, pos: &Pos) -> usize {
@@ -26,7 +26,7 @@ impl Eris {
         let mut direction = Direction::East;
         for _ in 0..4 {
             let next_pos = pos + direction;
-            if self._map.contains(&next_pos) {
+            if self.map.contains(&next_pos) {
                 count += 1;
             }
             direction = direction.turn_left()
@@ -41,7 +41,7 @@ impl Eris {
                 let pos = Pos::new(col, row);
                 let bug_is_here = match self.count_neighbors(&pos) {
                     1 => true,
-                    2 => !self._map.contains(&pos),
+                    2 => !self.map.contains(&pos),
                     _ => false,
                 };
                 if bug_is_here {
@@ -49,7 +49,7 @@ impl Eris {
                 }
             }
         }
-        Eris { _map: map }
+        Eris { map }
     }
 
     pub fn rate(&self) -> i64 {
@@ -57,7 +57,7 @@ impl Eris {
         let mut power = 1i64;
         for row in 0..5 {
             for col in 0..5 {
-                if self._map.contains(&Pos::new(col, row)) {
+                if self.map.contains(&Pos::new(col, row)) {
                     result += power;
                 }
                 power *= 2;

@@ -4,18 +4,18 @@ use crate::{map::ENTRANCE, path::Path};
 
 #[derive(Debug, Eq, Default)]
 pub struct Content {
-    _steps: usize,
-    _nodes: HashMap<usize, char>,
-    _keyring: HashSet<char>,
+    steps: usize,
+    nodes: HashMap<usize, char>,
+    keyring: HashSet<char>,
 }
 
 impl Content {
     pub fn get_steps(&self) -> usize {
-        return self._steps;
+        return self.steps;
     }
 
     fn replace_node(&self, pos: usize, other: char) -> HashMap<usize, char> {
-        let mut new_nodes = self._nodes.clone();
+        let mut new_nodes = self.nodes.clone();
         new_nodes.insert(pos, other);
         new_nodes
     }
@@ -24,17 +24,17 @@ impl Content {
         (0..paths.len())
             .map(|index| {
                 let path = &paths[index];
-                let node = self._nodes.get(&index).unwrap_or(&ENTRANCE);
+                let node = self.nodes.get(&index).unwrap_or(&ENTRANCE);
 
-                path.get_possible_neighbors(*node, &self._keyring)
+                path.get_possible_neighbors(*node, &self.keyring)
                     .filter_map(move |other| {
-                        let mut next_keyring = self._keyring.clone();
+                        let mut next_keyring = self.keyring.clone();
                         next_keyring.insert(other.to);
-                        let next_steps = self._steps + other.steps;
+                        let next_steps = self.steps + other.steps;
                         Some(Content {
-                            _steps: next_steps,
-                            _nodes: self.replace_node(index, other.to),
-                            _keyring: next_keyring,
+                            steps: next_steps,
+                            nodes: self.replace_node(index, other.to),
+                            keyring: next_keyring,
                         })
                     })
             })
@@ -48,14 +48,14 @@ impl Content {
         old_list.retain(|content| {
             let mut keep_old = true;
             for (keep_new, new_item) in keep_new.iter_mut().zip(&new_list) {
-                if content._nodes == new_item._nodes {
-                    if content._steps >= new_item._steps
-                        && content._keyring.is_subset(&new_item._keyring)
+                if content.nodes == new_item.nodes {
+                    if content.steps >= new_item.steps
+                        && content.keyring.is_subset(&new_item.keyring)
                     {
                         keep_old = false;
                         break;
-                    } else if content._steps <= new_item._steps
-                        && content._keyring.is_superset(&new_item._keyring)
+                    } else if content.steps <= new_item.steps
+                        && content.keyring.is_superset(&new_item.keyring)
                     {
                         *keep_new = false;
                     }
@@ -73,13 +73,13 @@ impl Content {
     }
 
     pub fn count_keys(&self) -> usize {
-        self._keyring.len()
+        self.keyring.len()
     }
 }
 
 impl PartialEq for Content {
     fn eq(&self, other: &Self) -> bool {
-        self._steps == other._steps && self._keyring == other._keyring
+        self.steps == other.steps && self.keyring == other.keyring
     }
 }
 
@@ -91,8 +91,8 @@ impl PartialOrd for Content {
 
 impl Ord for Content {
     fn cmp(&self, other: &Self) -> std::cmp::Ordering {
-        self._steps
-            .cmp(&other._steps)
-            .then(self._keyring.len().cmp(&other._keyring.len()).reverse())
+        self.steps
+            .cmp(&other.steps)
+            .then(self.keyring.len().cmp(&other.keyring.len()).reverse())
     }
 }

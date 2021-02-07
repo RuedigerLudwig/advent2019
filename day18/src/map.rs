@@ -50,45 +50,51 @@ impl Display for Tile {
 }
 
 pub struct Map {
-    _data: HashMap<Pos, Tile>,
+    data: HashMap<Pos, Tile>,
 }
 
 impl Map {
     pub fn new(input: &str) -> Result<Map, VaultError> {
-        let mut _data = HashMap::new();
+        let mut data = HashMap::new();
         for (row, line) in (0..).zip(input.lines().rev()) {
             for (col, ch) in (0..).zip(line.chars()) {
                 let tile: Tile = ch.try_into()?;
                 if !matches!(tile, Tile::Wall) {
-                    _data.insert(Pos::new(col, row), tile);
+                    data.insert(Pos::new(col, row), tile);
                 }
             }
         }
-        Ok(Map { _data })
+        Ok(Map { data })
     }
 
     pub fn get_tile(&self, pos: Pos) -> Tile {
-        self._data.get(&pos).copied().unwrap_or_default()
+        self.data.get(&pos).copied().unwrap_or_default()
     }
 
     pub fn get_entrance(&self) -> Result<Pos, VaultError> {
         let maybe = self
-            ._data
+            .data
             .iter()
-            .filter(|(_, &tile)| matches!(tile, Tile::Entrance))
+            .filter_map(|(&pos, &tile)| {
+                if matches!(tile, Tile::Entrance) {
+                    Some(pos)
+                } else {
+                    None
+                }
+            })
             .collect::<Vec<_>>();
 
         if maybe.len() != 1 {
             Err(VaultError::ExactlyOneEntrance)
         } else {
-            Ok(*maybe[0].0)
+            Ok(maybe[0])
         }
     }
 }
 
 impl Display for Map {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        let area = self._data.keys().copied().collect::<Area>();
+        let area = self.data.keys().copied().collect::<Area>();
         let upper = "#".repeat((area.width() + 2) as usize);
 
         writeln!(f, "{}", upper)?;

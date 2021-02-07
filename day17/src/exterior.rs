@@ -48,13 +48,13 @@ impl From<char> for Tile {
 }
 
 pub struct Exterior<I> {
-    _interface: I,
-    _data: HashMap<Pos, Tile>,
+    interface: I,
+    data: HashMap<Pos, Tile>,
 }
 
 impl<I> Exterior<I> {
     fn get_tile(&self, position: Pos) -> Tile {
-        *self._data.get(&position).unwrap_or(&Tile::Space)
+        *self.data.get(&position).unwrap_or(&Tile::Space)
     }
 
     fn is_crossing(&self, position: Pos) -> bool {
@@ -65,7 +65,7 @@ impl<I> Exterior<I> {
     }
 
     fn get_crossings(&self) -> HashSet<Pos> {
-        self._data
+        self.data
             .iter()
             .filter_map(|(&position, &tile)| {
                 if matches!(tile, Tile::Scaffold) && self.is_crossing(position) {
@@ -86,7 +86,7 @@ impl<I> Exterior<I> {
     }
 
     fn find_robot(&self) -> Option<(Pos, Direction)> {
-        self._data.iter().find_map(|(pos, tile)| {
+        self.data.iter().find_map(|(pos, tile)| {
             if let Tile::Robot(dir) = *tile {
                 Some((*pos, dir))
             } else {
@@ -155,19 +155,19 @@ impl<I> Exterior<I>
 where
     I: ExteriorInterface,
 {
-    pub fn new(mut _interface: I) -> Result<Exterior<I>, ExteriorError> {
-        let picture = _interface.get_picture()?;
-        let mut _data = HashMap::new();
+    pub fn new(mut interface: I) -> Result<Exterior<I>, ExteriorError> {
+        let picture = interface.get_picture()?;
+        let mut data = HashMap::new();
         for (row, line) in (0..).zip(picture) {
             for (col, item) in (0..).zip(line.chars()) {
                 let tile: Tile = item.into();
                 if !matches!(tile, Tile::Space) {
-                    _data.insert(Pos::new(col, -row), tile);
+                    data.insert(Pos::new(col, -row), tile);
                 }
             }
         }
 
-        Ok(Exterior { _interface, _data })
+        Ok(Exterior { interface, data })
     }
 
     pub fn run_bot(&mut self, run_silent: bool) -> Result<i64, ExteriorError> {
@@ -177,14 +177,14 @@ where
         } else {
             answers.push(String::from("y"));
         }
-        let result = self._interface.send_data(&answers, run_silent)?;
+        let result = self.interface.send_data(&answers, run_silent)?;
         Ok(result)
     }
 }
 
 impl<I> Display for Exterior<I> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        let area = self._data.keys().copied().collect::<Area>();
+        let area = self.data.keys().copied().collect::<Area>();
         for row in area.rows(false) {
             for cell in row.cols(true) {
                 let tile = self.get_tile(cell);

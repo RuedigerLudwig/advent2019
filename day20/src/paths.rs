@@ -10,39 +10,39 @@ use std::{
 
 #[derive(Debug)]
 pub struct Paths<'a> {
-    pub _known: RefCell<HashMap<&'a PortalData, HashMap<&'a PortalData, i32>>>,
-    _map: &'a Map,
+    known: RefCell<HashMap<&'a PortalData, HashMap<&'a PortalData, i32>>>,
+    map: &'a Map,
 }
 
 impl<'a> Paths<'a> {
     pub fn new(map: &'a Map) -> Paths<'_> {
         Paths {
-            _known: RefCell::new(HashMap::new()),
-            _map: map,
+            known: RefCell::new(HashMap::new()),
+            map,
         }
     }
 
     pub fn get_entrance(&self) -> &PortalData {
-        self._map.get_entrance()
+        self.map.get_entrance()
     }
 
     pub fn get_exit(&self) -> &PortalData {
-        self._map.get_exit()
+        self.map.get_exit()
     }
 
     pub fn get_portal_complement(&self, portal_data: &PortalData) -> &PortalData {
-        self._map.get_portal_complement(portal_data)
+        self.map.get_portal_complement(portal_data)
     }
 
     pub fn get_paths(
         &'a self,
         from: &'a PortalData,
     ) -> Result<HashMap<&'a PortalData, i32>, MapError> {
-        let mut known = self._known.borrow_mut();
+        let mut known = self.known.borrow_mut();
         if let Some(paths) = known.get(&from) {
             Ok(paths.clone())
         } else {
-            let explored = Explorer::explore(self._map, &from.position)?;
+            let explored = Explorer::explore(self.map, &from.position)?;
             known.insert(from, explored);
             Ok(known.get(&from).unwrap().clone())
         }
@@ -50,15 +50,15 @@ impl<'a> Paths<'a> {
 }
 
 struct Explorer<'a> {
-    _explored: HashSet<Pos>,
-    _map: &'a Map,
+    explored: HashSet<Pos>,
+    map: &'a Map,
 }
 
 impl<'a> Explorer<'a> {
     pub fn explore(map: &'a Map, start: &Pos) -> Result<HashMap<&'a PortalData, i32>, MapError> {
         Explorer {
-            _explored: hashset!(*start),
-            _map: map,
+            explored: hashset!(*start),
+            map,
         }
         .dig_into(start, 0)
     }
@@ -68,12 +68,12 @@ impl<'a> Explorer<'a> {
         start: &Pos,
         mut steps: i32,
     ) -> Option<(Tile, Pos, i32)> {
-        if self._explored.contains(&start) {
+        if self.explored.contains(&start) {
             return None;
         }
         let mut pos = *start;
         loop {
-            let tile = *self._map.get_tile(&pos);
+            let tile = *self.map.get_tile(&pos);
             match tile {
                 Tile::Floor => {
                     let mut check_facing = Direction::East;
@@ -81,8 +81,8 @@ impl<'a> Explorer<'a> {
                     let mut next_pos = None;
                     for _ in 0..4 {
                         let check_pos = pos + check_facing;
-                        if !self._explored.contains(&check_pos) {
-                            if let Tile::Wall = self._map.get_tile(&check_pos) {
+                        if !self.explored.contains(&check_pos) {
+                            if let Tile::Wall = self.map.get_tile(&check_pos) {
                             } else {
                                 if next_pos.is_none() {
                                     next_pos = Some(check_pos);
@@ -95,7 +95,7 @@ impl<'a> Explorer<'a> {
                     match free_walks {
                         0 => return None,
                         1 => {
-                            self._explored.insert(pos);
+                            self.explored.insert(pos);
                             pos = next_pos.unwrap();
                             steps += 1;
                         }
@@ -130,7 +130,7 @@ impl<'a> Explorer<'a> {
         let mut result = hashmap! {};
 
         while let Some((tile, next_pos, steps)) = self.next_step(start, steps) {
-            self._explored.insert(next_pos);
+            self.explored.insert(next_pos);
             match tile {
                 Tile::Floor => {
                     let following = self.dig_into(&next_pos, steps)?;
@@ -138,7 +138,7 @@ impl<'a> Explorer<'a> {
                 }
 
                 Tile::Portal => {
-                    let portal_data = self._map.get_portal(&next_pos)?;
+                    let portal_data = self.map.get_portal(&next_pos)?;
                     result.insert(portal_data, steps);
                 }
 

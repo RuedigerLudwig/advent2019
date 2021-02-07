@@ -6,60 +6,60 @@ use crate::error::WireError;
 
 #[derive(Debug, PartialEq, Eq)]
 pub struct Section {
-    _direction: Direction,
-    _steps: i32,
-    _start: Pos<i32>,
+    direction: Direction,
+    steps: i32,
+    start: Pos<i32>,
 }
 
 impl Section {
-    pub fn new(dir: Direction, steps: i32) -> Section {
+    pub fn new(direction: Direction, steps: i32) -> Section {
         Section {
-            _start: Pos::default(),
-            _direction: dir,
-            _steps: steps,
+            start: Pos::default(),
+            direction,
+            steps,
         }
     }
 
     pub fn steps(&self) -> i32 {
-        self._steps
+        self.steps
     }
 
     pub fn end(&self) -> Pos<i32> {
-        self._start + self._direction.as_pos() * self._steps
+        self.start + self.direction.as_pos() * self.steps
     }
 
     pub fn set_start(&self, start: Pos<i32>) -> Section {
         Section {
-            _start: start,
-            _direction: self._direction,
-            _steps: self._steps,
+            start,
+            direction: self.direction,
+            steps: self.steps,
         }
     }
 
     pub fn distance(&self, pos: Pos<i32>) -> i32 {
-        (pos - self._start).abs()
+        (pos - self.start).abs()
     }
 
     pub fn intersection(&self, other: &Section) -> Option<Pos<i32>> {
-        if !self._direction.is_perpendicular(&other._direction) {
+        if !self.direction.is_perpendicular(&other.direction) {
             None
         } else {
             let (left_right, down_up) =
-                if self._direction == Direction::East || self._direction == Direction::West {
+                if self.direction == Direction::East || self.direction == Direction::West {
                     (self, other)
                 } else {
                     (other, self)
                 };
-            let (left, right) = if left_right._direction == Direction::East {
-                (left_right._start, left_right.end())
+            let (left, right) = if left_right.direction == Direction::East {
+                (left_right.start, left_right.end())
             } else {
-                (left_right.end(), left_right._start)
+                (left_right.end(), left_right.start)
             };
 
-            let (down, up) = if down_up._direction == Direction::North {
-                (down_up._start, down_up.end())
+            let (down, up) = if down_up.direction == Direction::North {
+                (down_up.start, down_up.end())
             } else {
-                (down_up.end(), down_up._start)
+                (down_up.end(), down_up.start)
             };
 
             let x = down.x();

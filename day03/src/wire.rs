@@ -5,7 +5,7 @@ use std::str::FromStr;
 
 #[derive(Debug)]
 pub struct Wire {
-    _path: Vec<Section>,
+    path: Vec<Section>,
 }
 
 impl Wire {
@@ -17,15 +17,15 @@ impl Wire {
             endpoint = next_section.end();
             my_path.push(next_section);
         }
-        Wire { _path: my_path }
+        Wire { path: my_path }
     }
 
     pub fn get_intersections(&self, other: &Wire) -> Vec<(Pos<i32>, i32)> {
         let mut result = Vec::new();
         let mut len1 = 0;
-        for sec1 in &self._path {
+        for sec1 in &self.path {
             let mut len2 = 0;
-            for sec2 in &other._path {
+            for sec2 in &other.path {
                 if let Some(crossing) = sec1.intersection(&sec2) {
                     let add = sec1.distance(crossing) + sec2.distance(crossing);
                     result.push((crossing, len1 + len2 + add));
@@ -81,7 +81,7 @@ mod tests {
             Section::new(Direction::South, 14).set_start(Pos::new(6, 7)),
             Section::new(Direction::West, 4).set_start(Pos::new(6, -7)),
         ];
-        assert_eq!(expected, wire._path);
+        assert_eq!(expected, wire.path);
 
         Ok(())
     }

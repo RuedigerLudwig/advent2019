@@ -60,7 +60,7 @@ impl Node {
     }
 
     pub fn get_id(&self) -> usize {
-        return self.id;
+        self.id
     }
 
     pub fn feed(&self, x: i64, y: i64) {

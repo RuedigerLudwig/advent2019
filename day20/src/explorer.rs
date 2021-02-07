@@ -46,13 +46,13 @@ impl<'a> Portal<'a> {
 }
 
 pub struct Explorer<'a> {
-    _paths: Paths<'a>,
+    paths: Paths<'a>,
 }
 
 impl<'a> Explorer<'a> {
     pub fn new(map: &'a Map) -> Explorer<'a> {
         Explorer {
-            _paths: Paths::new(map),
+            paths: Paths::new(map),
         }
     }
 
@@ -71,7 +71,7 @@ impl<'a> Explorer<'a> {
 
         let mut shortest_paths = HashMap::new();
 
-        let entrance = self._paths.get_entrance();
+        let entrance = self.paths.get_entrance();
         let mut check_list = vec![Portal {
             portal_data: entrance,
             steps: 0,
@@ -86,11 +86,11 @@ impl<'a> Explorer<'a> {
             } else {
                 *shortest = item.steps;
             }
-            let neighbors = item.get_neighbors(&self._paths)?;
+            let neighbors = item.get_neighbors(&self.paths)?;
             check_list.extend(neighbors);
         }
 
-        let exit = self._paths.get_exit();
+        let exit = self.paths.get_exit();
         shortest_paths
             .get(&exit.id)
             .copied()
