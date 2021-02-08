@@ -1,10 +1,10 @@
-use std::{cell::Cell, fmt::Debug};
+use std::fmt::Debug;
 
 pub trait ComputerInput: Debug {
     fn get_next_input(&mut self) -> Option<i64>;
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug)]
 pub struct NoInput {}
 
 impl ComputerInput for NoInput {
@@ -13,16 +13,14 @@ impl ComputerInput for NoInput {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug)]
 pub struct OnceInput {
-    cell: Cell<Option<i64>>,
+    cell: Option<i64>,
 }
 
 impl OnceInput {
     pub fn new(value: i64) -> OnceInput {
-        OnceInput {
-            cell: Cell::new(Some(value)),
-        }
+        OnceInput { cell: Some(value) }
     }
 }
 

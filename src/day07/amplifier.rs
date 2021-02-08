@@ -1,4 +1,5 @@
-use super::{error::AmplifierError, permutations::Permutate};
+use super::error::AmplifierError;
+use crate::common::permutations::*;
 use crate::computer::{Code, ListInput, VirtualMachine};
 use std::collections::VecDeque;
 

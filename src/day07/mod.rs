@@ -1,6 +1,5 @@
 mod amplifier;
 mod error;
-mod permutations;
 
 use crate::computer::Code;
 use amplifier::Amplifier;

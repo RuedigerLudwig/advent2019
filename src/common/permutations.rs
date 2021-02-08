@@ -1,10 +1,10 @@
 use std::{cell::RefCell, rc::Rc};
 
-pub trait Permutate<T>: IntoIterator<Item = T> {
+pub trait PermutateExt<T>: IntoIterator<Item = T> {
     fn permutate(&self) -> Permutations<'_, T>;
 }
 
-impl<T> Permutate<T> for Vec<T> {
+impl<T> PermutateExt<T> for Vec<T> {
     fn permutate(&self) -> Permutations<'_, T> {
         let list = self.into_iter().collect::<Vec<_>>();
         Permutations {
@@ -13,7 +13,7 @@ impl<T> Permutate<T> for Vec<T> {
             start: 0,
             current: 0,
             len: self.len(),
-            tail: None,
+            maybe_tail: None,
         }
     }
 }
@@ -23,7 +23,7 @@ pub struct Permutations<'a, T> {
     start: usize,
     current: usize,
     len: usize,
-    tail: Option<Box<Permutations<'a, T>>>,
+    maybe_tail: Option<Box<Permutations<'a, T>>>,
 }
 
 impl<'a, T> Iterator for Permutations<'a, T> {
@@ -36,13 +36,13 @@ impl<'a, T> Iterator for Permutations<'a, T> {
             self.current += 1;
             Some(self.list.borrow().clone())
         } else {
-            if let Some(mut rest) = self.tail.take() {
-                if let Some(result) = rest.next() {
-                    self.tail = Some(rest);
+            if let Some(mut tail) = self.maybe_tail.take() {
+                if let Some(result) = tail.next() {
+                    self.maybe_tail = Some(tail);
                     return Some(result);
                 } else {
                     let mut borrow = (*self.list).borrow_mut();
-                    // Swapping back for next iteration
+                    // Swapping prev first item back to its original osition
                     for p in self.start..self.current {
                         borrow.swap(p, p + 1);
                     }
@@ -52,7 +52,7 @@ impl<'a, T> Iterator for Permutations<'a, T> {
                         return None;
                     }
 
-                    // Swapping forward for this iteration
+                    // Getting next first item for next iteration
                     for p in (self.start..self.current).rev() {
                         borrow.swap(p, p + 1);
                     }
@@ -64,10 +64,10 @@ impl<'a, T> Iterator for Permutations<'a, T> {
                 list: self.list.clone(),
                 current: self.start + 1,
                 start: self.start + 1,
-                tail: None,
+                maybe_tail: None,
             });
             let result = rest.next();
-            self.tail = Some(rest);
+            self.maybe_tail = Some(rest);
 
             result
         }
