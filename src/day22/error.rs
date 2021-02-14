@@ -1,5 +1,7 @@
 use thiserror::Error;
 
+use crate::common::math::MathError;
+
 #[derive(Debug, Error)]
 pub enum CardError {
     #[error("Unknown Technique: {0}")]
@@ -15,6 +17,12 @@ pub enum CardError {
         "This in only implemented for shuffles with fixpoints, i.e. decksizes with prime cards"
     )]
     NotImplemented,
+
+    #[error("MathError: {source}")]
+    MathError {
+        #[from]
+        source: MathError,
+    },
 
     #[error("IoError: {source}")]
     IoError {

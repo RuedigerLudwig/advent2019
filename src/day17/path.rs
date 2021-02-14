@@ -1,6 +1,8 @@
 use crate::common::turn::Turn;
 use std::fmt::Display;
 
+use super::error::ExteriorError;
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Path {
     Left(usize),
@@ -9,11 +11,11 @@ pub enum Path {
 }
 
 impl Path {
-    pub fn new(turn: Turn, steps: usize) -> Path {
+    pub fn new(turn: Turn, steps: usize) -> Result<Path, ExteriorError> {
         match turn {
-            Turn::Right => Path::Right(steps),
-            Turn::Left => Path::Left(steps),
-            _ => panic!("Illegal turn for path {:?}", turn),
+            Turn::Right => Ok(Path::Right(steps)),
+            Turn::Left => Ok(Path::Left(steps)),
+            _ => Err(ExteriorError::IllegalTurn(turn)),
         }
     }
 

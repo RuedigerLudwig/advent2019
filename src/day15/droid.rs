@@ -1,5 +1,7 @@
-use crate::common::pos::Pos as RawPos;
+use turn::Turn;
+
 use crate::common::{area::Area as RawArea, direction::Direction};
+use crate::common::{pos::Pos as RawPos, turn};
 use std::{collections::HashMap, fmt::Display};
 
 use super::{
@@ -80,7 +82,7 @@ impl<I> Droid<I> {
             if self.get_tile(self.position + face_next) == Tile::Unknown {
                 return Some(face_next);
             }
-            face_next = face_next.turn_left();
+            face_next = face_next + Turn::Left;
         }
         None
     }
@@ -92,7 +94,7 @@ impl<I> Droid<I> {
                 Tile::Unknown | Tile::Floor => return Some(face_next),
                 _ => (),
             }
-            face_next = face_next.turn_left();
+            face_next = face_next + Turn::Left;
         }
         None
     }
@@ -114,7 +116,7 @@ where
     fn backtrack_exploring(&mut self, path: &mut Vec<Direction>) -> Result<Direction, DroidError> {
         loop {
             if let Some(prev_dir) = path.pop() {
-                let facing = prev_dir.turn_back();
+                let facing = prev_dir + Turn::Back;
                 match self.interface.send_direction(facing)? {
                     Report::Moved => {
                         self.position = self.position + facing;
@@ -174,7 +176,7 @@ where
         path: &mut Vec<Direction>,
     ) -> Result<Option<Direction>, DroidError> {
         while let Some(prev_dir) = path.pop() {
-            let facing = prev_dir.turn_back();
+            let facing = prev_dir + Turn::Back;
 
             if matches!(
                 self.interface.send_direction(facing)?,
@@ -235,17 +237,18 @@ where
 
 impl<I> Display for Droid<I> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        let area = self.layout.keys().copied().collect::<Area>();
-        for row in area.rows(false) {
-            for cell in row.cols(true) {
-                if cell == self.position {
-                    write!(f, "D")?;
-                } else {
-                    let tile = self.get_tile(cell);
-                    write!(f, "{}", tile)?;
+        if let Some(area) = Area::from_iterator(self.layout.keys()) {
+            for row in area.rows(false) {
+                for cell in row.cols(true) {
+                    if cell == self.position {
+                        write!(f, "D")?;
+                    } else {
+                        let tile = self.get_tile(cell);
+                        write!(f, "{}", tile)?;
+                    }
                 }
+                writeln!(f, "")?;
             }
-            writeln!(f, "")?;
         }
         writeln!(f, "--")
     }

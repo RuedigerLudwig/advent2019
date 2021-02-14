@@ -3,7 +3,7 @@ use super::{
     map::{Map, Tile},
     path::Path,
 };
-use crate::common::{direction::Direction, pos::Pos as RawPos};
+use crate::common::{direction::Direction, pos::Pos as RawPos, turn::Turn};
 use std::collections::HashSet;
 
 type Pos = RawPos<i32>;
@@ -30,7 +30,7 @@ impl<'a> Explorer<'a> {
             if !self.explored.contains(&next_pos) {
                 return Some(next_pos);
             }
-            face_next = face_next.turn_left();
+            face_next = face_next + Turn::Left;
         }
         None
     }
@@ -79,7 +79,7 @@ impl<'a> Explorer<'a> {
             if !self.explored.contains(&next_pos) && !matches!(self.map.get_tile(next_pos), Wall) {
                 result += 1;
             }
-            facing = facing.turn_left();
+            facing = facing + Turn::Left;
         }
         result
     }

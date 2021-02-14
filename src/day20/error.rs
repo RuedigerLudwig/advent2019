@@ -5,6 +5,10 @@ pub enum MapError {
     #[error("Unknown tile {0}")]
     UnknownTile(char),
 
+    #[cfg(test)]
+    #[error("Test did not produce expected error")]
+    ErrorNotRaised,
+
     #[error("Did not find Portal")]
     UnknownPortal,
 

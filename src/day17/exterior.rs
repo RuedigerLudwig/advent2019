@@ -123,14 +123,14 @@ impl<I> Exterior<I> {
                         position = position + facing;
                     }
                     Turn::Back => {
-                        result.push(Path::new(last_turn, steps));
+                        result.push(Path::new(last_turn, steps)?);
                         return Ok(result);
                     }
                     turn @ Turn::Left | turn @ Turn::Right => {
-                        result.push(Path::new(last_turn, steps));
+                        result.push(Path::new(last_turn, steps)?);
                         last_turn = turn;
                         steps = 1;
-                        facing = facing.turn(turn);
+                        facing = facing + turn;
                         position = position + facing
                     }
                 }
@@ -184,13 +184,14 @@ where
 
 impl<I> Display for Exterior<I> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        let area = self.data.keys().copied().collect::<Area>();
-        for row in area.rows(false) {
-            for cell in row.cols(true) {
-                let tile = self.get_tile(cell);
-                write!(f, "{}", tile)?;
+        if let Some(area) = Area::from_iterator(self.data.keys()) {
+            for row in area.rows(false) {
+                for cell in row.cols(true) {
+                    let tile = self.get_tile(cell);
+                    write!(f, "{}", tile)?;
+                }
+                writeln!(f, "")?;
             }
-            writeln!(f, "")?;
         }
         writeln!(f, "--")
     }

@@ -1,4 +1,4 @@
-use crate::common::{area::Area as RawArea, direction::Direction, pos::Pos as RawPos};
+use crate::common::{area::Area as RawArea, direction::Direction, pos::Pos as RawPos, turn::Turn};
 use std::collections::HashSet;
 
 type Pos = RawPos<i32>;
@@ -30,7 +30,7 @@ impl Eris {
             if map.contains(&next_pos) {
                 count += 1;
             }
-            direction = direction.turn_left()
+            direction = direction + Turn::Left;
         }
         count
     }

@@ -1,4 +1,4 @@
-#![feature(iter_map_while)]
+#![feature(iter_map_while, result_flattening)]
 #![warn(rust_2018_idioms, missing_debug_implementations)]
 mod common;
 mod computer;

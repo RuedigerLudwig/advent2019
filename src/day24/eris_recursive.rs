@@ -1,5 +1,5 @@
 use crate::{
-    common::{direction::Direction, pos::Pos as RawPos},
+    common::{direction::Direction, pos::Pos as RawPos, turn::Turn},
     hashset,
 };
 use std::collections::HashSet;
@@ -71,7 +71,7 @@ impl ErisRecursive {
                 .map
                 .intersection(&self.get_neighbors(pos, level, direction))
                 .count();
-            direction = direction.turn_left()
+            direction = direction + Turn::Left;
         }
         count
     }

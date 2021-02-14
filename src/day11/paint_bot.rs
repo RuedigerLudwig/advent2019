@@ -34,7 +34,7 @@ impl<T: BotComputerInterface> Bot<T> {
         let mut color = start_color;
         while let Some((paint_color, turn)) = self.interface.accept_input(color)? {
             self.board.insert(self.position, paint_color);
-            self.facing = self.facing.turn(turn);
+            self.facing = self.facing + turn;
             self.position = self.position + self.facing.as_pos();
             color = self.board.get(&self.position).copied().unwrap_or_default();
         }
@@ -51,12 +51,13 @@ impl<T> Bot<T> {
 
 impl<T> Display for Bot<T> {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        let extent: Area = self.board.keys().collect();
-        for row in extent.rows(false) {
-            for pos in row.cols(true) {
-                write!(f, "{}", self.board.get(&pos).copied().unwrap_or_default())?;
+        if let Some(extent) = Area::from_iterator(self.board.keys()) {
+            for row in extent.rows(false) {
+                for pos in row.cols(true) {
+                    write!(f, "{}", self.board.get(&pos).copied().unwrap_or_default())?;
+                }
+                writeln!(f, "")?;
             }
-            writeln!(f, "")?;
         }
         write!(f, "")
     }

@@ -327,14 +327,14 @@ impl Map {
         self.portals
             .iter()
             .find(|portal_data| portal_data.is_entrance())
-            .unwrap()
+            .expect("We made sure to have exactly one portal previously")
     }
 
     pub fn get_exit(&self) -> &PortalData {
         self.portals
             .iter()
             .find(|portal_data| portal_data.is_exit())
-            .unwrap()
+            .expect("We made sure to have exactly one exit previously")
     }
 
     pub fn get_portal_complement(&self, portal_data: &PortalData) -> &PortalData {
@@ -346,6 +346,6 @@ impl Map {
                         .portal_type
                         .is_complement(&portal_data.portal_type)
             })
-            .unwrap()
+            .expect("We made sure to have a complement for each portal previously")
     }
 }

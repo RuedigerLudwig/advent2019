@@ -2,7 +2,7 @@ use super::{
     error::DroneError,
     santa::{SantasShip, ShipState},
 };
-use crate::common::direction::Direction;
+use crate::common::{direction::Direction, turn::Turn};
 use crate::computer::Code;
 
 #[derive(Debug)]
@@ -76,7 +76,7 @@ impl<'a> Drone<'a> {
                 for &exit in &room.exits {
                     if from.map(|from| from != exit).unwrap_or(true) {
                         self.say_direction(exit)?;
-                        let dir_result = self.explore(Some(exit.turn_back()))?;
+                        let dir_result = self.explore(Some(exit + Turn::Back))?;
                         match dir_result {
                             ExploreResult::Restart => return Ok(ExploreResult::Restart),
                             ExploreResult::SecurityPath(_) => result = dir_result,
@@ -90,7 +90,7 @@ impl<'a> Drone<'a> {
 
             if let Some(from) = from {
                 if let ExploreResult::SecurityPath(mut path) = result {
-                    path.push(from.turn_back());
+                    path.push(from + Turn::Back);
                     result = ExploreResult::SecurityPath(path);
                 }
 
@@ -168,22 +168,26 @@ impl<'a> Drone<'a> {
     }
 
     fn go_to_security_check(&mut self, path: &[Direction]) -> Result<Direction, DroneError> {
-        let mut last_lines = None;
+        if !path.is_empty() {
+            let mut last_lines = None;
 
-        for &dir in path.iter().rev() {
-            self.say_direction(dir)?;
-            let (_, lines) = self.ship.get_text()?;
-            last_lines = Some(lines);
-        }
+            for &dir in path.iter().rev() {
+                self.say_direction(dir)?;
+                let (_, lines) = self.ship.get_text()?;
+                last_lines = Some(lines);
+            }
 
-        let last_lines = last_lines.unwrap();
-        let room = self.analyse_room(&last_lines).unwrap();
-        for exit in room.exits {
-            if exit != path[0].turn_back() {
-                return Ok(exit);
+            let last_lines =
+                last_lines.expect("We know we made at least one step, so there is a last room");
+            let room = self
+                .analyse_room(&last_lines)
+                .expect("We made sure to be in a room");
+            for exit in room.exits {
+                if exit != path[0] + Turn::Back {
+                    return Ok(exit);
+                }
             }
         }
-
         Err(DroneError::NoSecurityExit)
     }
 

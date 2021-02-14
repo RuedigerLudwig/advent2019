@@ -2,7 +2,10 @@ use super::{
     error::MapError,
     map::{Map, PortalData, Pos, Tile},
 };
-use crate::{common::direction::Direction, hashmap, hashset};
+use crate::{
+    common::{direction::Direction, turn::Turn},
+    hashmap, hashset,
+};
 use std::{
     cell::RefCell,
     collections::{HashMap, HashSet},
@@ -44,7 +47,7 @@ impl<'a> Paths<'a> {
         } else {
             let explored = Explorer::explore(self.map, &from.position)?;
             known.insert(from, explored);
-            Ok(known.get(&from).unwrap().clone())
+            Ok(known[&from].clone())
         }
     }
 }
@@ -90,13 +93,13 @@ impl<'a> Explorer<'a> {
                                 free_walks += 1;
                             }
                         }
-                        check_facing = check_facing.turn_left();
+                        check_facing = check_facing + Turn::Left;
                     }
                     match free_walks {
                         0 => return None,
                         1 => {
                             self.explored.insert(pos);
-                            pos = next_pos.unwrap();
+                            pos = next_pos.expect("This is safe,because we have one free_walk");
                             steps += 1;
                         }
                         _ => return Some((tile, pos, steps)),
@@ -116,7 +119,7 @@ impl<'a> Explorer<'a> {
             if let Some(result) = self.walk_to_next_interesting(&next_pos, steps + 1) {
                 return Some(result);
             }
-            facing = facing.turn_left();
+            facing = facing + Turn::Left;
         }
 
         None

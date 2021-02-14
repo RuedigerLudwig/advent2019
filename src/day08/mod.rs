@@ -10,7 +10,7 @@ pub fn result() -> Result<(), std::io::Error> {
     if let Some(result) = picture.get_magic_number() {
         println!("Day 08 - Result 1: {}", result);
     } else {
-        panic!("There is no magic number in my picture");
+        println!("Day 08 - Result 1: There is no magic number in my picture");
     }
 
     println!("Day 08 - Result 2:\n{}", picture);

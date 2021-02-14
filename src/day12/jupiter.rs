@@ -1,7 +1,7 @@
 use super::error::JupiterError;
 use crate::common::math;
 use regex::Regex;
-use std::{fmt::Debug, ops::Index, str::FromStr};
+use std::{fmt::Debug, str::FromStr};
 
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
 pub struct Component {
@@ -80,6 +80,15 @@ impl Moon {
         (self.x.pos.abs() + self.y.pos.abs() + self.z.pos.abs())
             * (self.x.vel.abs() + self.y.vel.abs() + self.z.vel.abs())
     }
+
+    fn get(&self, index: usize) -> Option<Component> {
+        match index {
+            0 => Some(self.x),
+            1 => Some(self.y),
+            2 => Some(self.z),
+            _ => None,
+        }
+    }
 }
 
 impl FromStr for Moon {
@@ -94,19 +103,6 @@ impl FromStr for Moon {
             Ok(Moon::new(x, y, z))
         } else {
             Err(JupiterError::NoValidMoon(s.to_owned()))
-        }
-    }
-}
-
-impl Index<usize> for Moon {
-    type Output = Component;
-
-    fn index(&self, index: usize) -> &Self::Output {
-        match index {
-            0 => &self.x,
-            1 => &self.y,
-            2 => &self.z,
-            _ => panic!("Index needs to be 0, 1, 2 got: {}", index),
         }
     }
 }
@@ -151,7 +147,15 @@ impl Jupiter {
     pub fn get_repeat_steps(&self) -> i64 {
         (0..3)
             .map(|component| {
-                Component::calc_repeat(self.moons.iter().map(|moon| moon[component]).collect())
+                Component::calc_repeat(
+                    self.moons
+                        .iter()
+                        .map(|moon| {
+                            moon.get(component)
+                                .expect("We made sure to only request valid components")
+                        })
+                        .collect(),
+                )
             })
             .fold(1, |a, b| math::lcm(a, b))
     }

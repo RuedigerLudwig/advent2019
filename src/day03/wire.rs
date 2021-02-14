@@ -39,17 +39,12 @@ impl Wire {
     pub fn get_closest_intersection(&self, other: &Wire) -> Option<Pos<i32>> {
         self.get_intersections(other)
             .iter()
-            .map(|(p, _)| p)
-            .copied()
-            .min()
+            .map(|(p, _)| *p)
+            .min_by_key(|p| p.abs())
     }
 
     pub fn get_shortest_intersection(&self, other: &Wire) -> Option<i32> {
-        self.get_intersections(other)
-            .iter()
-            .map(|(_, l)| l)
-            .copied()
-            .min()
+        self.get_intersections(other).iter().map(|(_, l)| *l).min()
     }
 }
 

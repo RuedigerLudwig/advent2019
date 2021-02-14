@@ -1,9 +1,13 @@
-use std::{fmt::Display, iter::FromIterator};
+#![allow(dead_code)]
+use std::fmt::Display;
 
-use super::{math::Number, pos::Pos};
+use super::{number::Number, pos::Pos};
 
 #[derive(Debug, Clone, Copy, Default)]
-pub struct Area<T> {
+pub struct Area<T>
+where
+    T: Number,
+{
     lower_left: Pos<T>,
     upper_right: Pos<T>,
 }
@@ -12,30 +16,21 @@ impl<T> Area<T>
 where
     T: Number + Ord,
 {
-    pub fn single(pos: Pos<T>) -> Area<T> {
-        Area {
-            lower_left: pos,
-            upper_right: pos,
-        }
-    }
-
     pub fn new(p1: Pos<T>, p2: Pos<T>) -> Area<T> {
         Area {
-            lower_left: Pos::new(p1.x().min(p2.x()), p1.y().min(p2.y())),
-            upper_right: Pos::new(p1.x().max(p2.x()), p1.y().max(p2.y())),
+            lower_left: p1.min_components(&p2),
+            upper_right: p1.max_components(&p2),
         }
     }
 
     pub fn extend(&self, pos: Pos<T>) -> Area<T> {
+        if self.contains(pos) {
+            return *self;
+        }
+
         Area {
-            lower_left: Pos::new(
-                self.lower_left.x().min(pos.x()),
-                self.lower_left.y().min(pos.y()),
-            ),
-            upper_right: Pos::new(
-                self.upper_right.x().max(pos.x()),
-                self.upper_right.y().max(pos.y()),
-            ),
+            lower_left: self.lower_left.min_components(&pos),
+            upper_right: self.upper_right.max_components(&pos),
         }
     }
 
@@ -47,12 +42,28 @@ where
         self.upper_right
     }
 
-    #[allow(dead_code)]
     pub fn contains(&self, pos: Pos<T>) -> bool {
         self.lower_left.x() >= pos.x()
             && pos.x() >= self.upper_right.x()
             && self.lower_left.y() >= pos.y()
             && pos.y() >= self.upper_right.y()
+    }
+}
+
+impl<'a, T> Area<T>
+where
+    T: Number + Ord + 'a,
+{
+    pub fn from_iterator<I>(mut iter: I) -> Option<Self>
+    where
+        I: Iterator<Item = &'a Pos<T>>,
+    {
+        let first = *iter.next()?;
+        let (upper, lower) = iter.fold((first, first), |(mx, mn), p| {
+            (mx.max_components(&p), mn.min_components(&p))
+        });
+
+        Some(Area::new(lower, upper))
     }
 }
 
@@ -80,54 +91,12 @@ where
     }
 }
 
-impl<_T> Display for Area<_T>
+impl<T> Display for Area<T>
 where
-    _T: Display,
+    T: Number + Display,
 {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "[{}-{}]", self.lower_left, self.upper_right)
-    }
-}
-
-impl<_T> FromIterator<Pos<_T>> for Area<_T>
-where
-    _T: Number + Ord,
-{
-    fn from_iter<T>(iter: T) -> Self
-    where
-        T: IntoIterator<Item = Pos<_T>>,
-    {
-        let mut iter = iter.into_iter();
-        if let Some(pos) = iter.next() {
-            let mut area = Area::single(pos);
-            while let Some(pos) = iter.next() {
-                area = area.extend(pos);
-            }
-            area
-        } else {
-            panic!("Need to have at least one position for an area");
-        }
-    }
-}
-
-impl<'a, _T> FromIterator<&'a Pos<_T>> for Area<_T>
-where
-    _T: 'a + Number + Ord,
-{
-    fn from_iter<T>(iter: T) -> Self
-    where
-        T: IntoIterator<Item = &'a Pos<_T>>,
-    {
-        let mut iter = iter.into_iter();
-        if let Some(&pos) = iter.next() {
-            let mut area = Area::single(pos);
-            while let Some(&pos) = iter.next() {
-                area = area.extend(pos);
-            }
-            area
-        } else {
-            panic!("Need to have at least one position for an area");
-        }
     }
 }
 
@@ -145,7 +114,10 @@ where
 }
 
 #[derive(Debug)]
-pub struct RowIterator<'a, T> {
+pub struct RowIterator<'a, T>
+where
+    T: Number,
+{
     area: &'a Area<T>,
     row: T,
     ascending: bool,
@@ -153,7 +125,7 @@ pub struct RowIterator<'a, T> {
 
 impl<'a, T> RowIterator<'a, T>
 where
-    T: Copy,
+    T: Number,
 {
     fn new(area: &'a Area<T>, ascending: bool) -> RowIterator<'a, T> {
         RowIterator {
@@ -195,14 +167,17 @@ where
 }
 
 #[derive(Debug)]
-pub struct Row<'a, T> {
+pub struct Row<'a, T>
+where
+    T: Number,
+{
     area: &'a Area<T>,
     row: T,
 }
 
 impl<'a, T> Row<'a, T>
 where
-    T: Copy,
+    T: Number,
 {
     pub fn cols(&self, ascending: bool) -> ColIterator<'_, T> {
         ColIterator {
@@ -219,7 +194,10 @@ where
 }
 
 #[derive(Debug)]
-pub struct ColIterator<'a, T> {
+pub struct ColIterator<'a, T>
+where
+    T: Number,
+{
     area: &'a Area<T>,
     row: T,
     col: T,
@@ -249,7 +227,10 @@ where
 }
 
 #[derive(Debug)]
-pub struct CellIterator<'a, T> {
+pub struct CellIterator<'a, T>
+where
+    T: Number,
+{
     area: &'a Area<T>,
     row: T,
     col: T,

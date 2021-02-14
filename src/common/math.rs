@@ -1,89 +1,17 @@
-use std::ops::{Add, AddAssign, BitAnd, Div, Mul, Rem, Shl, Shr, Sub, SubAssign};
+use thiserror::Error;
 
-pub trait Number:
-    Copy
-    + Add<Output = Self>
-    + Sub<Output = Self>
-    + Mul<Output = Self>
-    + Div<Output = Self>
-    + Rem<Output = Self>
-    + Shr<Output = Self>
-    + Shl<Output = Self>
-    + AddAssign
-    + SubAssign
-    + BitAnd<Output = Self>
-    + PartialEq
-    + PartialOrd
-{
-    const ZERO: Self;
-    const ONE: Self;
-    const MAX: Self;
+use super::number::Number;
 
-    fn abs(self) -> Self;
-    fn checked_mul(self, rhs: Self) -> Option<Self>;
-    fn rem_euclid(self, rhs: Self) -> Self;
+#[derive(Error, Debug)]
+pub enum MathError {
+    #[error("We can not calculate so close to the ceiling")]
+    TooHigh,
 
-    fn is_odd(&self) -> bool {
-        *self & Self::ONE == Self::ONE
-    }
+    #[error("Need positive modulo")]
+    NeedPositiveModulo,
 
-    fn is_even(&self) -> bool {
-        !self.is_odd()
-    }
-}
-
-impl Number for i32 {
-    const ZERO: i32 = 0i32;
-    const ONE: i32 = 1i32;
-    const MAX: i32 = i32::MAX;
-
-    fn abs(self) -> Self {
-        (self as i32).abs()
-    }
-
-    fn rem_euclid(self, rhs: Self) -> Self {
-        (self as i32).rem_euclid(rhs)
-    }
-
-    fn checked_mul(self, rhs: Self) -> Option<Self> {
-        (self as i32).checked_mul(rhs)
-    }
-}
-
-impl Number for i64 {
-    const ZERO: i64 = 0i64;
-    const ONE: i64 = 1i64;
-    const MAX: i64 = i64::MAX;
-
-    fn abs(self) -> Self {
-        (self as i64).abs()
-    }
-
-    fn rem_euclid(self, rhs: Self) -> Self {
-        (self as i64).rem_euclid(rhs)
-    }
-
-    fn checked_mul(self, rhs: Self) -> Option<Self> {
-        (self as i64).checked_mul(rhs)
-    }
-}
-
-impl Number for i128 {
-    const ZERO: i128 = 0i128;
-    const ONE: i128 = 1i128;
-    const MAX: i128 = i128::MAX;
-
-    fn abs(self) -> Self {
-        (self as i128).abs()
-    }
-
-    fn rem_euclid(self, rhs: Self) -> Self {
-        (self as i128).rem_euclid(rhs)
-    }
-
-    fn checked_mul(self, rhs: Self) -> Option<Self> {
-        (self as i128).checked_mul(rhs)
-    }
+    #[error("Need non negative exponent")]
+    NeedNonNegativeExponent,
 }
 
 fn non_zero_gcd<T>(mut a: T, mut b: T) -> T
@@ -141,46 +69,47 @@ where
     }
 }
 
-pub fn modulus_mul<T>(a: T, b: T, modulo: T) -> T
+pub fn modulus_mul<T>(a: T, b: T, modulo: T) -> Result<T, MathError>
 where
     T: Number,
 {
-    let mul = a.checked_mul(b).unwrap_or_else(|| {
-        if T::MAX >> T::ONE < a {
-            panic!("We can not calculate so close to the ceiling");
-        }
+    let mul = if let Some(mul) = a.checked_mul(b) {
+        mul
+    } else if T::MAX >> T::ONE >= a {
         let start = if b.is_odd() { a } else { T::ZERO };
-        start + modulus_mul((a << T::ONE).rem_euclid(modulo), b >> T::ONE, modulo)
-    });
+        start + modulus_mul((a << T::ONE).rem_euclid(modulo), b >> T::ONE, modulo)?
+    } else {
+        return Err(MathError::TooHigh);
+    };
 
-    mul.rem_euclid(modulo)
+    Ok(mul.rem_euclid(modulo))
 }
 
-pub fn modulus_exp<T>(base: T, exponent: T, modulo: T) -> T
+pub fn modulus_exp<T>(base: T, exponent: T, modulo: T) -> Result<T, MathError>
 where
     T: Number,
 {
     if modulo < T::ONE {
-        panic!("Need positive modulo");
+        return Err(MathError::NeedPositiveModulo);
     }
     if exponent < T::ZERO {
-        panic!("Need non negative exponent");
+        return Err(MathError::NeedNonNegativeExponent);
     }
 
     if modulo == T::ONE {
-        T::ZERO
+        Ok(T::ZERO)
     } else {
         let mut result = T::ONE;
         let mut base = base.rem_euclid(modulo);
         let mut exponent = exponent;
         while exponent > T::ZERO {
             if exponent.is_odd() {
-                result = modulus_mul(result, base, modulo);
+                result = modulus_mul(result, base, modulo)?;
             }
             exponent = exponent >> T::ONE;
-            base = modulus_mul(base, base, modulo);
+            base = modulus_mul(base, base, modulo)?;
         }
-        result
+        Ok(result)
     }
 }
 
@@ -202,22 +131,26 @@ mod tests {
     }
 
     #[test]
-    fn test_modulo_mul() {
+    fn test_modulo_mul() -> Result<(), MathError> {
         let a = 1_234_567_890_123_456i64;
         let b = 98_765;
-        let result = modulus_mul(a, b, 3_333_333_333_333_333);
+        let result = modulus_mul(a, b, 3_333_333_333_333_333)?;
 
         assert_eq!(result, 2_097_668_043_144_033);
+
+        Ok(())
     }
 
     #[test]
-    fn test_modulo_exp() {
+    fn test_modulo_exp() -> Result<(), MathError> {
         let base = 4;
         let exponent = 13;
         let modulo = 497;
-        let result = modulus_exp(base, exponent, modulo);
+        let result = modulus_exp(base, exponent, modulo)?;
 
         assert_eq!(result, 445);
+
+        Ok(())
     }
 
     #[test]

@@ -64,28 +64,47 @@ impl CardShuffle {
                 let (m2, a2) = technique.get_params();
 
                 modulus_inv(m2, deck_size)
-                    .map(|invers| {
-                        let new_mul = modulus_mul(mul, invers, deck_size);
-                        let new_add = modulus_mul(add + a2, m2, deck_size);
-
-                        (new_mul, new_add)
-                    })
+                    .map(|invers| CardShuffle::calc_mul_add(mul, invers, deck_size, add, a2, m2))
+                    .transpose()?
                     .ok_or(CardError::NotCoprime(m2, deck_size))
             })?;
 
         modulus_inv(mul, deck_size)
-            .map(|inv_mul| {
-                let fixpoint =
-                    modulus_inv(inv_mul - 1, deck_size).map(|tmp| modulus_mul(tmp, add, deck_size));
-
-                CardShuffle {
-                    deck_size,
-                    fixpoint,
-                    mul,
-                    add,
-                }
-            })
+            .map(|inv_mul| CardShuffle::with_fix_point(inv_mul, deck_size, add, mul))
+            .transpose()?
             .ok_or(CardError::NotCoprime(mul, deck_size))
+    }
+
+    fn calc_mul_add(
+        mul: i64,
+        invers: i64,
+        deck_size: i64,
+        add: i64,
+        a2: i64,
+        m2: i64,
+    ) -> Result<(i64, i64), CardError> {
+        let new_mul = modulus_mul(mul, invers, deck_size)?;
+        let new_add = modulus_mul(add + a2, m2, deck_size)?;
+
+        Ok((new_mul, new_add))
+    }
+
+    fn with_fix_point(
+        inv_mul: i64,
+        deck_size: i64,
+        add: i64,
+        mul: i64,
+    ) -> Result<CardShuffle, CardError> {
+        let fixpoint = modulus_inv(inv_mul - 1, deck_size)
+            .map(|tmp| modulus_mul(tmp, add, deck_size))
+            .transpose()?;
+
+        Ok(CardShuffle {
+            deck_size,
+            fixpoint,
+            mul,
+            add,
+        })
     }
 
     pub fn invert(&self) -> Result<CardShuffle, CardError> {
@@ -94,27 +113,30 @@ impl CardShuffle {
 
     pub fn repeat(&self, times: i64) -> Result<CardShuffle, CardError> {
         self.fixpoint
-            .map(|fixpoint| {
-                let times = times.rem_euclid(self.deck_size - 1);
-                let mul = modulus_exp(self.mul, times, self.deck_size);
-
-                let inv_mul = modulus_inv(mul, self.deck_size)
-                    .expect("I am sure I have a fixpoint, so this will always work safely");
-                let add = modulus_mul(inv_mul - 1, fixpoint, self.deck_size);
-
-                CardShuffle {
-                    deck_size: self.deck_size,
-                    fixpoint: self.fixpoint,
-                    mul,
-                    add,
-                }
-            })
+            .map(|fixpoint| self.calc_repeat(times, fixpoint))
+            .transpose()?
             .ok_or(CardError::NotImplemented)
     }
 
-    pub fn get_position_of_card(&self, card: i64) -> i64 {
+    fn calc_repeat(&self, times: i64, fixpoint: i64) -> Result<CardShuffle, CardError> {
+        let times = times.rem_euclid(self.deck_size - 1);
+        let mul = modulus_exp(self.mul, times, self.deck_size)?;
+
+        let inv_mul = modulus_inv(mul, self.deck_size)
+            .expect("I am sure I have a fixpoint, so this will always work safely");
+        let add = modulus_mul(inv_mul - 1, fixpoint, self.deck_size)?;
+
+        Ok(CardShuffle {
+            deck_size: self.deck_size,
+            fixpoint: self.fixpoint,
+            mul,
+            add,
+        })
+    }
+
+    pub fn get_position_of_card(&self, card: i64) -> Result<i64, CardError> {
         let number = card + self.add;
-        modulus_mul(number, self.mul, self.deck_size).rem_euclid(self.deck_size)
+        Ok(modulus_mul(number, self.mul, self.deck_size)?.rem_euclid(self.deck_size))
     }
 }
 
@@ -144,7 +166,7 @@ mod test {
 
         let result = (0..10)
             .map(|number| shuffle.get_position_of_card(number))
-            .collect::<Vec<_>>();
+            .collect::<Result<Vec<_>, _>>()?;
 
         let expected = vec![9, 8, 7, 6, 5, 4, 3, 2, 1, 0];
 
@@ -159,7 +181,7 @@ mod test {
 
         let result = (0..10)
             .map(|number| shuffle.get_position_of_card(number))
-            .collect::<Vec<_>>();
+            .collect::<Result<Vec<_>, _>>()?;
 
         let expected = vec![3, 4, 5, 6, 7, 8, 9, 0, 1, 2];
 
@@ -174,7 +196,7 @@ mod test {
 
         let result = (0..10)
             .map(|number| shuffle.get_position_of_card(number))
-            .collect::<Vec<_>>();
+            .collect::<Result<Vec<_>, _>>()?;
 
         let expected = vec![0, 7, 4, 1, 8, 5, 2, 9, 6, 3];
 
@@ -192,7 +214,7 @@ mod test {
 
         let result = (0..10)
             .map(|number| shuffle.get_position_of_card(number))
-            .collect::<Vec<_>>();
+            .collect::<Result<Vec<_>, _>>()?;
 
         let expected = vec![4, 1, 8, 5, 2, 9, 6, 3, 0, 7];
 
@@ -211,7 +233,7 @@ mod test {
 
         let result = (0..13)
             .map(|number| shuffle.get_position_of_card(number))
-            .collect::<Vec<_>>();
+            .collect::<Result<Vec<_>, _>>()?;
 
         let expected = vec![7, 10, 0, 3, 6, 9, 12, 2, 5, 8, 11, 1, 4];
 
@@ -231,7 +253,7 @@ mod test {
 
         let result = (0..13)
             .map(|number| shuffle.get_position_of_card(number))
-            .collect::<Vec<_>>();
+            .collect::<Result<Vec<_>, _>>()?;
 
         let expected = vec![9, 7, 5, 3, 1, 12, 10, 8, 6, 4, 2, 0, 11];
 
@@ -247,7 +269,7 @@ mod test {
 
         let result = (0..10)
             .map(|number| shuffle.get_position_of_card(number))
-            .collect::<Vec<_>>();
+            .collect::<Result<Vec<_>, _>>()?;
 
         let expected = vec![0, 3, 6, 9, 2, 5, 8, 1, 4, 7];
 
@@ -263,7 +285,7 @@ mod test {
 
         let result = (0..10)
             .map(|number| shuffle.get_position_of_card(number))
-            .collect::<Vec<_>>();
+            .collect::<Result<Vec<_>, _>>()?;
 
         let expected = vec![3, 0, 7, 4, 1, 8, 5, 2, 9, 6];
 
@@ -279,7 +301,7 @@ mod test {
 
         let result = (0..10)
             .map(|number| shuffle.get_position_of_card(number))
-            .collect::<Vec<_>>();
+            .collect::<Result<Vec<_>, _>>()?;
 
         let expected = vec![9, 2, 5, 8, 1, 4, 7, 0, 3, 6];
 

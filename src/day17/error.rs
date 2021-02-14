@@ -1,4 +1,4 @@
-use crate::common::{direction::Direction, pos::Pos};
+use crate::common::{direction::Direction, pos::Pos, turn::Turn};
 use crate::computer::ComputerError;
 use thiserror::Error;
 
@@ -12,6 +12,9 @@ pub enum ExteriorError {
 
     #[error("Could not get data from robot")]
     NoData,
+
+    #[error("Illegal turn for path: {0}")]
+    IllegalTurn(Turn),
 
     #[error("Can't turn from {0} facing {1}")]
     NoScaffold(Pos<i32>, Direction),

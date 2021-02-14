@@ -28,6 +28,6 @@ pub fn result() -> Result<(), WireError> {
         }
         Ok(())
     } else {
-        panic!("Did not get to wires!")
+        Err(WireError::NoTwoWires)
     }
 }

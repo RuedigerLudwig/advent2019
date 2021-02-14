@@ -1,55 +1,15 @@
-use super::{direction::Direction, math::gcd};
+use super::{direction::Direction, math::gcd, number::Number};
+use std::fmt;
 use std::ops::{Add, Mul, Sub};
-use std::{cmp::Ordering, fmt};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Default)]
-pub struct Pos<T>(T, T);
-
-impl Pos<i32> {
-    pub const fn new_const(x: i32, y: i32) -> Pos<i32> {
-        Pos(x, y)
-    }
-
-    pub fn abs(&self) -> i32 {
-        self.0.abs() + self.1.abs()
-    }
-
-    pub fn normalize(&self) -> (Pos<i32>, i32) {
-        if self.0 == 0 && self.1 == 0 {
-            (*self, 1)
-        } else {
-            let ggt = gcd(self.0, self.1);
-            (Pos::new(self.0 / ggt, self.1 / ggt), ggt)
-        }
-    }
-
-    pub fn angle(&self) -> f64 {
-        (self.1 as f64).atan2(self.0 as f64)
-    }
-
-    pub fn angle2(&self) -> f64 {
-        ((-self.0 as f64).atan2(-self.1 as f64) + std::f64::consts::PI)
-            .rem_euclid(2.0 * std::f64::consts::PI)
-    }
-}
-
-impl Pos<f64> {
-    pub fn abs(&self) -> f64 {
-        self.0.abs() + self.1.abs()
-    }
-
-    pub fn angle(&self) -> f64 {
-        self.1.atan2(self.0)
-    }
-
-    pub fn angle2(&self) -> f64 {
-        ((-self.0).atan2(-self.1) + std::f64::consts::PI).rem_euclid(2.0 * std::f64::consts::PI)
-    }
-}
+pub struct Pos<T>(T, T)
+where
+    T: Number;
 
 impl<T> Pos<T>
 where
-    T: Copy,
+    T: Number,
 {
     pub fn new(x: T, y: T) -> Pos<T> {
         Pos(x, y)
@@ -62,23 +22,41 @@ where
     pub fn y(&self) -> T {
         self.1
     }
-}
 
-impl Ord for Pos<i32> {
-    fn cmp(&self, other: &Self) -> Ordering {
-        self.abs().cmp(&other.abs())
+    pub fn max_components(&self, other: &Pos<T>) -> Self {
+        Self(self.0.max(other.0), self.1.max(other.1))
     }
-}
 
-impl PartialOrd for Pos<i32> {
-    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
-        Some(self.cmp(other))
+    pub fn min_components(&self, other: &Pos<T>) -> Self {
+        Self(self.0.min(other.0), self.1.min(other.1))
+    }
+
+    pub fn abs(&self) -> T {
+        self.0.abs() + self.1.abs()
+    }
+
+    pub fn normalize(&self) -> (Pos<T>, T) {
+        if self.0 == T::ZERO && self.1 == T::ZERO {
+            (*self, T::ONE)
+        } else {
+            let ggt = gcd(self.0, self.1);
+            (Pos::new(self.0 / ggt, self.1 / ggt), ggt)
+        }
+    }
+
+    pub fn angle(&self) -> f64 {
+        self.1.as_f64().atan2(self.0.as_f64())
+    }
+
+    pub fn angle2(&self) -> f64 {
+        (-self.0.as_f64().atan2(-self.1.as_f64()) + std::f64::consts::PI)
+            .rem_euclid(2.0 * std::f64::consts::PI)
     }
 }
 
 impl<T> fmt::Display for Pos<T>
 where
-    T: fmt::Display,
+    T: Number + fmt::Display,
 {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "({}, {})", self.0, self.1)
@@ -87,7 +65,7 @@ where
 
 impl<T> Add for Pos<T>
 where
-    T: Add<Output = T> + Copy,
+    T: Number,
 {
     type Output = Self;
     fn add(self, rhs: Self) -> Self::Output {
@@ -97,7 +75,7 @@ where
 
 impl<T> Add for &Pos<T>
 where
-    T: Add<Output = T> + Copy,
+    T: Number,
 {
     type Output = <Pos<T> as Add<Pos<T>>>::Output;
 
@@ -108,7 +86,7 @@ where
 
 impl<T> Add<&Pos<T>> for Pos<T>
 where
-    T: Add<Output = T> + Copy,
+    T: Number,
 {
     type Output = <Pos<T> as Add<Pos<T>>>::Output;
     fn add(self, rhs: &Self) -> Self::Output {
@@ -118,7 +96,7 @@ where
 
 impl<T> Add<Pos<T>> for &Pos<T>
 where
-    T: Add<Output = T> + Copy,
+    T: Number,
 {
     type Output = <Pos<T> as Add<Pos<T>>>::Output;
     fn add(self, rhs: Pos<T>) -> Self::Output {
@@ -128,7 +106,7 @@ where
 
 impl<T> Add<(T, T)> for Pos<T>
 where
-    T: Add<Output = T>,
+    T: Number,
 {
     type Output = Self;
     fn add(self, rhs: (T, T)) -> Self::Output {
@@ -170,7 +148,7 @@ impl Add<Direction> for &Pos<i32> {
 
 impl<T> Sub for Pos<T>
 where
-    T: Sub<Output = T>,
+    T: Number,
 {
     type Output = Pos<T>;
     fn sub(self, rhs: Self) -> Self::Output {
@@ -180,7 +158,7 @@ where
 
 impl<T> Sub<&Self> for Pos<T>
 where
-    T: Sub<Output = T> + Copy,
+    T: Number,
 {
     type Output = Pos<T>;
     fn sub(self, rhs: &Self) -> Self::Output {
@@ -190,7 +168,7 @@ where
 
 impl<T> Sub for &Pos<T>
 where
-    T: Sub<Output = T> + Copy,
+    T: Number,
 {
     type Output = Pos<T>;
     fn sub(self, rhs: &Pos<T>) -> Self::Output {
@@ -200,7 +178,7 @@ where
 
 impl<T> Sub<Pos<T>> for &Pos<T>
 where
-    T: Sub<Output = T> + Copy,
+    T: Number,
 {
     type Output = Pos<T>;
     fn sub(self, rhs: Pos<T>) -> Self::Output {
@@ -210,7 +188,7 @@ where
 
 impl<T> Mul<T> for Pos<T>
 where
-    T: Mul<Output = T> + Copy,
+    T: Number,
 {
     type Output = Self;
     fn mul(self, rhs: T) -> Self::Output {
@@ -220,7 +198,7 @@ where
 
 impl<T> Mul<T> for &Pos<T>
 where
-    T: Mul<Output = T> + Copy,
+    T: Number,
 {
     type Output = Pos<T>;
     fn mul(self, rhs: T) -> Self::Output {
@@ -230,7 +208,7 @@ where
 
 impl<T> Mul<&T> for Pos<T>
 where
-    T: Mul<Output = T> + Copy,
+    T: Number,
 {
     type Output = Pos<T>;
     fn mul(self, rhs: &T) -> Self::Output {
@@ -240,7 +218,7 @@ where
 
 impl<T> Mul<&T> for &Pos<T>
 where
-    T: Mul<Output = T> + Copy,
+    T: Number,
 {
     type Output = Pos<T>;
     fn mul(self, rhs: &T) -> Self::Output {

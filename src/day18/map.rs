@@ -94,19 +94,21 @@ impl Map {
 
 impl Display for Map {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        let area = self.data.keys().copied().collect::<Area>();
-        let upper = "#".repeat((area.width() + 2) as usize);
+        if let Some(area) = Area::from_iterator(self.data.keys()) {
+            let upper = "#".repeat((area.width() + 2) as usize);
 
-        writeln!(f, "{}", upper)?;
-        for row in area.rows(false) {
-            write!(f, "#")?;
-            for cell in row.cols(true) {
-                let tile = self.get_tile(cell);
-                write!(f, "{}", tile)?;
+            writeln!(f, "{}", upper)?;
+            for row in area.rows(false) {
+                write!(f, "#")?;
+                for cell in row.cols(true) {
+                    let tile = self.get_tile(cell);
+                    write!(f, "{}", tile)?;
+                }
+                writeln!(f, "#")?;
             }
-            writeln!(f, "#")?;
+            writeln!(f, "{}", upper)?
         }
-        writeln!(f, "{}", upper)
+        write!(f, "")
     }
 }
 

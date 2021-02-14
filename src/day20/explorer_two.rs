@@ -162,12 +162,11 @@ mod tests {
         let map = Map::parse(&input)?;
         let result = ExplorerTwo::new(&map).explore();
 
-        if let Err(MapError::NoPath) = result {
+        if matches!(result, Err(MapError::NoPath)) {
+            Ok(())
         } else {
-            panic!("Did not raise error")
+            Err(MapError::ErrorNotRaised)
         }
-
-        Ok(())
     }
 
     #[test]

@@ -25,6 +25,12 @@ impl Default for Tile {
     }
 }
 
+impl Default for &Tile {
+    fn default() -> Self {
+        &Tile::Empty
+    }
+}
+
 impl TryFrom<i64> for Tile {
     type Error = GameError;
 
@@ -136,13 +142,14 @@ impl Game {
 
 impl Display for Game {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        let area = self.board.keys().copied().collect::<Area>();
-        for row in area.rows(true) {
-            for col in row.cols(true) {
-                let tile = self.board.get(&col).copied().unwrap_or_default();
-                write!(f, "{}", tile)?;
+        if let Some(area) = Area::from_iterator( self.board.keys()) {
+            for row in area.rows(true) {
+                for col in row.cols(true) {
+                    let tile = self.board.get(&col).unwrap_or_default();
+                    write!(f, "{}", tile)?;
+                }
+                writeln!(f, "")?;
             }
-            writeln!(f, "")?;
         }
         write!(f, "")
     }
